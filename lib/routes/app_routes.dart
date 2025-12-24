@@ -7,6 +7,7 @@ class AppRoutes {
 
   // Main routes
   static const String home = '/home';
+  static const String notifications = '/home/notifications';
   static const String appointments = '/home/appointments';
   static const String appointmentDetail = '/home/appointments/:id';
   static const String serviceTracker = '/home/service-tracker';

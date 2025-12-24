@@ -52,7 +52,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
               ),
               const SizedBox(height: AppDimensions.spacingL),
               Text(
-                'Nail Tech App',
+                'Aicom Tech',
                 style: TextStyle(
                   fontSize: AppDimensions.displayLarge,
                   fontWeight: FontWeight.bold,

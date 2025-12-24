@@ -2,7 +2,7 @@ class AppConstants {
   AppConstants._();
 
   // App info
-  static const String appName = 'Nail Tech App';
+  static const String appName = 'Aicom Tech';
   static const String appVersion = '1.0.0';
 
   // Hive box names
