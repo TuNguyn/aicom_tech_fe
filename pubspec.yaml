@@ -30,6 +30,7 @@ dependencies:
   # UI
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
+  flutter_svg: ^2.0.10
 
   # Utilities
   intl: ^0.20.2
@@ -47,8 +48,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Assets
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
-  #   - assets/animations/
+  assets:
+    - assets/icons/
+

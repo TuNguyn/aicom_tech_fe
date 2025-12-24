@@ -23,9 +23,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
+    return Container(
+      decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
@@ -53,9 +56,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
-        child: SafeArea(
+      body: SafeArea(
           child: Column(
             children: [
               // Main Content Area
@@ -71,16 +72,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                       // Today's Summary
                       _buildTodaySummary(),
+                      const SizedBox(height: AppDimensions.spacingL),
+
+                      // Performance Stats
+                      _buildPerformanceStats(),
                     ],
                   ),
                 ),
               ),
-
-              // Stats Footer (similar to original design)
-              _buildStatsFooter(),
             ],
           ),
-        ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentNavIndex,
@@ -90,6 +91,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           });
           // TODO: Navigate to different pages based on index
         },
+      ),
       ),
     );
   }
@@ -165,9 +167,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           Text(
             subtitle,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: Colors.grey[500],
-            ),
+            style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[500]),
           ),
         ],
       ),
@@ -245,57 +245,56 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         Text(
           label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: Colors.grey[600],
-          ),
+          style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600]),
         ),
       ],
     );
   }
 
-  Widget _buildStatsFooter() {
+  Widget _buildPerformanceStats() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingL,
-        vertical: AppDimensions.spacingM,
-      ),
+      padding: const EdgeInsets.all(AppDimensions.spacingL),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Performance',
+            style: AppTextStyles.titleLarge.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingM),
           // Rating Row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ...List.generate(4, (index) => const Icon(
-                Icons.star,
-                color: Colors.amber,
-                size: 28,
-              )),
-              const Icon(
-                Icons.star_half,
-                color: Colors.amber,
-                size: 28,
+              ...List.generate(
+                4,
+                (index) => const Icon(Icons.star, color: Colors.amber, size: 28),
               ),
+              const Icon(Icons.star_half, color: Colors.amber, size: 28),
               const SizedBox(width: 8),
               Text(
                 '(4.5)',
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.spacingM),
+          const SizedBox(height: AppDimensions.spacingL),
           // Stats Row
           Row(
             children: [
@@ -303,7 +302,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Container(
                   padding: const EdgeInsets.all(AppDimensions.spacingM),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
                   ),
                   child: Column(
@@ -311,13 +310,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       Text(
                         'Total Earn',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey[600],
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '\$0',
-                        style: AppTextStyles.titleLarge.copyWith(
+                        style: AppTextStyles.displayMedium.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -331,7 +331,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Container(
                   padding: const EdgeInsets.all(AppDimensions.spacingM),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
                   ),
                   child: Column(
@@ -339,14 +339,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                       Text(
                         'Turns',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey[600],
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '0',
-                        style: AppTextStyles.titleLarge.copyWith(
-                          color: AppColors.primary,
+                        style: AppTextStyles.displayMedium.copyWith(
+                          color: AppColors.secondary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
