@@ -7,50 +7,80 @@ import '../theme/app_text_styles.dart';
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final bool useWhiteBackground;
 
   const BottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.useWhiteBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.9),
-                Colors.white.withValues(alpha: 0.85),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
+      child: useWhiteBackground
+          ? Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: SafeArea(
-            child: Container(
-              height: 64,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Row(
+              child: SafeArea(
+                child: Container(
+                  height: 64,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, 'assets/icons/home.svg', 'Home'),
               _buildNavItem(1, 'assets/icons/walk_in.svg', 'Walk-In'),
               _buildNavItem(2, 'assets/icons/calendar.svg', 'Appt'),
               _buildNavItem(3, 'assets/icons/report.svg', 'Report'),
-              _buildNavItem(4, 'assets/icons/note.svg', 'Note'),
-              _buildNavItem(5, 'assets/icons/more.svg', 'More'),
+              _buildNavItem(4, 'assets/icons/more.svg', 'More'),
+            ],
+          ),
+                ),
+              ),
+            )
+          : BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.9),
+                      Colors.white.withValues(alpha: 0.85),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Container(
+                    height: 64,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, 'assets/icons/home.svg', 'Home'),
+              _buildNavItem(1, 'assets/icons/walk_in.svg', 'Walk-In'),
+              _buildNavItem(2, 'assets/icons/calendar.svg', 'Appt'),
+              _buildNavItem(3, 'assets/icons/report.svg', 'Report'),
+              _buildNavItem(4, 'assets/icons/more.svg', 'More'),
             ],
           ),
         ),

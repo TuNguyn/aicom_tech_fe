@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import '../appointments/appointments_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -57,41 +58,97 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
       body: SafeArea(
-          child: Column(
-            children: [
-              // Main Content Area
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppDimensions.spacingM),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Quick Stats Section
-                      _buildQuickStatsSection(),
-                      const SizedBox(height: AppDimensions.spacingL),
-
-                      // Today's Summary
-                      _buildTodaySummary(),
-                      const SizedBox(height: AppDimensions.spacingL),
-
-                      // Performance Stats
-                      _buildPerformanceStats(),
-                    ],
-                  ),
-                ),
+        child: IndexedStack(
+          index: _currentNavIndex,
+          children: [
+            // Home Tab (index 0)
+            _buildHomePage(),
+            // Walk-In Tab (index 1)
+            _buildPlaceholderPage('Walk-In'),
+            // Appointments Tab (index 2)
+            const AppointmentsPage(),
+            // Report Tab (index 3)
+            _buildPlaceholderPage('Report'),
+            // More Tab (index 4)
+            _buildPlaceholderPage('More'),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _currentNavIndex == 2
+          ? Container(
+              color: Colors.white,
+              child: BottomNavBar(
+                currentIndex: _currentNavIndex,
+                useWhiteBackground: true,
+                onTap: (index) {
+                  setState(() {
+                    _currentNavIndex = index;
+                  });
+                  // TODO: Navigate to different pages based on index
+                },
               ),
-            ],
+            )
+          : BottomNavBar(
+              currentIndex: _currentNavIndex,
+              useWhiteBackground: false,
+              onTap: (index) {
+                setState(() {
+                  _currentNavIndex = index;
+                });
+                // TODO: Navigate to different pages based on index
+              },
+            ),
+      ),
+    );
+  }
+
+  Widget _buildHomePage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppDimensions.spacingM),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Quick Stats Section
+          _buildQuickStatsSection(),
+          const SizedBox(height: AppDimensions.spacingL),
+
+          // Today's Summary
+          _buildTodaySummary(),
+          const SizedBox(height: AppDimensions.spacingL),
+
+          // Performance Stats
+          _buildPerformanceStats(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderPage(String title) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.construction,
+            size: 80,
+            color: Colors.white.withValues(alpha: 0.7),
           ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentNavIndex,
-        onTap: (index) {
-          setState(() {
-            _currentNavIndex = index;
-          });
-          // TODO: Navigate to different pages based on index
-        },
-      ),
+          const SizedBox(height: AppDimensions.spacingM),
+          Text(
+            '$title Page',
+            style: AppTextStyles.displayMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingS),
+          Text(
+            'Coming Soon',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
       ),
     );
   }
