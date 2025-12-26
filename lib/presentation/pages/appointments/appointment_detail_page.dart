@@ -30,33 +30,51 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
   }
 
   List<Map<String, dynamic>> _convertAppointmentsToTimeline(List<Map<String, dynamic>> appointments) {
-    // Convert grid appointments to timeline format with start/end times
+    // Convert appointments to timeline format with start/end times
     return appointments.map((apt) {
-      final timeSlotIndex = apt['timeSlotIndex'] as int;
-      final duration = apt['duration'] as int;
+      final scheduledTime = apt['scheduledTime'] as DateTime;
+      final services = apt['services'] as List;
+      final totalDuration = services.fold<int>(
+        0,
+        (sum, service) => sum + (service['duration'] as int),
+      );
+      final endTime = scheduledTime.add(Duration(minutes: totalDuration));
 
-      // Calculate start and end times based on time slot index
-      final startHour = 9 + (timeSlotIndex * 15) ~/ 60;
-      final startMinute = (timeSlotIndex * 15) % 60;
-      final endMinute = startMinute + (duration * 15);
-      final endHour = startHour + endMinute ~/ 60;
-      final endMinuteFinal = endMinute % 60;
+      String formatTime(DateTime time) {
+        return DateFormat('h:mm a').format(time);
+      }
 
-      String formatTime(int hour, int minute) {
-        final isPM = hour >= 12;
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        final period = isPM ? 'pm' : 'am';
-        return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}$period';
+      // Get status color
+      final status = apt['status'] as String;
+      Color statusColor;
+      switch (status) {
+        case 'upcoming':
+          statusColor = const Color(0xFF6B7FD7);
+          break;
+        case 'in_progress':
+          statusColor = Colors.orange;
+          break;
+        case 'completed':
+          statusColor = Colors.green;
+          break;
+        case 'cancelled':
+          statusColor = Colors.red;
+          break;
+        default:
+          statusColor = Colors.grey;
       }
 
       return {
         'id': apt['id'],
         'customerName': apt['customerName'],
-        'service': apt['service'],
-        'startTime': formatTime(startHour, startMinute),
-        'endTime': formatTime(endHour, endMinuteFinal),
-        'duration': duration * 15, // Convert to minutes
-        'color': apt['color'],
+        'customerPhone': apt['customerPhone'],
+        'services': services,
+        'startTime': formatTime(scheduledTime),
+        'endTime': formatTime(endTime),
+        'duration': totalDuration,
+        'color': statusColor,
+        'status': status,
+        'notes': apt['notes'] ?? '',
       };
     }).toList();
   }
@@ -265,16 +283,52 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                   'Customer:',
                   apt['customerName'],
                 ),
-                const SizedBox(height: AppDimensions.spacingM),
+                const SizedBox(height: AppDimensions.spacingS),
                 _buildDetailRow(
-                  'Service:',
-                  apt['service'],
+                  'Phone:',
+                  apt['customerPhone'],
                 ),
                 const SizedBox(height: AppDimensions.spacingM),
+                Text(
+                  'Services:',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.spacingS),
+                ...(apt['services'] as List).map((service) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• ${service['name']} (${service['duration']} min)',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.black87,
+                    ),
+                  ),
+                )).toList(),
+                const SizedBox(height: AppDimensions.spacingM),
                 _buildDetailRow(
-                  'Time:',
+                  'Total time:',
                   '${apt['duration']} minutes',
                 ),
+                if (apt['notes'] != null && apt['notes'].toString().isNotEmpty) ...[
+                  const SizedBox(height: AppDimensions.spacingM),
+                  Text(
+                    'Notes:',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingS),
+                  Text(
+                    apt['notes'],
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.black87,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

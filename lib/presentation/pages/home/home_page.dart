@@ -28,7 +28,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
+        // Hide AppBar when on Appointments tab (index 2) to save space
+        appBar: _currentNavIndex == 2 ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
