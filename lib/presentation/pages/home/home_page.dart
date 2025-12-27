@@ -85,8 +85,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: IndexedStack(
+      body: IndexedStack(
           index: _currentNavIndex,
           children: [
             // Home Tab (index 0)
@@ -101,7 +100,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             const MorePage(),
           ],
         ),
-      ),
       bottomNavigationBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4)
           ? Container(
               color: Colors.white,
