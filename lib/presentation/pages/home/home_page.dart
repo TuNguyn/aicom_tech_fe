@@ -33,8 +33,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Appointments and More tabs: primary color
       statusBarColor = AppColors.primary;
     } else if (_currentNavIndex == 3) {
-      // Report tab: white background
-      statusBarColor = Colors.white;
+      // Report tab: match app background color
+      statusBarColor = AppColors.background;
     } else {
       // Home and Walk-In tabs: transparent (show gradient)
       statusBarColor = Colors.transparent;
@@ -42,8 +42,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // Icon brightness based on background color
     final iconBrightness = (_currentNavIndex == 3)
-        ? Brightness.dark  // Dark icons on white background
-        : Brightness.light; // Light icons on colored background
+        ? Brightness.dark // Dark icons on report background
+        : (_currentNavIndex == 0 || _currentNavIndex == 1 || _currentNavIndex == 2 || _currentNavIndex == 4)
+            ? Brightness.light // Light icons on colored background
+            : Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
