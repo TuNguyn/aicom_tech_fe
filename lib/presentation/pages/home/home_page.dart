@@ -55,6 +55,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
         child: Scaffold(
         backgroundColor: Colors.transparent,
+        extendBody: true,
         // Hide AppBar when on Appointments, Report, or More tab (index 2, 3, 4) to save space
         appBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4) ? null : AppBar(
         backgroundColor: Colors.transparent,
@@ -100,30 +101,16 @@ class _HomePageState extends ConsumerState<HomePage> {
             const MorePage(),
           ],
         ),
-      bottomNavigationBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4)
-          ? Container(
-              color: Colors.white,
-              child: BottomNavBar(
-                currentIndex: _currentNavIndex,
-                useWhiteBackground: true,
-                onTap: (index) {
-                  setState(() {
-                    _currentNavIndex = index;
-                  });
-                  // TODO: Navigate to different pages based on index
-                },
-              ),
-            )
-          : BottomNavBar(
-              currentIndex: _currentNavIndex,
-              useWhiteBackground: false,
-              onTap: (index) {
-                setState(() {
-                  _currentNavIndex = index;
-                });
-                // TODO: Navigate to different pages based on index
-              },
-            ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentNavIndex,
+        useWhiteBackground: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4),
+        onTap: (index) {
+          setState(() {
+            _currentNavIndex = index;
+          });
+          // TODO: Navigate to different pages based on index
+        },
+      ),
       ),
       ),
     );

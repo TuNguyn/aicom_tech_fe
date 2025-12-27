@@ -20,73 +20,58 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: useWhiteBackground
-          ? Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+      child: Stack(
+        children: [
+          // Blur Effect (Only for gradient background)
+          if (!useWhiteBackground)
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(color: Colors.transparent),
               ),
-              child: SafeArea(
-                child: Container(
-                  height: 64,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, 'assets/icons/home.svg', 'Home'),
-              _buildNavItem(1, 'assets/icons/walk_in.svg', 'Walk-In'),
-              _buildNavItem(2, 'assets/icons/calendar.svg', 'Appt'),
-              _buildNavItem(3, 'assets/icons/report.svg', 'Report'),
-              _buildNavItem(4, 'assets/icons/more.svg', 'More'),
-            ],
-          ),
-                ),
-              ),
-            )
-          : BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.9),
-                      Colors.white.withValues(alpha: 0.85),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, -5),
+            ),
+
+          // Main Container (Background + Content)
+          Container(
+            decoration: BoxDecoration(
+              color: useWhiteBackground ? Colors.white : null,
+              gradient: useWhiteBackground
+                  ? null
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.9),
+                        Colors.white.withValues(alpha: 0.85),
+                      ],
                     ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(0, 'assets/icons/home.svg', 'Home'),
+                    _buildNavItem(1, 'assets/icons/walk_in.svg', 'Walk-In'),
+                    _buildNavItem(2, 'assets/icons/calendar.svg', 'Appt'),
+                    _buildNavItem(3, 'assets/icons/report.svg', 'Report'),
+                    _buildNavItem(4, 'assets/icons/more.svg', 'More'),
                   ],
                 ),
-                child: SafeArea(
-                  child: Container(
-                    height: 64,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, 'assets/icons/home.svg', 'Home'),
-              _buildNavItem(1, 'assets/icons/walk_in.svg', 'Walk-In'),
-              _buildNavItem(2, 'assets/icons/calendar.svg', 'Appt'),
-              _buildNavItem(3, 'assets/icons/report.svg', 'Report'),
-              _buildNavItem(4, 'assets/icons/more.svg', 'More'),
-            ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
-    ),
-    ),
     );
   }
 
@@ -109,8 +94,8 @@ class BottomNavBar extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutBack,
-                height: isSelected ? 26 : 24,
-                width: isSelected ? 26 : 24,
+                height: isSelected ? 24 : 22,
+                width: isSelected ? 24 : 22,
                 child: SvgPicture.asset(
                   iconPath,
                   colorFilter: ColorFilter.mode(
@@ -120,18 +105,18 @@ class BottomNavBar extends StatelessWidget {
                 ),
               ),
               // Spacing
-              SizedBox(height: isSelected ? 0 : 2),
+              if (!isSelected) const SizedBox(height: 2),
               // Text (Hidden when active)
               if (!isSelected)
                 SizedBox(
-                  height: 14,
+                  height: 12,
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.labelSmall.copyWith(
                       color: inactiveColor,
-                      fontSize: 9,
+                      fontSize: 8,
                       fontWeight: FontWeight.w500,
                       height: 1.0,
                     ),
@@ -141,7 +126,7 @@ class BottomNavBar extends StatelessWidget {
               // Dot indicator when active
               if (isSelected)
                 Container(
-                  margin: const EdgeInsets.only(top: 2),
+                  margin: const EdgeInsets.only(top: 4),
                   height: 4,
                   width: 4,
                   decoration: BoxDecoration(
