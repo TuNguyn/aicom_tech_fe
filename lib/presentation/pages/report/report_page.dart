@@ -14,12 +14,12 @@ class ReportPage extends ConsumerStatefulWidget {
 
 class _ReportPageState extends ConsumerState<ReportPage> {
   // State variables
-  String _selectedTab = 'Payment'; // Payment or Transaction
-  String _selectedPeriod = 'Day'; // Day, Week, Month, Year, Custom
+  String _selectedTab = 'Payment'; 
+  String _selectedPeriod = 'Day'; 
   DateTime _selectedDate = DateTime.now();
   
-  // New variable to track the month currently visible in the calendar view
-  DateTime _displayedMonthDate = DateTime.now();
+  // Tracks the visible month/year in the calendar view
+  DateTime _displayedDate = DateTime.now();
   
   final int _initialPage = 1000;
   late final PageController _pageController;
@@ -90,6 +90,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     super.dispose();
   }
 
+  // --- Logic Helpers ---
+
   DateTime _getStartOfWeekForPage(int pageIndex) {
     final now = DateTime.now();
     final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
@@ -100,17 +102,17 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   void _jumpToDate(DateTime date) {
     setState(() {
       _selectedDate = date;
-      _displayedMonthDate = date;
+      _displayedDate = date;
     });
     
-    final now = DateTime.now();
-    final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
-    final targetWeekStart = date.subtract(Duration(days: date.weekday % 7));
-    final diffInDays = targetWeekStart.difference(currentWeekStart).inDays;
-    final diffInWeeks = (diffInDays / 7).round();
-    final targetPage = _initialPage + diffInWeeks;
-    
-    if (_pageController.hasClients) {
+    if (_selectedPeriod == 'Day' && _pageController.hasClients) {
+      final now = DateTime.now();
+      final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
+      final targetWeekStart = date.subtract(Duration(days: date.weekday % 7));
+      final diffInDays = targetWeekStart.difference(currentWeekStart).inDays;
+      final diffInWeeks = (diffInDays / 7).round();
+      final targetPage = _initialPage + diffInWeeks;
+      
       _pageController.animateToPage(
         targetPage, 
         duration: const Duration(milliseconds: 300), 
@@ -126,6 +128,20 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   List<Map<String, dynamic>> _getTransactionsForSelectedDate() {
     return _mockTransactions.where((transaction) {
       final transactionDate = transaction['date'] as DateTime;
+      
+      if (_selectedPeriod == 'Day') {
+        return DateUtils.isSameDay(transactionDate, _selectedDate);
+      } else if (_selectedPeriod == 'Week') {
+        // Week starts on _selectedDate (Sunday) and ends 6 days later
+        final weekEnd = _selectedDate.add(const Duration(days: 6));
+        // Use inclusive comparison logic
+        return !transactionDate.isBefore(_selectedDate) && 
+               !transactionDate.isAfter(weekEnd.add(const Duration(seconds: 1)));
+      } else if (_selectedPeriod == 'Month') {
+        return transactionDate.month == _selectedDate.month && transactionDate.year == _selectedDate.year;
+      } else if (_selectedPeriod == 'Year') {
+        return transactionDate.year == _selectedDate.year;
+      }
       return DateUtils.isSameDay(transactionDate, _selectedDate);
     }).toList();
   }
@@ -137,6 +153,42 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       'tips': transactions.fold(0.0, (sum, t) => sum + (t['tips'] as double)),
       'empShare': transactions.fold(0.0, (sum, t) => sum + (t['empShare'] as double)),
     };
+  }
+
+  // --- Header Navigation Logic ---
+
+  String _getHeaderTitle() {
+    if (_selectedPeriod == 'Day' || _selectedPeriod == 'Week') {
+      return DateFormat('MMMM yyyy').format(_displayedDate);
+    } else {
+      return DateFormat('yyyy').format(_displayedDate);
+    }
+  }
+
+  void _onHeaderPrev() {
+    setState(() {
+      if (_selectedPeriod == 'Day' || _selectedPeriod == 'Week') {
+        _displayedDate = DateTime(_displayedDate.year, _displayedDate.month - 1, 1);
+        _selectedDate = _displayedDate;
+      } else {
+        _displayedDate = DateTime(_displayedDate.year - 1, 1, 1);
+        _selectedDate = _displayedDate;
+      }
+    });
+    if (_selectedPeriod == 'Day') _jumpToDate(_displayedDate);
+  }
+
+  void _onHeaderNext() {
+    setState(() {
+      if (_selectedPeriod == 'Day' || _selectedPeriod == 'Week') {
+        _displayedDate = DateTime(_displayedDate.year, _displayedDate.month + 1, 1);
+        _selectedDate = _displayedDate;
+      } else {
+        _displayedDate = DateTime(_displayedDate.year + 1, 1, 1);
+        _selectedDate = _displayedDate;
+      }
+    });
+    if (_selectedPeriod == 'Day') _jumpToDate(_displayedDate);
   }
 
   @override
@@ -151,7 +203,6 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // Modern Sliding Segment Control
             SliverAppBar(
               floating: true,
               pinned: true,
@@ -165,20 +216,14 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  // Unified Compact Calendar Card
                   _buildCompactCalendarCard(),
-                  
                   const SizedBox(height: AppDimensions.spacingS),
-                  
-                  // Summary Cards
                   _buildSummaryCards(summary),
-                  
                   const SizedBox(height: AppDimensions.spacingM),
                 ],
               ),
             ),
 
-            // Transactions List
             if (transactions.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
@@ -212,13 +257,12 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  // 1. Modern Sliding Segment Control
   Widget _buildSegmentedControl() {
     return Container(
       height: 44,
-      width: 300, // Fixed width for better centering
+      width: 300,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5), // Light grey track
+        color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
@@ -267,8 +311,9 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  // 2. Unified Compact Calendar Card
   Widget _buildCompactCalendarCard() {
+    final bool showBottomCalendar = _selectedPeriod != 'Year' && _selectedPeriod != 'Custom';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
       decoration: BoxDecoration(
@@ -285,33 +330,25 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Month Nav (Left) + Today Button (Right)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Month Title & Nav
                 Row(
                   children: [
                     InkWell(
-                      onTap: () {
-                        final prevMonth = DateTime(_displayedMonthDate.year, _displayedMonthDate.month - 1, 1);
-                        _jumpToDate(prevMonth);
-                      },
+                      onTap: _onHeaderPrev,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey[100],
-                        ),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
                         child: Icon(Icons.chevron_left, color: Colors.grey[700], size: 18),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
-                        DateFormat('MMMM yyyy').format(_displayedMonthDate),
+                        _getHeaderTitle(),
                         style: AppTextStyles.titleLarge.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -320,23 +357,17 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                       ),
                     ),
                     InkWell(
-                      onTap: () {
-                        final nextMonth = DateTime(_displayedMonthDate.year, _displayedMonthDate.month + 1, 1);
-                        _jumpToDate(nextMonth);
-                      },
+                      onTap: _onHeaderNext,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey[100],
-                        ),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
                         child: Icon(Icons.chevron_right, color: Colors.grey[700], size: 18),
                       ),
                     ),
                   ],
                 ),
                 
-                // Today Button
+                // Dynamic Today/This Week/etc Button
                 GestureDetector(
                   onTap: () => _jumpToDate(DateTime.now()),
                   child: Container(
@@ -347,7 +378,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                     ),
                     child: Text(
-                      'Today',
+                      _selectedPeriod == 'Day'
+                          ? 'Today'
+                          : _selectedPeriod == 'Week'
+                              ? 'This Week'
+                              : _selectedPeriod == 'Month'
+                                  ? 'This Month'
+                                  : _selectedPeriod == 'Year'
+                                      ? 'This Year'
+                                      : 'Today',
                       style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 11,
@@ -362,7 +401,6 @@ class _ReportPageState extends ConsumerState<ReportPage> {
 
           const SizedBox(height: 12),
 
-          // Row 2: Period Selector (All fit in one row, equal width)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -380,13 +418,14 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             ),
           ),
 
-          const SizedBox(height: 12),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-          const SizedBox(height: 8),
-
-          _buildCompactCalendar(),
-          
-          const SizedBox(height: 8),
+          if (showBottomCalendar) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+            const SizedBox(height: 8),
+            _buildDynamicCalendarBody(),
+            const SizedBox(height: 8),
+          ] else
+            const SizedBox(height: 16),
         ],
       ),
     );
@@ -396,7 +435,10 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final isSelected = _selectedPeriod == period;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedPeriod = period),
+        onTap: () {
+          setState(() => _selectedPeriod = period);
+          if (period == 'Day') _jumpToDate(_selectedDate); 
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -420,9 +462,18 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  // Removed _buildTodayChip as it's now integrated in Row 1
+  Widget _buildDynamicCalendarBody() {
+    if (_selectedPeriod == 'Week') {
+      return _buildWeekView();
+    } else if (_selectedPeriod == 'Month') {
+      return _buildMonthView();
+    } else {
+      return _buildDayView();
+    }
+  }
 
-  Widget _buildCompactCalendar() {
+  Widget _buildDayView() {
+    final now = DateTime.now();
     return SizedBox(
       height: 60,
       child: PageView.builder(
@@ -430,8 +481,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         onPageChanged: (index) {
           final weekStart = _getStartOfWeekForPage(index);
           final midWeek = weekStart.add(const Duration(days: 3));
-          if (midWeek.month != _displayedMonthDate.month || midWeek.year != _displayedMonthDate.year) {
-            setState(() => _displayedMonthDate = midWeek);
+          if (midWeek.month != _displayedDate.month || midWeek.year != _displayedDate.year) {
+            setState(() => _displayedDate = midWeek);
           }
         },
         itemBuilder: (context, index) {
@@ -441,7 +492,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             children: List.generate(7, (dayIndex) {
               final date = weekStart.add(Duration(days: dayIndex));
               final isSelected = DateUtils.isSameDay(date, _selectedDate);
-              final isToday = DateUtils.isSameDay(date, DateTime.now());
+              final isToday = DateUtils.isSameDay(date, now);
               final hasData = _hasDataForDate(date);
 
               return Expanded(
@@ -449,7 +500,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                   onTap: () {
                     setState(() {
                       _selectedDate = date;
-                      _displayedMonthDate = date;
+                      _displayedDate = date;
                     });
                   },
                   child: Container(
@@ -459,6 +510,9 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                           ? AppColors.primary 
                           : (isToday ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
                       borderRadius: BorderRadius.circular(12),
+                      border: isToday && !isSelected
+                          ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1)
+                          : null,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -466,9 +520,9 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                         Text(
                           DateFormat('E').format(date).toUpperCase().substring(0, 1),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[500],
+                            color: isSelected ? Colors.white : (isToday ? AppColors.primary : Colors.grey[500]),
                             fontSize: 9,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -504,7 +558,119 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  // Summary Cards
+  Widget _buildWeekView() {
+    final now = DateTime.now();
+    final currentWeekStartAnchor = now.subtract(Duration(days: now.weekday % 7));
+    
+    final weeks = <DateTime>[];
+    var d = DateTime(_displayedDate.year, _displayedDate.month, 1);
+    var weekStart = d.subtract(Duration(days: d.weekday % 7));
+    
+    while (weekStart.month == _displayedDate.month || 
+           weekStart.add(const Duration(days: 6)).month == _displayedDate.month) {
+      if (weeks.isNotEmpty && weeks.last.isAtSameMomentAs(weekStart)) break;
+      weeks.add(weekStart);
+      weekStart = weekStart.add(const Duration(days: 7));
+    }
+
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: weeks.length,
+        itemBuilder: (context, index) {
+          final start = weeks[index];
+          final end = start.add(const Duration(days: 6));
+          
+          final isSelected = DateUtils.isSameDay(start, _selectedDate.subtract(Duration(days: _selectedDate.weekday % 7)));
+          final isCurrentWeek = DateUtils.isSameDay(start, currentWeekStartAnchor);
+
+          return GestureDetector(
+            onTap: () => setState(() => _selectedDate = start),
+            child: Container(
+              width: 85,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : (isCurrentWeek ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected 
+                      ? Colors.transparent 
+                      : (isCurrentWeek ? AppColors.primary : Colors.grey[200]!),
+                  width: isCurrentWeek ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Week ${index + 1}',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : (isCurrentWeek ? AppColors.primary : Colors.grey[600]),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${DateFormat('MMM d').format(start)} - ${DateFormat('d').format(end)}',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMonthView() {
+    final now = DateTime.now();
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 12,
+        itemBuilder: (context, index) {
+          final monthIndex = index + 1;
+          final isSelected = _selectedDate.month == monthIndex && _selectedDate.year == _displayedDate.year;
+          final isCurrentMonth = now.month == monthIndex && now.year == _displayedDate.year;
+          
+          return GestureDetector(
+            onTap: () => setState(() => _selectedDate = DateTime(_displayedDate.year, monthIndex, 1)),
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : (isCurrentMonth ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected 
+                    ? null 
+                    : Border.all(color: isCurrentMonth ? AppColors.primary.withValues(alpha: 0.5) : Colors.grey[200]!),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                DateFormat('MMM').format(DateTime(2022, monthIndex)),
+                style: TextStyle(
+                  color: isSelected ? Colors.white : (isCurrentMonth ? AppColors.primary : AppColors.textPrimary),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildSummaryCards(Map<String, double> summary) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
