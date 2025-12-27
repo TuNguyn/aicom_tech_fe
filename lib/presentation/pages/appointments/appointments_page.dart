@@ -69,6 +69,21 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
       'status': 'upcoming',
       'notes': '',
     },
+    {
+      'id': '5',
+      'customerName': 'Isabella Martinez',
+      'customerPhone': '(555) 567-8901',
+      'services': [
+        {'name': 'Acrylic Full Set', 'duration': 90},
+        {'name': 'Nail Art', 'duration': 30},
+        {'name': 'Gel Polish', 'duration': 20},
+        {'name': 'Hand Massage', 'duration': 15},
+        {'name': 'Paraffin Treatment', 'duration': 20},
+      ],
+      'scheduledTime': DateTime(2025, 12, 26, 9, 0),
+      'status': 'upcoming',
+      'notes': 'VIP customer - full spa package',
+    },
   ];
 
   List<DateTime> _getWeekDates() {
@@ -303,7 +318,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         AppDimensions.spacingM,
         AppDimensions.spacingS,
         AppDimensions.spacingM,
-        AppDimensions.spacingM,
+        100, // Extra bottom padding to account for bottom nav bar
       ),
       itemCount: appointments.length,
       separatorBuilder: (context, index) => const SizedBox(height: AppDimensions.spacingS),

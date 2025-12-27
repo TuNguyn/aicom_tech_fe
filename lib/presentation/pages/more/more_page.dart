@@ -161,7 +161,7 @@ class MorePage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 100), // Extra bottom padding to account for bottom nav bar
                   ],
                 ),
               ),

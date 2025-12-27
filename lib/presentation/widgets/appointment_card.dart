@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 
-class AppointmentCard extends StatelessWidget {
+class AppointmentCard extends StatefulWidget {
   final Map<String, dynamic> appointment;
   final VoidCallback onTap;
 
@@ -13,6 +13,13 @@ class AppointmentCard extends StatelessWidget {
     required this.appointment,
     required this.onTap,
   });
+
+  @override
+  State<AppointmentCard> createState() => _AppointmentCardState();
+}
+
+class _AppointmentCardState extends State<AppointmentCard> {
+  bool _isExpanded = false;
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -61,18 +68,20 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheduledTime = appointment['scheduledTime'] as DateTime;
-    final services = appointment['services'] as List;
+    final scheduledTime = widget.appointment['scheduledTime'] as DateTime;
+    final services = widget.appointment['services'] as List;
     final totalDuration = services.fold<int>(
       0,
       (sum, service) => sum + (service['duration'] as int),
     );
     final endTime = scheduledTime.add(Duration(minutes: totalDuration));
-    final status = appointment['status'] as String;
+    final status = widget.appointment['status'] as String;
     final statusColor = _getStatusColor(status);
+    final hasMultipleServices = services.length > 2;
+    final displayedServices = _isExpanded ? services : services.take(2).toList();
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -250,7 +259,7 @@ class AppointmentCard extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                appointment['customerName'].toString()[0].toUpperCase(),
+                                widget.appointment['customerName'].toString()[0].toUpperCase(),
                                 style: AppTextStyles.bodyLarge.copyWith(
                                   color: statusColor,
                                   fontWeight: FontWeight.bold,
@@ -265,7 +274,7 @@ class AppointmentCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  appointment['customerName'],
+                                  widget.appointment['customerName'],
                                   style: AppTextStyles.bodyLarge.copyWith(
                                     color: Colors.black87,
                                     fontWeight: FontWeight.bold,
@@ -292,7 +301,7 @@ class AppointmentCard extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
-                                        appointment['customerPhone'],
+                                        widget.appointment['customerPhone'],
                                         style: AppTextStyles.bodySmall.copyWith(
                                           color: Colors.grey[700],
                                           fontSize: 10,
@@ -322,13 +331,23 @@ class AppointmentCard extends StatelessWidget {
                           ),
                         ),
                         child: Column(
-                          children: services.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final service = entry.value;
+                          children: [
+                            ...displayedServices.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final service = entry.value;
+
+                              // Calculate start time for this service (using original index from full services list)
+                              final originalIndex = services.indexOf(service);
+                              int cumulativeDuration = 0;
+                              for (int i = 0; i < originalIndex; i++) {
+                                cumulativeDuration += services[i]['duration'] as int;
+                              }
+                              final serviceStartTime = scheduledTime.add(Duration(minutes: cumulativeDuration));
+                              final serviceEndTime = serviceStartTime.add(Duration(minutes: service['duration'] as int));
 
                             return Padding(
                               padding: EdgeInsets.only(
-                                bottom: index < services.length - 1 ? 6 : 0,
+                                bottom: index < displayedServices.length - 1 ? 6 : 0,
                               ),
                               child: Row(
                                 children: [
@@ -357,13 +376,27 @@ class AppointmentCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(
-                                      service['name'],
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          service['name'],
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${DateFormat('h:mm a').format(serviceStartTime)} - ${DateFormat('h:mm a').format(serviceEndTime)}',
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            color: Colors.grey[600],
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   Container(
@@ -388,12 +421,60 @@ class AppointmentCard extends StatelessWidget {
                               ),
                             );
                           }).toList(),
+
+                          // Show more/less button
+                          if (hasMultipleServices) ...[
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isExpanded = !_isExpanded;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: statusColor.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                                      size: 14,
+                                      color: statusColor,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _isExpanded
+                                        ? 'Show less'
+                                        : 'Show ${services.length - 2} more service${services.length - 2 > 1 ? 's' : ''}',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                         ),
                       ),
 
                       // Notes (if any)
-                      if (appointment['notes'] != null &&
-                          appointment['notes'].toString().isNotEmpty) ...[
+                      if (widget.appointment['notes'] != null &&
+                          widget.appointment['notes'].toString().isNotEmpty) ...[
                         const SizedBox(height: AppDimensions.spacingS),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -424,7 +505,7 @@ class AppointmentCard extends StatelessWidget {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  appointment['notes'],
+                                  widget.appointment['notes'],
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: Colors.amber[900],
                                     fontSize: 11,

@@ -120,7 +120,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildHomePage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppDimensions.spacingM),
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.spacingM,
+        AppDimensions.spacingM,
+        AppDimensions.spacingM,
+        100, // Extra bottom padding to account for bottom nav bar
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
