@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../../domain/entities/notification.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
@@ -13,35 +11,56 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  // Mock notifications data
-  final List<NotificationEntity> _notifications = [
-    NotificationEntity(
-      id: '1',
-      title: 'New Signed-In',
-      message: 'Client: Nhan',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      type: NotificationType.newSignIn,
-      clientName: 'Nhan',
-      isRead: false,
-    ),
-    NotificationEntity(
-      id: '2',
-      title: 'Appointment Reminder',
-      message: 'Client: Sarah Johnson at 2:00 PM',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      type: NotificationType.appointment,
-      clientName: 'Sarah Johnson',
-      isRead: false,
-    ),
-    NotificationEntity(
-      id: '3',
-      title: 'Service Completed',
-      message: 'Client: Maria Garcia finished manicure service',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      type: NotificationType.serviceComplete,
-      clientName: 'Maria Garcia',
-      isRead: true,
-    ),
+  // Mock notifications data - simplified format
+  final List<Map<String, dynamic>> _notifications = [
+    {
+      'id': '1',
+      'title': 'Appointment Reminder',
+      'message': 'Sarah Johnson at 10:00 AM',
+      'time': '5m ago',
+      'icon': Icons.event_available,
+      'color': AppColors.primary,
+    },
+    {
+      'id': '2',
+      'title': 'New Walk-in Customer',
+      'message': 'Customer waiting at front desk',
+      'time': '12m ago',
+      'icon': Icons.person_add_outlined,
+      'color': AppColors.accent,
+    },
+    {
+      'id': '3',
+      'title': 'Payment Received',
+      'message': 'Ticket #00003 - \$35.00',
+      'time': '1h ago',
+      'icon': Icons.payment,
+      'color': AppColors.success,
+    },
+    {
+      'id': '4',
+      'title': 'Appointment Cancelled',
+      'message': 'Maria Garcia cancelled 2:30 PM slot',
+      'time': '2h ago',
+      'icon': Icons.event_busy,
+      'color': AppColors.error,
+    },
+    {
+      'id': '5',
+      'title': 'New Review',
+      'message': 'Jennifer Smith left a 5-star review',
+      'time': '3h ago',
+      'icon': Icons.star,
+      'color': Colors.amber,
+    },
+    {
+      'id': '6',
+      'title': 'Stock Alert',
+      'message': 'Gel polish running low - reorder needed',
+      'time': '4h ago',
+      'icon': Icons.inventory_2_outlined,
+      'color': AppColors.warning,
+    },
   ];
 
   @override
@@ -76,135 +95,101 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: _notifications.isEmpty
             ? _buildEmptyState()
             : ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingS),
+                padding: const EdgeInsets.all(AppDimensions.spacingM),
                 itemCount: _notifications.length,
                 itemBuilder: (context, index) {
                   final notification = _notifications[index];
-                  return _buildNotificationItem(notification);
+                  return _buildNotificationItem(notification, index);
                 },
               ),
       ),
     );
   }
 
-  Widget _buildNotificationItem(NotificationEntity notification) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingM,
-        vertical: AppDimensions.spacingS,
-      ),
-      decoration: BoxDecoration(
-        color: notification.isRead ? Colors.white : AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _markAsRead(notification);
-          },
-          borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.spacingM),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Avatar
-                _buildAvatar(notification),
-                const SizedBox(width: AppDimensions.spacingM),
-
-                // Notification Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        notification.title,
-                        style: AppTextStyles.titleLarge.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (notification.clientName != null)
-                        Text(
-                          '• ${notification.message}',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '• ${_formatTime(notification.timestamp)}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Unread indicator
-                if (!notification.isRead)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+  Widget _buildNotificationItem(Map<String, dynamic> notification, int index) {
+    return Dismissible(
+      key: ValueKey(notification['id']),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(8),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(NotificationEntity notification) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.secondary,
-          ],
-        ),
-      ),
-      child: notification.avatarUrl != null
-          ? ClipOval(
-              child: Image.network(
-                notification.avatarUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return _buildDefaultAvatar(notification);
-                },
-              ),
-            )
-          : _buildDefaultAvatar(notification),
-    );
-  }
-
-  Widget _buildDefaultAvatar(NotificationEntity notification) {
-    return Center(
-      child: Text(
-        notification.clientName?.substring(0, 1).toUpperCase() ?? 'N',
-        style: AppTextStyles.displayMedium.copyWith(
+        child: const Icon(
+          Icons.delete_outline,
           color: Colors.white,
-          fontWeight: FontWeight.bold,
+        ),
+      ),
+      onDismissed: (direction) {
+        setState(() {
+          _notifications.removeWhere((n) => n['id'] == notification['id']);
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: (notification['color'] as Color).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  notification['icon'] as IconData,
+                  color: notification['color'] as Color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacingM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notification['title'] as String,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification['message'] as String,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacingS),
+              Text(
+                notification['time'] as String,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.grey[500],
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -237,41 +222,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ],
       ),
     );
-  }
-
-  String _formatTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minutes ago';
-    } else if (difference.inHours < 24) {
-      return DateFormat('h:mm a').format(timestamp);
-    } else if (difference.inDays == 1) {
-      return 'Yesterday ${DateFormat('h:mm a').format(timestamp)}';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return DateFormat('MMM d, h:mm a').format(timestamp);
-    }
-  }
-
-  void _markAsRead(NotificationEntity notification) {
-    setState(() {
-      final index = _notifications.indexWhere((n) => n.id == notification.id);
-      if (index != -1) {
-        _notifications[index] = NotificationEntity(
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          timestamp: notification.timestamp,
-          type: notification.type,
-          clientName: notification.clientName,
-          avatarUrl: notification.avatarUrl,
-          isRead: true,
-        );
-      }
-    });
   }
 
   void _showDeleteAllDialog() {

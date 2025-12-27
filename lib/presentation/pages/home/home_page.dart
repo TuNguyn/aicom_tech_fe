@@ -1,5 +1,6 @@
 import 'package:aicom_tech_fe/app_dependencies.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../routes/app_routes.dart';
@@ -9,6 +10,7 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../appointments/appointments_page.dart';
 import '../report/report_page.dart';
+import '../more/more_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -25,12 +27,36 @@ class _HomePageState extends ConsumerState<HomePage> {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
-    return Container(
-      decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
-      child: Scaffold(
+    // Determine status bar color based on current tab
+    Color statusBarColor;
+    if (_currentNavIndex == 2 || _currentNavIndex == 4) {
+      // Appointments and More tabs: primary color
+      statusBarColor = AppColors.primary;
+    } else if (_currentNavIndex == 3) {
+      // Report tab: white background
+      statusBarColor = Colors.white;
+    } else {
+      // Home and Walk-In tabs: transparent (show gradient)
+      statusBarColor = Colors.transparent;
+    }
+
+    // Icon brightness based on background color
+    final iconBrightness = (_currentNavIndex == 3)
+        ? Brightness.dark  // Dark icons on white background
+        : Brightness.light; // Light icons on colored background
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: statusBarColor,
+        statusBarIconBrightness: iconBrightness,
+        statusBarBrightness: (_currentNavIndex == 3) ? Brightness.light : Brightness.dark,
+      ),
+      child: Container(
+        decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+        child: Scaffold(
         backgroundColor: Colors.transparent,
-        // Hide AppBar when on Appointments or Report tab (index 2, 3) to save space
-        appBar: (_currentNavIndex == 2 || _currentNavIndex == 3) ? null : AppBar(
+        // Hide AppBar when on Appointments, Report, or More tab (index 2, 3, 4) to save space
+        appBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4) ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -72,11 +98,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             // Report Tab (index 3)
             const ReportPage(),
             // More Tab (index 4)
-            _buildPlaceholderPage('More'),
+            const MorePage(),
           ],
         ),
       ),
-      bottomNavigationBar: (_currentNavIndex == 2 || _currentNavIndex == 3)
+      bottomNavigationBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4)
           ? Container(
               color: Colors.white,
               child: BottomNavBar(
@@ -100,6 +126,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // TODO: Navigate to different pages based on index
               },
             ),
+      ),
       ),
     );
   }
@@ -293,15 +320,22 @@ class _HomePageState extends ConsumerState<HomePage> {
   }) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 32),
-        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 32),
+        ),
+        const SizedBox(height: 8),
         Text(
           value,
           style: AppTextStyles.titleLarge.copyWith(
             fontWeight: FontWeight.bold,
-            color: color,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           label,
           style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600]),
@@ -516,84 +550,58 @@ class _HomePageState extends ConsumerState<HomePage> {
               itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                return Dismissible(
-                  key: Key('notification_$index'),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.error,
+                      color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onDismissed: (direction) {
-                    // Remove notification (in real app, would update state)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${notification['title']} dismissed'),
-                        duration: const Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: (notification['color'] as Color).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              notification['icon'] as IconData,
-                              color: notification['color'] as Color,
-                              size: 20,
-                            ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: (notification['color'] as Color).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: AppDimensions.spacingS),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  notification['title'] as String,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          child: Icon(
+                            notification['icon'] as IconData,
+                            color: notification['color'] as Color,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spacingS),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notification['title'] as String,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                Text(
-                                  notification['message'] as String,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                notification['message'] as String,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.grey[600],
                                 ),
-                              ],
-                            ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          Text(
-                            notification['time'] as String,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.grey[500],
-                              fontSize: 11,
-                            ),
+                        ),
+                        Text(
+                          notification['time'] as String,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.grey[500],
+                            fontSize: 11,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -628,25 +636,25 @@ class _HomePageState extends ConsumerState<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.spacingM),
+          const SizedBox(height: AppDimensions.spacingL),
           // Completed, In Progress, Cancelled
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildSummaryItem(
-                icon: Icons.check_circle_outline,
+                icon: Icons.check_circle,
                 label: 'Completed',
                 value: '5',
                 color: AppColors.success,
               ),
               _buildSummaryItem(
-                icon: Icons.schedule,
+                icon: Icons.access_time,
                 label: 'In Progress',
                 value: '2',
                 color: AppColors.warning,
               ),
               _buildSummaryItem(
-                icon: Icons.cancel_outlined,
+                icon: Icons.cancel,
                 label: 'Cancelled',
                 value: '1',
                 color: AppColors.error,
@@ -654,33 +662,45 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const Divider(),
-          const SizedBox(height: AppDimensions.spacingM),
-          // Performance - Total Earn and Turns only
+          // Performance - Total Earn and Turns
           Row(
             children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(AppDimensions.spacingM),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 1.5,
+                    ),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      Text(
-                        'Total Earn',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Icon(
+                        Icons.attach_money,
+                        color: AppColors.success,
+                        size: 24,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$0',
-                        style: AppTextStyles.displayMedium.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: AppDimensions.spacingS),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '\$450',
+                              style: AppTextStyles.titleLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Total Earn',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -692,24 +712,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Container(
                   padding: const EdgeInsets.all(AppDimensions.spacingM),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.1),
+                    color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 1.5,
+                    ),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      Text(
-                        'Turns',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Icon(
+                        Icons.sync,
+                        color: AppColors.secondary,
+                        size: 24,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '0',
-                        style: AppTextStyles.displayMedium.copyWith(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: AppDimensions.spacingS),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '12',
+                              style: AppTextStyles.titleLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Turns',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
