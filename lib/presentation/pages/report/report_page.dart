@@ -200,78 +200,79 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              pinned: true,
-              backgroundColor: AppColors.background,
-              elevation: 0,
-              toolbarHeight: 60,
-              title: _buildSegmentedControl(),
-              centerTitle: true,
-            ),
-
-            SliverToBoxAdapter(
+        child: Column(
+          children: [
+            // --- FIXED HEADER SECTION ---
+            Container(
+              color: AppColors.background,
+              padding: const EdgeInsets.only(top: 8),
               child: Column(
                 children: [
+                  // 1. Segmented Control
+                  _buildSegmentedControl(),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // 2. Calendar Card
                   _buildCompactCalendarCard(),
-                  const SizedBox(height: AppDimensions.spacingS),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // 3. Summary Cards
                   _buildSummaryCards(summary),
-                  const SizedBox(height: AppDimensions.spacingM),
+                  
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
 
-            if (transactions.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _buildEmptyState(),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.spacingM,
-                  0,
-                  AppDimensions.spacingM,
-                  100,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final transaction = transactions[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppDimensions.spacingS),
-                        child: _buildTransactionCard(transaction, index + 1),
-                      );
-                    },
-                    childCount: transactions.length,
-                  ),
-                ),
-              ),
+            // --- SCROLLABLE LIST SECTION ---
+            Expanded(
+              child: transactions.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppDimensions.spacingM,
+                        0,
+                        AppDimensions.spacingM,
+                        20, // Bottom padding
+                      ),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) {
+                        final transaction = transactions[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppDimensions.spacingS),
+                          child: _buildTransactionCard(transaction, index + 1),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomSummary(summary),
+      // Removed bottom TOTAL summary bar
+      // bottomNavigationBar: _buildBottomSummary(summary),
     );
   }
 
   Widget _buildSegmentedControl() {
-    return Container(
-      height: 44,
-      width: 300,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        children: [
-          _buildSegmentButton('Payment'),
-          _buildSegmentButton('Transaction'),
-        ],
+    return RepaintBoundary(
+      child: Container(
+        height: 44,
+        width: 300,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            _buildSegmentButton('Payment'),
+            _buildSegmentButton('Transaction'),
+          ],
+        ),
       ),
     );
   }
@@ -280,22 +281,24 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final isSelected = _selectedTab == tab;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = tab),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
+        onTap: () {
+          if (_selectedTab != tab) {
+            setState(() => _selectedTab = tab);
+          }
+        },
+        child: Container(
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.transparent,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           alignment: Alignment.center,
           child: Text(
@@ -314,19 +317,20 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   Widget _buildCompactCalendarCard() {
     final bool showBottomCalendar = _selectedPeriod != 'Year' && _selectedPeriod != 'Custom';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -427,6 +431,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           ] else
             const SizedBox(height: 16),
         ],
+      ),
       ),
     );
   }
@@ -672,16 +677,18 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   Widget _buildSummaryCards(Map<String, double> summary) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
-      child: Row(
-        children: [
-          Expanded(child: _buildSummaryCard('Total', summary['totalEarn']!, AppColors.primary)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildSummaryCard('Share', summary['empShare']!, AppColors.secondary)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildSummaryCard('Tips', summary['tips']!, AppColors.accent)),
-        ],
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
+        child: Row(
+          children: [
+            Expanded(child: _buildSummaryCard('Total', summary['totalEarn']!, AppColors.primary)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildSummaryCard('Share', summary['empShare']!, AppColors.secondary)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildSummaryCard('Tips', summary['tips']!, AppColors.accent)),
+          ],
+        ),
       ),
     );
   }

@@ -115,9 +115,9 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   Widget _buildHeader(int appointmentCount) {
     return Container(
       color: AppColors.primary,
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppDimensions.spacingS,
-        AppDimensions.spacingXs,
+        MediaQuery.of(context).padding.top + AppDimensions.spacingXs,
         AppDimensions.spacingS,
         AppDimensions.spacingS,
       ),
