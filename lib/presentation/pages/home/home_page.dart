@@ -11,6 +11,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import '../appointments/appointments_page.dart';
 import '../report/report_page.dart';
 import '../more/more_page.dart';
+import '../walk_in/walk_in_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -58,8 +59,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,
-        // Hide AppBar when on Appointments, Report, or More tab (index 2, 3, 4) to save space
-        appBar: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4) ? null : AppBar(
+        // Hide AppBar when on Walk-In, Appointments, Report, or More tab (index 1, 2, 3, 4) to save space
+        appBar: (_currentNavIndex == 1 || _currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4) ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -94,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             // Home Tab (index 0)
             _buildHomePage(),
             // Walk-In Tab (index 1)
-            _buildPlaceholderPage('Walk-In'),
+            const WalkInPage(),
             // Appointments Tab (index 2)
             const AppointmentsPage(),
             // Report Tab (index 3)

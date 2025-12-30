@@ -4,7 +4,9 @@
       "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)",
       "Bash(flutter run:*)",
-      "Bash(nc:*)"
+      "Bash(nc:*)",
+      "Bash(flutter build:*)",
+      "Bash(Select-Object -First 30)"
     ]
   }
 }

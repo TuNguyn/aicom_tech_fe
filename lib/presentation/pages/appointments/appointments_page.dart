@@ -21,70 +21,72 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   DateTime _selectedDate = DateTime.now();
   final ScrollController _scrollController = ScrollController();
 
-  // Mock appointments data - now with support for multiple services
-  final List<Map<String, dynamic>> _mockAppointments = [
-    {
-      'id': '1',
-      'customerName': 'Sarah Johnson',
-      'customerPhone': '(555) 123-4567',
-      'services': [
-        {'name': 'Gel Manicure', 'duration': 60},
-      ],
-      'scheduledTime': DateTime(2025, 12, 26, 10, 0),
-      'status': 'upcoming',
-      'notes': 'Customer prefers soft pink color',
-    },
-    {
-      'id': '2',
-      'customerName': 'Maria Garcia',
-      'customerPhone': '(555) 234-5678',
-      'services': [
-        {'name': 'Acrylic Full Set', 'duration': 90},
-        {'name': 'Nail Art', 'duration': 30},
-      ],
-      'scheduledTime': DateTime(2025, 12, 26, 13, 30),
-      'status': 'upcoming',
-      'notes': 'Bring extra glitter',
-    },
-    {
-      'id': '3',
-      'customerName': 'Jennifer Smith',
-      'customerPhone': '(555) 345-6789',
-      'services': [
-        {'name': 'Pedicure Deluxe', 'duration': 75},
-      ],
-      'scheduledTime': DateTime(2025, 12, 26, 15, 30),
-      'status': 'in_progress',
-      'notes': '',
-    },
-    {
-      'id': '4',
-      'customerName': 'Emma Wilson',
-      'customerPhone': '(555) 456-7890',
-      'services': [
-        {'name': 'Gel Manicure', 'duration': 60},
-        {'name': 'Foot Massage', 'duration': 30},
-      ],
-      'scheduledTime': DateTime(2025, 12, 27, 9, 0),
-      'status': 'upcoming',
-      'notes': '',
-    },
-    {
-      'id': '5',
-      'customerName': 'Isabella Martinez',
-      'customerPhone': '(555) 567-8901',
-      'services': [
-        {'name': 'Acrylic Full Set', 'duration': 90},
-        {'name': 'Nail Art', 'duration': 30},
-        {'name': 'Gel Polish', 'duration': 20},
-        {'name': 'Hand Massage', 'duration': 15},
-        {'name': 'Paraffin Treatment', 'duration': 20},
-      ],
-      'scheduledTime': DateTime(2025, 12, 26, 9, 0),
-      'status': 'upcoming',
-      'notes': 'VIP customer - full spa package',
-    },
-  ];
+  // Generate mock appointments for any date
+  List<Map<String, dynamic>> _generateMockAppointmentsForDate(DateTime date) {
+    return [
+      {
+        'id': '${date.day}-1',
+        'customerName': 'Sarah Johnson',
+        'customerPhone': '(555) 123-4567',
+        'services': [
+          {'name': 'Gel Manicure', 'duration': 60},
+        ],
+        'scheduledTime': DateTime(date.year, date.month, date.day, 9, 0),
+        'status': 'upcoming',
+        'notes': 'Customer prefers soft pink color',
+      },
+      {
+        'id': '${date.day}-2',
+        'customerName': 'Maria Garcia',
+        'customerPhone': '(555) 234-5678',
+        'services': [
+          {'name': 'Acrylic Full Set', 'duration': 90},
+          {'name': 'Nail Art', 'duration': 30},
+        ],
+        'scheduledTime': DateTime(date.year, date.month, date.day, 10, 30),
+        'status': 'upcoming',
+        'notes': 'Bring extra glitter',
+      },
+      {
+        'id': '${date.day}-3',
+        'customerName': 'Jennifer Smith',
+        'customerPhone': '(555) 345-6789',
+        'services': [
+          {'name': 'Pedicure Deluxe', 'duration': 75},
+        ],
+        'scheduledTime': DateTime(date.year, date.month, date.day, 13, 0),
+        'status': DateUtils.isSameDay(date, DateTime.now()) ? 'in_progress' : 'upcoming',
+        'notes': '',
+      },
+      {
+        'id': '${date.day}-4',
+        'customerName': 'Emma Wilson',
+        'customerPhone': '(555) 456-7890',
+        'services': [
+          {'name': 'Gel Manicure', 'duration': 60},
+          {'name': 'Foot Massage', 'duration': 30},
+        ],
+        'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+        'status': 'upcoming',
+        'notes': '',
+      },
+      {
+        'id': '${date.day}-5',
+        'customerName': 'Isabella Martinez',
+        'customerPhone': '(555) 567-8901',
+        'services': [
+          {'name': 'Acrylic Full Set', 'duration': 90},
+          {'name': 'Nail Art', 'duration': 30},
+          {'name': 'Gel Polish', 'duration': 20},
+          {'name': 'Hand Massage', 'duration': 15},
+          {'name': 'Paraffin Treatment', 'duration': 20},
+        ],
+        'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
+        'status': 'upcoming',
+        'notes': 'VIP customer - full spa package',
+      },
+    ];
+  }
 
   List<DateTime> _getWeekDates() {
     final now = DateTime.now();
@@ -93,10 +95,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   }
 
   List<Map<String, dynamic>> _getAppointmentsForSelectedDate() {
-    return _mockAppointments.where((apt) {
-      final scheduledTime = apt['scheduledTime'] as DateTime;
-      return DateUtils.isSameDay(scheduledTime, _selectedDate);
-    }).toList()
+    return _generateMockAppointmentsForDate(_selectedDate)
       ..sort((a, b) => (a['scheduledTime'] as DateTime)
           .compareTo(b['scheduledTime'] as DateTime));
   }
@@ -239,10 +238,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           final isToday = DateUtils.isSameDay(date, DateTime.now());
 
           // Count appointments for this date
-          final appointmentsCount = _mockAppointments.where((apt) {
-            final scheduledTime = apt['scheduledTime'] as DateTime;
-            return DateUtils.isSameDay(scheduledTime, date);
-          }).length;
+          final appointmentsCount = _generateMockAppointmentsForDate(date).length;
 
           return Expanded(
             child: GestureDetector(
