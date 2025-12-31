@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
+import '../../widgets/date_range_picker_bottom_sheet.dart';
 
 class ReportPage extends ConsumerStatefulWidget {
   const ReportPage({super.key});
@@ -200,43 +201,23 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     if (_selectedPeriod == 'Day') _jumpToDate(_displayedDate);
   }
 
-  Future<void> _selectCustomDate(bool isFromDate) async {
-    final DateTime initialDate = isFromDate ? _customFromDate : _customToDate;
-    final DateTime? picked = await showDatePicker(
+  Future<void> _openDateRangePicker() async {
+    final result = await showModalBottomSheet<Map<String, DateTime?>>(
       context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DateRangePickerBottomSheet(
+        initialFromDate: _customFromDate,
+        initialToDate: _customToDate,
+      ),
     );
 
-    if (picked != null) {
+    if (result != null &&
+        result['fromDate'] != null &&
+        result['toDate'] != null) {
       setState(() {
-        if (isFromDate) {
-          _customFromDate = picked;
-          // Validation: if From > To, adjust To to match From
-          if (_customFromDate.isAfter(_customToDate)) {
-            _customToDate = _customFromDate;
-          }
-        } else {
-          _customToDate = picked;
-          // Validation: if To < From, adjust From to match To
-          if (_customToDate.isBefore(_customFromDate)) {
-            _customFromDate = _customToDate;
-          }
-        }
+        _customFromDate = result['fromDate']!;
+        _customToDate = result['toDate']!;
       });
     }
   }
@@ -387,14 +368,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: _selectedPeriod == 'Custom'
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildCustomDateSelector(true),
-                      const SizedBox(width: 12),
-                      _buildCustomDateSelector(false),
-                    ],
-                  )
+                ? Center(child: _buildCustomDateSelector())
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -526,14 +500,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  Widget _buildCustomDateSelector(bool isFromDate) {
-    final DateTime date = isFromDate ? _customFromDate : _customToDate;
-    final String label = isFromDate ? 'From' : 'To';
-
+  Widget _buildCustomDateSelector() {
     return GestureDetector(
-      onTap: () => _selectCustomDate(isFromDate),
+      onTap: _openDateRangePicker,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
@@ -544,17 +515,39 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           children: [
             Icon(
               Icons.calendar_today,
-              size: 12,
+              size: 13,
               color: AppColors.primary,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Text(
-              '$label: ${DateFormat('MMM d, yyyy').format(date)}',
+              'From: ${DateFormat('MMM d, yyyy').format(_customFromDate)}',
               style: TextStyle(
                 color: AppColors.primary,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(
+                Icons.arrow_forward,
+                size: 10,
+                color: AppColors.primary.withValues(alpha: 0.6),
+              ),
+            ),
+            Text(
+              'To: ${DateFormat('MMM d, yyyy').format(_customToDate)}',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.edit,
+              size: 12,
+              color: AppColors.primary,
             ),
           ],
         ),
