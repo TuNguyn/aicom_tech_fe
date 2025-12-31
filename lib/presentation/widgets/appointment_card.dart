@@ -484,13 +484,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                Colors.amber[50]!,
-                                Colors.orange[50]!,
+                                Colors.blue[50]!,
+                                Colors.blue[50]!.withValues(alpha: 0.5),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: Colors.amber[300]!,
+                              color: Colors.blue[200]!,
                               width: 1,
                             ),
                           ),
@@ -498,16 +498,16 @@ class _AppointmentCardState extends State<AppointmentCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(
-                                Icons.lightbulb_outline_rounded,
+                                Icons.sticky_note_2_outlined,
                                 size: 14,
-                                color: Colors.amber[800],
+                                color: Colors.blue[700],
                               ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   widget.appointment['notes'],
                                   style: AppTextStyles.bodySmall.copyWith(
-                                    color: Colors.amber[900],
+                                    color: Colors.blue[900],
                                     fontSize: 11,
                                     fontStyle: FontStyle.italic,
                                   ),

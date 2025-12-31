@@ -23,7 +23,13 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
 
   // Generate mock appointments for any date
   List<Map<String, dynamic>> _generateMockAppointmentsForDate(DateTime date) {
-    return [
+    // Sunday (weekday % 7 == 0) - No appointments (closed)
+    if (date.weekday % 7 == 0) {
+      return [];
+    }
+
+    // Base appointments that appear on most days
+    final baseAppointments = [
       {
         'id': '${date.day}-1',
         'customerName': 'Sarah Johnson',
@@ -44,8 +50,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           {'name': 'Nail Art', 'duration': 30},
         ],
         'scheduledTime': DateTime(date.year, date.month, date.day, 10, 30),
-        'status': 'upcoming',
-        'notes': 'Bring extra glitter',
+        'status': 'in_progress',
+        'notes': 'Allergic to certain nail polish - check ingredients first',
       },
       {
         'id': '${date.day}-3',
@@ -56,36 +62,220 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         ],
         'scheduledTime': DateTime(date.year, date.month, date.day, 13, 0),
         'status': DateUtils.isSameDay(date, DateTime.now()) ? 'in_progress' : 'upcoming',
-        'notes': '',
-      },
-      {
-        'id': '${date.day}-4',
-        'customerName': 'Emma Wilson',
-        'customerPhone': '(555) 456-7890',
-        'services': [
-          {'name': 'Gel Manicure', 'duration': 60},
-          {'name': 'Foot Massage', 'duration': 30},
-        ],
-        'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-        'status': 'upcoming',
-        'notes': '',
-      },
-      {
-        'id': '${date.day}-5',
-        'customerName': 'Isabella Martinez',
-        'customerPhone': '(555) 567-8901',
-        'services': [
-          {'name': 'Acrylic Full Set', 'duration': 90},
-          {'name': 'Nail Art', 'duration': 30},
-          {'name': 'Gel Polish', 'duration': 20},
-          {'name': 'Hand Massage', 'duration': 15},
-          {'name': 'Paraffin Treatment', 'duration': 20},
-        ],
-        'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
-        'status': 'upcoming',
-        'notes': 'VIP customer - full spa package',
+        'notes': 'Prefers technician Lisa - very gentle with cuticles',
       },
     ];
+
+    // Different number of appointments for each day
+    switch (date.weekday) {
+      case DateTime.monday: // Monday - 3 appointments (slow day)
+        return baseAppointments;
+
+      case DateTime.tuesday: // Tuesday - 4 appointments
+        return [
+          ...baseAppointments,
+          {
+            'id': '${date.day}-4',
+            'customerName': 'Emma Wilson',
+            'customerPhone': '(555) 456-7890',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+              {'name': 'Foot Massage', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+            'status': 'upcoming',
+            'notes': '',
+          },
+        ];
+
+      case DateTime.wednesday: // Wednesday - 5 appointments
+        return [
+          ...baseAppointments,
+          {
+            'id': '${date.day}-4',
+            'customerName': 'Emma Wilson',
+            'customerPhone': '(555) 456-7890',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+            'status': 'in_progress',
+            'notes': 'Regular customer - knows her favorite color (OPI #15)',
+          },
+          {
+            'id': '${date.day}-5',
+            'customerName': 'Olivia Brown',
+            'customerPhone': '(555) 678-9012',
+            'services': [
+              {'name': 'Spa Pedicure', 'duration': 60},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 15, 45),
+            'status': 'upcoming',
+            'notes': '',
+          },
+        ];
+
+      case DateTime.thursday: // Thursday - 6 appointments (busy)
+        return [
+          ...baseAppointments,
+          {
+            'id': '${date.day}-4',
+            'customerName': 'Emma Wilson',
+            'customerPhone': '(555) 456-7890',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+              {'name': 'Foot Massage', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+            'status': 'upcoming',
+            'notes': '',
+          },
+          {
+            'id': '${date.day}-5',
+            'customerName': 'Isabella Martinez',
+            'customerPhone': '(555) 567-8901',
+            'services': [
+              {'name': 'Acrylic Full Set', 'duration': 90},
+              {'name': 'Nail Art', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
+            'status': 'in_progress',
+            'notes': 'VIP customer - full spa package, prefersStation 3',
+          },
+          {
+            'id': '${date.day}-6',
+            'customerName': 'Sophia Lee',
+            'customerPhone': '(555) 789-0123',
+            'services': [
+              {'name': 'Manicure', 'duration': 45},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 30),
+            'status': 'upcoming',
+            'notes': '',
+          },
+        ];
+
+      case DateTime.friday: // Friday - 7 appointments (very busy)
+        return [
+          ...baseAppointments,
+          {
+            'id': '${date.day}-4',
+            'customerName': 'Emma Wilson',
+            'customerPhone': '(555) 456-7890',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+              {'name': 'Foot Massage', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+            'status': 'upcoming',
+            'notes': '',
+          },
+          {
+            'id': '${date.day}-5',
+            'customerName': 'Isabella Martinez',
+            'customerPhone': '(555) 567-8901',
+            'services': [
+              {'name': 'Acrylic Full Set', 'duration': 90},
+              {'name': 'Nail Art', 'duration': 30},
+              {'name': 'Gel Polish', 'duration': 20},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
+            'status': 'in_progress',
+            'notes': 'Birthday girl! Wants something extra special and sparkly',
+          },
+          {
+            'id': '${date.day}-6',
+            'customerName': 'Sophia Lee',
+            'customerPhone': '(555) 789-0123',
+            'services': [
+              {'name': 'Pedicure', 'duration': 60},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 45),
+            'status': 'upcoming',
+            'notes': '',
+          },
+          {
+            'id': '${date.day}-7',
+            'customerName': 'Ava Taylor',
+            'customerPhone': '(555) 890-1234',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 18, 50),
+            'status': 'upcoming',
+            'notes': 'First time customer - explain all services and prices',
+          },
+        ];
+
+      case DateTime.saturday: // Saturday - 8 appointments (busiest day)
+        return [
+          ...baseAppointments,
+          {
+            'id': '${date.day}-4',
+            'customerName': 'Emma Wilson',
+            'customerPhone': '(555) 456-7890',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+              {'name': 'Foot Massage', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
+            'status': 'in_progress',
+            'notes': 'Has wedding next week - wants color recommendation',
+          },
+          {
+            'id': '${date.day}-5',
+            'customerName': 'Isabella Martinez',
+            'customerPhone': '(555) 567-8901',
+            'services': [
+              {'name': 'Acrylic Full Set', 'duration': 90},
+              {'name': 'Nail Art', 'duration': 30},
+              {'name': 'Gel Polish', 'duration': 20},
+              {'name': 'Hand Massage', 'duration': 15},
+              {'name': 'Paraffin Treatment', 'duration': 20},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
+            'status': 'upcoming',
+            'notes': 'VIP customer - full spa package, offer complimentary drink',
+          },
+          {
+            'id': '${date.day}-6',
+            'customerName': 'Sophia Lee',
+            'customerPhone': '(555) 789-0123',
+            'services': [
+              {'name': 'Pedicure Deluxe', 'duration': 75},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 30),
+            'status': 'upcoming',
+            'notes': '',
+          },
+          {
+            'id': '${date.day}-7',
+            'customerName': 'Ava Taylor',
+            'customerPhone': '(555) 890-1234',
+            'services': [
+              {'name': 'Gel Manicure', 'duration': 60},
+              {'name': 'Nail Art', 'duration': 30},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 18, 50),
+            'status': 'upcoming',
+            'notes': '',
+          },
+          {
+            'id': '${date.day}-8',
+            'customerName': 'Mia Anderson',
+            'customerPhone': '(555) 901-2345',
+            'services': [
+              {'name': 'Manicure', 'duration': 45},
+            ],
+            'scheduledTime': DateTime(date.year, date.month, date.day, 20, 0),
+            'status': 'upcoming',
+            'notes': 'Closing time customer - please accommodate if possible',
+          },
+        ];
+
+      default:
+        return baseAppointments;
+    }
   }
 
   List<DateTime> _getWeekDates() {
