@@ -45,10 +45,10 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       'id': '2',
       'ticketNumber': '00001',
       'services': ['Acrylic Full Set'],
-      'totalEarn': 35.0,
-      'discount': 0.0,
-      'tips': 0.0,
-      'empShare': 21.0,
+      'totalEarn': 60.0,
+      'discount': 5.0,
+      'tips': 8.0,
+      'empShare': 36.0,
       'date': DateTime(2025, 12, 26),
     },
     {
@@ -79,6 +79,116 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       'discount': 0.0,
       'tips': 2.0,
       'empShare': 10.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '6',
+      'ticketNumber': '00015',
+      'services': ['Spa Pedicure', 'Paraffin Treatment'],
+      'totalEarn': 70.0,
+      'discount': 10.0,
+      'tips': 12.0,
+      'empShare': 42.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '7',
+      'ticketNumber': '00018',
+      'services': ['Classic Manicure', 'Hand Massage'],
+      'totalEarn': 45.0,
+      'discount': 0.0,
+      'tips': 7.0,
+      'empShare': 27.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '8',
+      'ticketNumber': '00020',
+      'services': ['No Chip Manicure'],
+      'totalEarn': 25.0,
+      'discount': 0.0,
+      'tips': 3.0,
+      'empShare': 15.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '9',
+      'ticketNumber': '00022',
+      'services': ['Acrylic Fill', 'Gel Polish', 'Nail Art'],
+      'totalEarn': 85.0,
+      'discount': 5.0,
+      'tips': 15.0,
+      'empShare': 51.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '10',
+      'ticketNumber': '00025',
+      'services': ['Basic Pedicure'],
+      'totalEarn': 40.0,
+      'discount': 0.0,
+      'tips': 6.0,
+      'empShare': 24.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '11',
+      'ticketNumber': '00028',
+      'services': ['Deluxe Pedicure', 'Callus Treatment'],
+      'totalEarn': 75.0,
+      'discount': 10.0,
+      'tips': 10.0,
+      'empShare': 45.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '12',
+      'ticketNumber': '00030',
+      'services': ['Waxing - Eyebrows', 'Waxing - Upper Lip'],
+      'totalEarn': 20.0,
+      'discount': 0.0,
+      'tips': 2.0,
+      'empShare': 12.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '13',
+      'ticketNumber': '00032',
+      'services': ['Gel Pedicure', 'Nail Art'],
+      'totalEarn': 75.0,
+      'discount': 0.0,
+      'tips': 12.0,
+      'empShare': 45.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '14',
+      'ticketNumber': '00035',
+      'services': ['Acrylic Remove', 'Classic Manicure'],
+      'totalEarn': 55.0,
+      'discount': 5.0,
+      'tips': 8.0,
+      'empShare': 33.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '15',
+      'ticketNumber': '00038',
+      'services': ['Luxe Manicure', 'Paraffin Treatment'],
+      'totalEarn': 60.0,
+      'discount': 0.0,
+      'tips': 10.0,
+      'empShare': 36.0,
+      'date': DateTime(2025, 12, 26),
+    },
+    {
+      'id': '16',
+      'ticketNumber': '00040',
+      'services': ['Mini Manicure'],
+      'totalEarn': 35.0,
+      'discount': 0.0,
+      'tips': 5.0,
+      'empShare': 21.0,
       'date': DateTime(2025, 12, 26),
     },
   ];
@@ -286,21 +396,52 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               ),
             ),
 
-            // --- SCROLLABLE LIST SECTION ---
-            Expanded(
-              child: transactions.isEmpty
-                  ? _buildEmptyState()
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(
-                        0,
-                        0,
-                        0,
-                        20, // Bottom padding
-                      ),
-                      physics: const ClampingScrollPhysics(),
-                      child: _buildTicketTable(transactions, summary),
+            // --- TABLE SECTION ---
+            if (transactions.isEmpty)
+              Expanded(child: _buildEmptyState())
+            else ...[
+              // Sticky table header
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-            ),
+                  ],
+                ),
+                child: _buildTableHeader(),
+              ),
+              // Scrollable data rows
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    physics: const ClampingScrollPhysics(),
+                    itemCount: transactions.length,
+                    itemBuilder: (context, index) {
+                      return _buildTableRow(transactions[index], index + 1);
+                    },
+                  ),
+                ),
+              ),
+              // Sticky total row
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                child: _buildTotalRow(summary),
+              ),
+            ],
           ],
         ),
       ),
