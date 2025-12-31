@@ -71,7 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         title: Text(
           user.fullName,
-          style: AppTextStyles.titleLarge.copyWith(
+          style: AppTextStyles.bodyLarge.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),

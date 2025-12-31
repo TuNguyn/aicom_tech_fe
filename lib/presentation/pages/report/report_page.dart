@@ -14,12 +14,16 @@ class ReportPage extends ConsumerStatefulWidget {
 
 class _ReportPageState extends ConsumerState<ReportPage> {
   // State variables
-  String _selectedTab = 'Payment'; 
-  String _selectedPeriod = 'Day'; 
+  String _selectedTab = 'Payment';
+  String _selectedPeriod = 'Day';
   DateTime _selectedDate = DateTime.now();
-  
+
   // Tracks the visible month/year in the calendar view
   DateTime _displayedDate = DateTime.now();
+
+  // Custom date range
+  DateTime _customFromDate = DateTime.now();
+  DateTime _customToDate = DateTime.now();
   
   final int _initialPage = 1000;
   late final PageController _pageController;
@@ -128,19 +132,24 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   List<Map<String, dynamic>> _getTransactionsForSelectedDate() {
     return _mockTransactions.where((transaction) {
       final transactionDate = transaction['date'] as DateTime;
-      
+
       if (_selectedPeriod == 'Day') {
         return DateUtils.isSameDay(transactionDate, _selectedDate);
       } else if (_selectedPeriod == 'Week') {
         // Week starts on _selectedDate (Sunday) and ends 6 days later
         final weekEnd = _selectedDate.add(const Duration(days: 6));
         // Use inclusive comparison logic
-        return !transactionDate.isBefore(_selectedDate) && 
+        return !transactionDate.isBefore(_selectedDate) &&
                !transactionDate.isAfter(weekEnd.add(const Duration(seconds: 1)));
       } else if (_selectedPeriod == 'Month') {
         return transactionDate.month == _selectedDate.month && transactionDate.year == _selectedDate.year;
       } else if (_selectedPeriod == 'Year') {
         return transactionDate.year == _selectedDate.year;
+      } else if (_selectedPeriod == 'Custom') {
+        // Filter transactions within custom date range (inclusive)
+        final fromDate = DateTime(_customFromDate.year, _customFromDate.month, _customFromDate.day);
+        final toDate = DateTime(_customToDate.year, _customToDate.month, _customToDate.day, 23, 59, 59);
+        return !transactionDate.isBefore(fromDate) && !transactionDate.isAfter(toDate);
       }
       return DateUtils.isSameDay(transactionDate, _selectedDate);
     }).toList();
@@ -189,6 +198,47 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       }
     });
     if (_selectedPeriod == 'Day') _jumpToDate(_displayedDate);
+  }
+
+  Future<void> _selectCustomDate(bool isFromDate) async {
+    final DateTime initialDate = isFromDate ? _customFromDate : _customToDate;
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isFromDate) {
+          _customFromDate = picked;
+          // Validation: if From > To, adjust To to match From
+          if (_customFromDate.isAfter(_customToDate)) {
+            _customToDate = _customFromDate;
+          }
+        } else {
+          _customToDate = picked;
+          // Validation: if To < From, adjust From to match To
+          if (_customToDate.isBefore(_customFromDate)) {
+            _customFromDate = _customToDate;
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -336,71 +386,80 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: _onHeaderPrev,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
-                        child: Icon(Icons.chevron_left, color: Colors.grey[700], size: 18),
+            child: _selectedPeriod == 'Custom'
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildCustomDateSelector(true),
+                      const SizedBox(width: 12),
+                      _buildCustomDateSelector(false),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: _onHeaderPrev,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
+                              child: Icon(Icons.chevron_left, color: Colors.grey[700], size: 18),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              _getHeaderTitle(),
+                              style: AppTextStyles.titleLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: _onHeaderNext,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
+                              child: Icon(Icons.chevron_right, color: Colors.grey[700], size: 18),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        _getHeaderTitle(),
-                        style: AppTextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
+
+                      // Dynamic Today/This Week/etc Button
+                      GestureDetector(
+                        onTap: () => _jumpToDate(DateTime.now()),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                          ),
+                          child: Text(
+                            _selectedPeriod == 'Day'
+                                ? 'Today'
+                                : _selectedPeriod == 'Week'
+                                    ? 'This Week'
+                                    : _selectedPeriod == 'Month'
+                                        ? 'This Month'
+                                        : _selectedPeriod == 'Year'
+                                            ? 'This Year'
+                                            : 'Today',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: _onHeaderNext,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
-                        child: Icon(Icons.chevron_right, color: Colors.grey[700], size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Dynamic Today/This Week/etc Button
-                GestureDetector(
-                  onTap: () => _jumpToDate(DateTime.now()),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-                    ),
-                    child: Text(
-                      _selectedPeriod == 'Day'
-                          ? 'Today'
-                          : _selectedPeriod == 'Week'
-                              ? 'This Week'
-                              : _selectedPeriod == 'Month'
-                                  ? 'This Month'
-                                  : _selectedPeriod == 'Year'
-                                      ? 'This Year'
-                                      : 'Today',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           const SizedBox(height: 12),
@@ -442,7 +501,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       child: GestureDetector(
         onTap: () {
           setState(() => _selectedPeriod = period);
-          if (period == 'Day') _jumpToDate(_selectedDate); 
+          if (period == 'Day') _jumpToDate(_selectedDate);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -462,6 +521,42 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomDateSelector(bool isFromDate) {
+    final DateTime date = isFromDate ? _customFromDate : _customToDate;
+    final String label = isFromDate ? 'From' : 'To';
+
+    return GestureDetector(
+      onTap: () => _selectCustomDate(isFromDate),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today,
+              size: 12,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$label: ${DateFormat('MMM d, yyyy').format(date)}',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
