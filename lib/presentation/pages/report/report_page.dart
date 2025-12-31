@@ -268,7 +268,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                         AppDimensions.spacingM,
                         20, // Bottom padding
                       ),
-                      physics: const BouncingScrollPhysics(),
+                      physics: const ClampingScrollPhysics(),
                       itemCount: transactions.length,
                       itemBuilder: (context, index) {
                         final transaction = transactions[index];

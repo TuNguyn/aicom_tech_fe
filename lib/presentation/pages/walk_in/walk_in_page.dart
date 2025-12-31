@@ -136,7 +136,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
     final walkInCount = walkIns.length;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           _buildHeader(walkInCount),

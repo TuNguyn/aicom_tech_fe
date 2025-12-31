@@ -106,7 +106,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     final appointmentCount = appointments.length;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header with date selector

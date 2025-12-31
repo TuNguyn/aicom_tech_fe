@@ -26,77 +26,30 @@ class MorePage extends ConsumerWidget {
       ),
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Elegant Header
-            SliverAppBar(
-              pinned: true,
-              backgroundColor: AppColors.primary,
-              elevation: 0,
-              centerTitle: true,
-              title: Text(
-                'More',
-                style: AppTextStyles.headlineMedium.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.8),
-                    ],
-                  ),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Abstract decorative shapes
-                    Positioned(
-                      right: -20,
-                      top: -20,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: -20,
-                      bottom: -40,
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                  onPressed: () => context.push(AppRoutes.notifications),
-                ),
-              ],
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            'More',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Column(
-                  children: [
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+              onPressed: () => context.push(AppRoutes.notifications),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              children: [
                     // Profile Section
                     _buildProfileSection(context, user),
                     const SizedBox(height: 32),
@@ -161,12 +114,10 @@ class MorePage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 100), // Extra bottom padding to account for bottom nav bar
-                  ],
-                ),
-              ),
+                const SizedBox(height: 100), // Extra bottom padding to account for bottom nav bar
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
