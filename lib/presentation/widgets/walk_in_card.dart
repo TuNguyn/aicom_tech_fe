@@ -3,7 +3,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 
-class WalkInCard extends StatelessWidget {
+class WalkInCard extends StatefulWidget {
   final Map<String, dynamic> walkIn;
   final VoidCallback onTap;
   final Function(String?) onStationAssign; // Keep for compatibility but not used in UI
@@ -14,6 +14,13 @@ class WalkInCard extends StatelessWidget {
     required this.onTap,
     required this.onStationAssign,
   });
+
+  @override
+  State<WalkInCard> createState() => _WalkInCardState();
+}
+
+class _WalkInCardState extends State<WalkInCard> {
+  bool _isExpanded = false;
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -60,7 +67,7 @@ class WalkInCard extends StatelessWidget {
   }
 
   Widget _buildStationInfo(String status) {
-    final assignedStation = walkIn['assignedStation'] as String?;
+    final assignedStation = widget.walkIn['assignedStation'] as String?;
     final hasStation = assignedStation != null;
     final statusColor = _getStatusColor(status);
 
@@ -107,18 +114,18 @@ class WalkInCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checkInTime = walkIn['checkInTime'] as DateTime;
-    final services = walkIn['services'] as List;
-    final status = walkIn['status'] as String;
+    final checkInTime = widget.walkIn['checkInTime'] as DateTime;
+    final services = widget.walkIn['services'] as List;
+    final status = widget.walkIn['status'] as String;
     final statusColor = _getStatusColor(status);
-    final customerName = walkIn['customerName'] as String;
+    final customerName = widget.walkIn['customerName'] as String;
 
-    // Show max 3 services, then "..."
-    final displayServices = services.take(3).toList();
-    final hasMore = services.length > 3;
+    // Show max 3 services initially, expand to show all
+    final hasMultipleServices = services.length > 3;
+    final displayServices = _isExpanded ? services : services.take(3).toList();
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
         decoration: BoxDecoration(
@@ -349,24 +356,52 @@ class WalkInCard extends StatelessWidget {
                                     ],
                                   ),
                                 )),
-                            // Show "..." if more services
-                            if (hasMore)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Row(
-                                  children: [
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      '...',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: statusColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
+                            // Show more/less button
+                            if (hasMultipleServices) ...[
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isExpanded = !_isExpanded;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: statusColor.withValues(alpha: 0.2),
+                                      width: 1,
                                     ),
-                                  ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                                        size: 14,
+                                        color: statusColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _isExpanded
+                                          ? 'Show less'
+                                          : 'Show ${services.length - 3} more service${services.length - 3 > 1 ? 's' : ''}',
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: statusColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
+                            ],
                             // Station info
                             const SizedBox(height: 6),
                             _buildStationInfo(status),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class ServiceStationSelectionPage extends StatefulWidget {
   final List<Map<String, dynamic>> initialServices;
@@ -188,14 +189,22 @@ class _ServiceStationSelectionPageState
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Edit Detail'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Select Services',
+          style: AppTextStyles.headlineMedium.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check, color: Colors.white),
+            icon: const Icon(Icons.check, color: Colors.white, size: 24),
             onPressed: _handleSave,
+            tooltip: 'Save',
           ),
         ],
       ),
@@ -358,18 +367,25 @@ class _ServiceStationSelectionPageState
                       flex: 3,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary.withValues(alpha: isSelected ? 0.15 : 0.1),
+                              AppColors.primary.withValues(alpha: isSelected ? 0.1 : 0.05),
+                            ],
+                          ),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(12),
                             topRight: Radius.circular(12),
                           ),
                         ),
                         child: Icon(
-                          Icons.spa,
-                          size: 40,
+                          Icons.spa_outlined,
+                          size: 50,
                           color: isSelected
-                              ? AppColors.primary.withValues(alpha: 0.5)
-                              : Colors.grey[400],
+                              ? AppColors.primary
+                              : AppColors.primary.withValues(alpha: 0.4),
                         ),
                       ),
                     ),

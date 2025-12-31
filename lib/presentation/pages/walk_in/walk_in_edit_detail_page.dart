@@ -231,10 +231,17 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Edit Detail'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Edit Detail',
+          style: AppTextStyles.headlineMedium.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 100),
@@ -255,6 +262,10 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
   }
 
   Widget _buildCustomerInfoSection() {
+    final customerInitial = _nameController.text.isNotEmpty
+        ? _nameController.text[0].toUpperCase()
+        : '?';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -269,81 +280,123 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Customer Name
-          Text(
-            'Customer Name',
-            style: AppTextStyles.labelLarge.copyWith(
-              color: Colors.grey[700],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+          // Avatar
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.2),
+                  AppColors.primary.withValues(alpha: 0.1),
+                ],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                customerInitial,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              prefixIcon: Icon(Icons.person_outline, color: AppColors.primary, size: 20),
-              hintText: 'Enter customer name',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primary, width: 2),
-              ),
-              isDense: true,
-            ),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Phone Number
-          Text(
-            'Phone Number',
-            style: AppTextStyles.labelLarge.copyWith(
-              color: Colors.grey[700],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _phoneController,
-            decoration: InputDecoration(
-              prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-              hintText: 'Enter phone number',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primary, width: 2),
-              ),
-              isDense: true,
-            ),
-            keyboardType: TextInputType.phone,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
+          const SizedBox(width: 16),
+          // Text fields
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer Name
+                Text(
+                  'Customer Name',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.grey[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _nameController,
+                  onChanged: (value) {
+                    setState(() {}); // Rebuild to update avatar
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.person_outline, color: AppColors.primary, size: 20),
+                    hintText: 'Enter customer name',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                    ),
+                    isDense: true,
+                  ),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Phone Number
+                Text(
+                  'Phone Number',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.grey[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _phoneController,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                    hintText: 'Enter phone number',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                    ),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -360,17 +413,26 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: hasNote ? Colors.amber.withValues(alpha: 0.1) : Colors.grey[100],
+          gradient: hasNote
+              ? LinearGradient(
+                  colors: [
+                    Colors.blue[50]!,
+                    Colors.blue[50]!.withValues(alpha: 0.5),
+                  ],
+                )
+              : null,
+          color: hasNote ? null : Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: hasNote ? Colors.amber.withValues(alpha: 0.3) : Colors.grey[200]!,
+            color: hasNote ? Colors.blue[200]! : Colors.grey[200]!,
+            width: 1,
           ),
         ),
         child: Row(
           children: [
             Icon(
-              Icons.note_outlined,
-              color: hasNote ? Colors.amber[800] : Colors.grey[600],
+              Icons.sticky_note_2_outlined,
+              color: hasNote ? Colors.blue[700] : Colors.grey[600],
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -378,9 +440,10 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
               child: Text(
                 hasNote ? 'Note: ${_noteController.text}' : 'No notes (tap to add)',
                 style: TextStyle(
-                  color: hasNote ? Colors.amber[900] : Colors.grey[600],
+                  color: hasNote ? Colors.blue[900] : Colors.grey[600],
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
+                  fontStyle: hasNote ? FontStyle.italic : FontStyle.normal,
                 ),
               ),
             ),
@@ -396,21 +459,12 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Services',
-                style: AppTextStyles.titleLarge.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.edit, color: AppColors.primary, size: 22),
-                onPressed: () => _navigateToServiceStationSelection(isServiceTab: true),
-              ),
-            ],
+          Text(
+            'Services',
+            style: AppTextStyles.titleLarge.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 8),
           if (_selectedServices.isEmpty)
@@ -466,15 +520,19 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
             child: Text(
               timeStr,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -486,37 +544,25 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: _selectedStation != null
-                    ? AppColors.secondary.withValues(alpha: 0.1)
+                    ? AppColors.secondary.withValues(alpha: 0.12)
                     : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: _selectedStation != null
-                      ? AppColors.secondary.withValues(alpha: 0.3)
+                      ? AppColors.secondary.withValues(alpha: 0.25)
                       : Colors.grey[300]!,
+                  width: 1,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _selectedStation ?? 'No Station',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _selectedStation != null
-                          ? AppColors.secondary
-                          : Colors.grey[700],
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.edit,
-                    size: 12,
-                    color: _selectedStation != null
-                        ? AppColors.secondary
-                        : Colors.grey[600],
-                  ),
-                ],
+              child: Text(
+                _selectedStation ?? 'No Station',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _selectedStation != null
+                      ? AppColors.secondary
+                      : Colors.grey[700],
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -551,7 +597,7 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
 
   Widget _buildBottomActions() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -563,6 +609,7 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
         ],
       ),
       child: SafeArea(
+        top: false,
         child: Row(
           children: [
             Expanded(
