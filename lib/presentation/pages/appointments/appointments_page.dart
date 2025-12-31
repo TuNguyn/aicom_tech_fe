@@ -8,7 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
 import '../../widgets/appointment_card.dart';
-import 'appointment_detail_page.dart';
+// import 'appointment_detail_page.dart'; // Temporarily disabled
 
 class AppointmentsPage extends ConsumerStatefulWidget {
   const AppointmentsPage({super.key});
@@ -322,14 +322,15 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         return AppointmentCard(
           appointment: appointments[index],
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => AppointmentDetailPage(
-                  selectedDate: _selectedDate,
-                  appointments: [appointments[index]],
-                ),
-              ),
-            );
+            // TODO: Temporarily disabled - uncomment when needed
+            // Navigator.of(context).push(
+            //   MaterialPageRoute(
+            //     builder: (context) => AppointmentDetailPage(
+            //       selectedDate: _selectedDate,
+            //       appointments: [appointments[index]],
+            //     ),
+            //   ),
+            // );
           },
         );
       },
