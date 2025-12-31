@@ -179,7 +179,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                 ),
                 Expanded(
                   child: Text(
-                    ref.watch(authNotifierProvider).user.fullName,
+                    'Walk-Ins',
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

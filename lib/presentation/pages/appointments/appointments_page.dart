@@ -154,7 +154,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                 ),
                 Expanded(
                   child: Text(
-                    ref.watch(authNotifierProvider).user.fullName,
+                    'Appointments',
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
