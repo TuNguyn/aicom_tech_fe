@@ -243,19 +243,34 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            _buildCustomerInfoSection(),
-            const SizedBox(height: 16),
-            _buildNoteSection(),
-            const SizedBox(height: 16),
-            _buildServicesSection(),
-            const SizedBox(height: 20),
-          ],
-        ),
+      body: Column(
+        children: [
+          // Fixed customer section
+          const SizedBox(height: 16),
+          _buildCustomerInfoSection(),
+          const SizedBox(height: 16),
+          _buildNoteSection(),
+          const SizedBox(height: 16),
+          // Fixed Services header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Services',
+              style: AppTextStyles.titleLarge.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Scrollable services list
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: _buildServicesList(),
+            ),
+          ),
+        ],
       ),
       bottomSheet: _buildBottomActions(),
     );
@@ -453,20 +468,12 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
     );
   }
 
-  Widget _buildServicesSection() {
+  Widget _buildServicesList() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Services',
-            style: AppTextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: 8),
           if (_selectedServices.isEmpty)
             Container(
               padding: const EdgeInsets.all(20),
