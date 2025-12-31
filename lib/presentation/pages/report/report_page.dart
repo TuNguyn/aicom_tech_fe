@@ -25,7 +25,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   // Custom date range
   DateTime _customFromDate = DateTime.now();
   DateTime _customToDate = DateTime.now();
-  
+
   final int _initialPage = 1000;
   late final PageController _pageController;
 
@@ -109,7 +109,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       _selectedDate = date;
       _displayedDate = date;
     });
-    
+
     if (_selectedPeriod == 'Day' && _pageController.hasClients) {
       final now = DateTime.now();
       final currentWeekStart = now.subtract(Duration(days: now.weekday % 7));
@@ -117,17 +117,19 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       final diffInDays = targetWeekStart.difference(currentWeekStart).inDays;
       final diffInWeeks = (diffInDays / 7).round();
       final targetPage = _initialPage + diffInWeeks;
-      
+
       _pageController.animateToPage(
-        targetPage, 
-        duration: const Duration(milliseconds: 300), 
+        targetPage,
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
   }
 
   bool _hasDataForDate(DateTime date) {
-    return _mockTransactions.any((t) => DateUtils.isSameDay(t['date'] as DateTime, date));
+    return _mockTransactions.any(
+      (t) => DateUtils.isSameDay(t['date'] as DateTime, date),
+    );
   }
 
   List<Map<String, dynamic>> _getTransactionsForSelectedDate() {
@@ -141,27 +143,51 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         final weekEnd = _selectedDate.add(const Duration(days: 6));
         // Use inclusive comparison logic
         return !transactionDate.isBefore(_selectedDate) &&
-               !transactionDate.isAfter(weekEnd.add(const Duration(seconds: 1)));
+            !transactionDate.isAfter(weekEnd.add(const Duration(seconds: 1)));
       } else if (_selectedPeriod == 'Month') {
-        return transactionDate.month == _selectedDate.month && transactionDate.year == _selectedDate.year;
+        return transactionDate.month == _selectedDate.month &&
+            transactionDate.year == _selectedDate.year;
       } else if (_selectedPeriod == 'Year') {
         return transactionDate.year == _selectedDate.year;
       } else if (_selectedPeriod == 'Custom') {
         // Filter transactions within custom date range (inclusive)
-        final fromDate = DateTime(_customFromDate.year, _customFromDate.month, _customFromDate.day);
-        final toDate = DateTime(_customToDate.year, _customToDate.month, _customToDate.day, 23, 59, 59);
-        return !transactionDate.isBefore(fromDate) && !transactionDate.isAfter(toDate);
+        final fromDate = DateTime(
+          _customFromDate.year,
+          _customFromDate.month,
+          _customFromDate.day,
+        );
+        final toDate = DateTime(
+          _customToDate.year,
+          _customToDate.month,
+          _customToDate.day,
+          23,
+          59,
+          59,
+        );
+        return !transactionDate.isBefore(fromDate) &&
+            !transactionDate.isAfter(toDate);
       }
       return DateUtils.isSameDay(transactionDate, _selectedDate);
     }).toList();
   }
 
-  Map<String, double> _calculateSummary(List<Map<String, dynamic>> transactions) {
+  Map<String, double> _calculateSummary(
+    List<Map<String, dynamic>> transactions,
+  ) {
     return {
-      'totalEarn': transactions.fold(0.0, (sum, t) => sum + (t['totalEarn'] as double)),
-      'discount': transactions.fold(0.0, (sum, t) => sum + (t['discount'] as double)),
+      'totalEarn': transactions.fold(
+        0.0,
+        (sum, t) => sum + (t['totalEarn'] as double),
+      ),
+      'discount': transactions.fold(
+        0.0,
+        (sum, t) => sum + (t['discount'] as double),
+      ),
       'tips': transactions.fold(0.0, (sum, t) => sum + (t['tips'] as double)),
-      'empShare': transactions.fold(0.0, (sum, t) => sum + (t['empShare'] as double)),
+      'empShare': transactions.fold(
+        0.0,
+        (sum, t) => sum + (t['empShare'] as double),
+      ),
     };
   }
 
@@ -178,7 +204,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   void _onHeaderPrev() {
     setState(() {
       if (_selectedPeriod == 'Day' || _selectedPeriod == 'Week') {
-        _displayedDate = DateTime(_displayedDate.year, _displayedDate.month - 1, 1);
+        _displayedDate = DateTime(
+          _displayedDate.year,
+          _displayedDate.month - 1,
+          1,
+        );
         _selectedDate = _displayedDate;
       } else {
         _displayedDate = DateTime(_displayedDate.year - 1, 1, 1);
@@ -191,7 +221,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   void _onHeaderNext() {
     setState(() {
       if (_selectedPeriod == 'Day' || _selectedPeriod == 'Week') {
-        _displayedDate = DateTime(_displayedDate.year, _displayedDate.month + 1, 1);
+        _displayedDate = DateTime(
+          _displayedDate.year,
+          _displayedDate.month + 1,
+          1,
+        );
         _selectedDate = _displayedDate;
       } else {
         _displayedDate = DateTime(_displayedDate.year + 1, 1, 1);
@@ -241,17 +275,12 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                 children: [
                   // 1. Segmented Control
                   _buildSegmentedControl(),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // 2. Calendar Card
                   _buildCompactCalendarCard(),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // 3. Summary Cards
-                  _buildSummaryCards(summary),
-                  
+
                   const SizedBox(height: 12),
                 ],
               ),
@@ -261,22 +290,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             Expanded(
               child: transactions.isEmpty
                   ? _buildEmptyState()
-                  : ListView.builder(
+                  : SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(
-                        AppDimensions.spacingM,
                         0,
-                        AppDimensions.spacingM,
+                        0,
+                        0,
                         20, // Bottom padding
                       ),
                       physics: const ClampingScrollPhysics(),
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = transactions[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppDimensions.spacingS),
-                          child: _buildTransactionCard(transaction, index + 1),
-                        );
-                      },
+                      child: _buildTicketTable(transactions, summary),
                     ),
             ),
           ],
@@ -346,7 +368,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   Widget _buildCompactCalendarCard() {
-    final bool showBottomCalendar = _selectedPeriod != 'Year' && _selectedPeriod != 'Custom';
+    final bool showBottomCalendar =
+        _selectedPeriod != 'Year' && _selectedPeriod != 'Custom';
 
     return RepaintBoundary(
       child: Container(
@@ -362,109 +385,130 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             ),
           ],
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: _selectedPeriod == 'Custom'
-                ? Center(child: _buildCustomDateSelector())
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          InkWell(
-                            onTap: _onHeaderPrev,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
-                              child: Icon(Icons.chevron_left, color: Colors.grey[700], size: 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _selectedPeriod == 'Custom'
+                  ? Center(child: _buildCustomDateSelector())
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: _onHeaderPrev,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey[100],
+                                ),
+                                child: Icon(
+                                  Icons.chevron_left,
+                                  color: Colors.grey[700],
+                                  size: 18,
+                                ),
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Text(
+                                _getHeaderTitle(),
+                                style: AppTextStyles.titleLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: _onHeaderNext,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey[100],
+                                ),
+                                child: Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey[700],
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Dynamic Today/This Week/etc Button
+                        GestureDetector(
+                          onTap: () => _jumpToDate(DateTime.now()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                              ),
+                            ),
                             child: Text(
-                              _getHeaderTitle(),
-                              style: AppTextStyles.titleLarge.copyWith(
+                              _selectedPeriod == 'Day'
+                                  ? 'Today'
+                                  : _selectedPeriod == 'Week'
+                                  ? 'This Week'
+                                  : _selectedPeriod == 'Month'
+                                  ? 'This Month'
+                                  : _selectedPeriod == 'Year'
+                                  ? 'This Year'
+                                  : 'Today',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                                fontSize: 16,
                               ),
                             ),
                           ),
-                          InkWell(
-                            onTap: _onHeaderNext,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[100]),
-                              child: Icon(Icons.chevron_right, color: Colors.grey[700], size: 18),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Dynamic Today/This Week/etc Button
-                      GestureDetector(
-                        onTap: () => _jumpToDate(DateTime.now()),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-                          ),
-                          child: Text(
-                            _selectedPeriod == 'Day'
-                                ? 'Today'
-                                : _selectedPeriod == 'Week'
-                                    ? 'This Week'
-                                    : _selectedPeriod == 'Month'
-                                        ? 'This Month'
-                                        : _selectedPeriod == 'Year'
-                                            ? 'This Year'
-                                            : 'Today',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildExpandedPeriodChip('Day'),
-                const SizedBox(width: 4),
-                _buildExpandedPeriodChip('Week'),
-                const SizedBox(width: 4),
-                _buildExpandedPeriodChip('Month'),
-                const SizedBox(width: 4),
-                _buildExpandedPeriodChip('Year'),
-                const SizedBox(width: 4),
-                _buildExpandedPeriodChip('Custom'),
-              ],
+                      ],
+                    ),
             ),
-          ),
 
-          if (showBottomCalendar) ...[
             const SizedBox(height: 12),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-            const SizedBox(height: 8),
-            _buildDynamicCalendarBody(),
-            const SizedBox(height: 8),
-          ] else
-            const SizedBox(height: 16),
-        ],
-      ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  _buildExpandedPeriodChip('Day'),
+                  const SizedBox(width: 4),
+                  _buildExpandedPeriodChip('Week'),
+                  const SizedBox(width: 4),
+                  _buildExpandedPeriodChip('Month'),
+                  const SizedBox(width: 4),
+                  _buildExpandedPeriodChip('Year'),
+                  const SizedBox(width: 4),
+                  _buildExpandedPeriodChip('Custom'),
+                ],
+              ),
+            ),
+
+            if (showBottomCalendar) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+              const SizedBox(height: 8),
+              _buildDynamicCalendarBody(),
+              const SizedBox(height: 8),
+            ] else
+              const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -513,11 +557,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.calendar_today,
-              size: 13,
-              color: AppColors.primary,
-            ),
+            Icon(Icons.calendar_today, size: 13, color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
               'From: ${DateFormat('MMM d, yyyy').format(_customFromDate)}',
@@ -544,11 +584,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.edit,
-              size: 12,
-              color: AppColors.primary,
-            ),
+            Icon(Icons.edit, size: 12, color: AppColors.primary),
           ],
         ),
       ),
@@ -574,7 +610,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         onPageChanged: (index) {
           final weekStart = _getStartOfWeekForPage(index);
           final midWeek = weekStart.add(const Duration(days: 3));
-          if (midWeek.month != _displayedDate.month || midWeek.year != _displayedDate.year) {
+          if (midWeek.month != _displayedDate.month ||
+              midWeek.year != _displayedDate.year) {
             setState(() => _displayedDate = midWeek);
           }
         },
@@ -599,30 +636,45 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     decoration: BoxDecoration(
-                      color: isSelected 
-                          ? AppColors.primary 
-                          : (isToday ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isToday
+                                ? AppColors.primary.withValues(alpha: 0.05)
+                                : Colors.transparent),
                       borderRadius: BorderRadius.circular(12),
                       border: isToday && !isSelected
-                          ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1)
+                          ? Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.5),
+                              width: 1,
+                            )
                           : null,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          DateFormat('E').format(date).toUpperCase().substring(0, 1),
+                          DateFormat(
+                            'E',
+                          ).format(date).toUpperCase().substring(0, 1),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : (isToday ? AppColors.primary : Colors.grey[500]),
+                            color: isSelected
+                                ? Colors.white
+                                : (isToday
+                                      ? AppColors.primary
+                                      : Colors.grey[500]),
                             fontSize: 9,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                            fontWeight: isToday
+                                ? FontWeight.bold
+                                : FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           DateFormat('d').format(date),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -633,7 +685,9 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                             width: 3,
                             height: 3,
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.white : AppColors.primary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.primary,
                               shape: BoxShape.circle,
                             ),
                           )
@@ -653,14 +707,16 @@ class _ReportPageState extends ConsumerState<ReportPage> {
 
   Widget _buildWeekView() {
     final now = DateTime.now();
-    final currentWeekStartAnchor = now.subtract(Duration(days: now.weekday % 7));
-    
+    final currentWeekStartAnchor = now.subtract(
+      Duration(days: now.weekday % 7),
+    );
+
     final weeks = <DateTime>[];
     var d = DateTime(_displayedDate.year, _displayedDate.month, 1);
     var weekStart = d.subtract(Duration(days: d.weekday % 7));
-    
-    while (weekStart.month == _displayedDate.month || 
-           weekStart.add(const Duration(days: 6)).month == _displayedDate.month) {
+
+    while (weekStart.month == _displayedDate.month ||
+        weekStart.add(const Duration(days: 6)).month == _displayedDate.month) {
       if (weeks.isNotEmpty && weeks.last.isAtSameMomentAs(weekStart)) break;
       weeks.add(weekStart);
       weekStart = weekStart.add(const Duration(days: 7));
@@ -675,9 +731,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         itemBuilder: (context, index) {
           final start = weeks[index];
           final end = start.add(const Duration(days: 6));
-          
-          final isSelected = DateUtils.isSameDay(start, _selectedDate.subtract(Duration(days: _selectedDate.weekday % 7)));
-          final isCurrentWeek = DateUtils.isSameDay(start, currentWeekStartAnchor);
+
+          final isSelected = DateUtils.isSameDay(
+            start,
+            _selectedDate.subtract(Duration(days: _selectedDate.weekday % 7)),
+          );
+          final isCurrentWeek = DateUtils.isSameDay(
+            start,
+            currentWeekStartAnchor,
+          );
 
           return GestureDetector(
             onTap: () => setState(() => _selectedDate = start),
@@ -685,11 +747,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               width: 85,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : (isCurrentWeek ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
+                color: isSelected
+                    ? AppColors.primary
+                    : (isCurrentWeek
+                          ? AppColors.primary.withValues(alpha: 0.05)
+                          : Colors.transparent),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected 
-                      ? Colors.transparent 
+                  color: isSelected
+                      ? Colors.transparent
                       : (isCurrentWeek ? AppColors.primary : Colors.grey[200]!),
                   width: isCurrentWeek ? 1.5 : 1,
                 ),
@@ -700,7 +766,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                   Text(
                     'Week ${index + 1}',
                     style: TextStyle(
-                      color: isSelected ? Colors.white : (isCurrentWeek ? AppColors.primary : Colors.grey[600]),
+                      color: isSelected
+                          ? Colors.white
+                          : (isCurrentWeek
+                                ? AppColors.primary
+                                : Colors.grey[600]),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -733,26 +803,44 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         itemCount: 12,
         itemBuilder: (context, index) {
           final monthIndex = index + 1;
-          final isSelected = _selectedDate.month == monthIndex && _selectedDate.year == _displayedDate.year;
-          final isCurrentMonth = now.month == monthIndex && now.year == _displayedDate.year;
-          
+          final isSelected =
+              _selectedDate.month == monthIndex &&
+              _selectedDate.year == _displayedDate.year;
+          final isCurrentMonth =
+              now.month == monthIndex && now.year == _displayedDate.year;
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedDate = DateTime(_displayedDate.year, monthIndex, 1)),
+            onTap: () => setState(
+              () =>
+                  _selectedDate = DateTime(_displayedDate.year, monthIndex, 1),
+            ),
             child: Container(
               width: 60,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : (isCurrentMonth ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent),
+                color: isSelected
+                    ? AppColors.primary
+                    : (isCurrentMonth
+                          ? AppColors.primary.withValues(alpha: 0.05)
+                          : Colors.transparent),
                 borderRadius: BorderRadius.circular(12),
-                border: isSelected 
-                    ? null 
-                    : Border.all(color: isCurrentMonth ? AppColors.primary.withValues(alpha: 0.5) : Colors.grey[200]!),
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: isCurrentMonth
+                            ? AppColors.primary.withValues(alpha: 0.5)
+                            : Colors.grey[200]!,
+                      ),
               ),
               alignment: Alignment.center,
               child: Text(
                 DateFormat('MMM').format(DateTime(2022, monthIndex)),
                 style: TextStyle(
-                  color: isSelected ? Colors.white : (isCurrentMonth ? AppColors.primary : AppColors.textPrimary),
+                  color: isSelected
+                      ? Colors.white
+                      : (isCurrentMonth
+                            ? AppColors.primary
+                            : AppColors.textPrimary),
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -770,11 +858,29 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
         child: Row(
           children: [
-            Expanded(child: _buildSummaryCard('Total', summary['totalEarn']!, AppColors.primary)),
+            Expanded(
+              child: _buildSummaryCard(
+                'Total',
+                summary['totalEarn']!,
+                AppColors.primary,
+              ),
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildSummaryCard('Share', summary['empShare']!, AppColors.secondary)),
+            Expanded(
+              child: _buildSummaryCard(
+                'Share',
+                summary['empShare']!,
+                AppColors.secondary,
+              ),
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildSummaryCard('Tips', summary['tips']!, AppColors.accent)),
+            Expanded(
+              child: _buildSummaryCard(
+                'Tips',
+                summary['tips']!,
+                AppColors.accent,
+              ),
+            ),
           ],
         ),
       ),
@@ -788,7 +894,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -813,100 +923,261 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  Widget _buildTransactionCard(Map<String, dynamic> transaction, int index) {
-    final services = transaction['services'] as List<String>;
-
+  Widget _buildTicketTable(
+    List<Map<String, dynamic>> transactions,
+    Map<String, double> summary,
+  ) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          leading: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                '#$index',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          title: Text(
-            'Ticket #${transaction['ticketNumber']}',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          subtitle: _selectedTab == 'Payment'
-              ? Text(
-                  services.join(', '),
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                )
-              : null,
-          trailing: Text(
-            '\$${transaction['totalEarn'].toStringAsFixed(0)}',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Column(
-                children: [
-                  const Divider(height: 12),
-                  _buildDetailRow('Discount', '\$${transaction['discount']}'),
-                  _buildDetailRow('Tips', '\$${transaction['tips']}'),
-                  _buildDetailRow('Your Share', '\$${transaction['empShare']}', isBold: true),
-                ],
-              ),
-            ),
-          ],
+      child: Column(
+        children: [
+          _buildTableHeader(),
+          ...transactions.asMap().entries.map((entry) {
+            return _buildTableRow(entry.value, entry.key + 1);
+          }),
+          // Add total row for both tabs
+          _buildTotalRow(summary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader() {
+    final isPaymentTab = _selectedTab == 'Payment';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      child: Row(
+        children: isPaymentTab
+            ? [
+                // Payment tab: 6 columns
+                _buildHeaderCell('#', flex: 1),
+                _buildHeaderCell('Ticket', flex: 2),
+                _buildHeaderCell('Total\nEarn', flex: 2),
+                _buildHeaderCell('Disc', flex: 2),
+                _buildHeaderCell('Tips', flex: 2),
+                _buildHeaderCell('Emp \$', flex: 2),
+              ]
+            : [
+                // Transaction tab: 3 columns
+                _buildHeaderCell('#', flex: 1),
+                _buildHeaderCell('Ticket', flex: 2),
+                _buildHeaderCell('Services', flex: 6),
+                _buildHeaderCell('Total', flex: 2),
+              ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderCell(String text, {int flex = 1}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],
+          height: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+  Widget _buildTableRow(
+    Map<String, dynamic> transaction,
+    int index,
+  ) {
+    final isPaymentTab = _selectedTab == 'Payment';
+
+    // Hiển thị "-" nếu giá trị = 0
+    String formatValue(double value) {
+      return value == 0 ? '-' : value.toStringAsFixed(0);
+    }
+
+    // Format services for Transaction tab
+    String formatServices(List<dynamic> services) {
+      if (services.isEmpty) return '-';
+      return services.map((s) => '- $s').join('\n');
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: index % 2 == 0 ? Colors.white : Colors.grey[50],
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 0.5)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: isBold ? AppColors.primary : Colors.black87,
-              fontSize: 12,
-            ),
-          ),
-        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: isPaymentTab
+            ? [
+                // Payment tab: 6 columns
+                _buildDataCell('$index', flex: 1),
+                _buildDataCell(transaction['ticketNumber'], flex: 2),
+                _buildDataCell(
+                  transaction['totalEarn'].toStringAsFixed(0),
+                  flex: 2,
+                ),
+                _buildDataCell(formatValue(transaction['discount']), flex: 2),
+                _buildDataCell(formatValue(transaction['tips']), flex: 2),
+                _buildDataCell(
+                  transaction['empShare'].toStringAsFixed(0),
+                  flex: 2,
+                ),
+              ]
+            : [
+                // Transaction tab: 3 columns
+                _buildDataCell('$index', flex: 1),
+                _buildDataCell(transaction['ticketNumber'], flex: 2),
+                _buildDataCell(
+                  formatServices(transaction['services'] as List),
+                  flex: 6,
+                  isMultiline: true,
+                ),
+                _buildDataCell(
+                  transaction['totalEarn'].toStringAsFixed(0),
+                  flex: 2,
+                ),
+              ],
+      ),
+    );
+  }
+
+  Widget _buildDataCell(String text, {int flex = 1, bool isMultiline = false}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        textAlign: isMultiline ? TextAlign.left : TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          color: text == '-' ? Colors.grey[400] : Colors.grey[800],
+          fontWeight: text == '-' ? FontWeight.normal : FontWeight.w500,
+        ),
+        maxLines: isMultiline ? null : 1,
+        overflow: isMultiline ? null : TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildTotalRow(Map<String, double> summary) {
+    final isPaymentTab = _selectedTab == 'Payment';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
+      ),
+      child: Row(
+        children: isPaymentTab
+            ? [
+                // Payment tab: Show Total, Disc, Tips, Emp $ in respective columns
+                Expanded(flex: 1, child: Container()), // # column
+                Expanded(flex: 2, child: Container()), // Ticket column
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '\$${summary['totalEarn']!.toStringAsFixed(0)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    summary['discount']! > 0
+                        ? '\$${summary['discount']!.toStringAsFixed(0)}'
+                        : '-',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '\$${summary['tips']!.toStringAsFixed(0)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '\$${summary['empShare']!.toStringAsFixed(0)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            : [
+                // Transaction tab: Show only total
+                Expanded(flex: 1, child: Container()), // # column
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'TOTAL',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(flex: 6, child: Container()), // Services column
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    summary['totalEarn']!.toStringAsFixed(0),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
       ),
     );
   }
@@ -916,11 +1187,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.receipt_long_rounded,
-            size: 48,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey[300]),
           const SizedBox(height: 8),
           Text(
             'No Data',
@@ -941,7 +1208,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
         ],
       ),
       child: SafeArea(
@@ -951,7 +1222,11 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
-              BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Row(
