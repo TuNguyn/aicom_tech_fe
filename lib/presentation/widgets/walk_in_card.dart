@@ -18,9 +18,9 @@ class WalkInCard extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'waiting':
-        return Colors.orange;
+        return const Color(0xFFFF6B00); // Vibrant orange for better contrast
       case 'inService':
-        return AppColors.secondary;
+        return const Color(0xFF00A86B); // Vibrant jade green for better contrast
       default:
         return Colors.grey;
     }
@@ -59,39 +59,45 @@ class WalkInCard extends StatelessWidget {
     }
   }
 
-  Widget _buildStationInfo() {
+  Widget _buildStationInfo(String status) {
     final assignedStation = walkIn['assignedStation'] as String?;
     final hasStation = assignedStation != null;
+    final statusColor = _getStatusColor(status);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: hasStation
-            ? AppColors.secondary.withValues(alpha: 0.1)
-            : Colors.grey[100],
+        color: hasStation ? Colors.white : Colors.grey[100],
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: hasStation
-              ? AppColors.secondary.withValues(alpha: 0.3)
-              : Colors.grey[300]!,
-          width: 1,
+          color: hasStation ? statusColor : Colors.grey[300]!,
+          width: 1.5,
         ),
+        boxShadow: hasStation
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.place,
-            size: 10,
-            color: hasStation ? AppColors.secondary : Colors.grey[600],
+            size: 11,
+            color: hasStation ? statusColor : Colors.grey[600],
           ),
           const SizedBox(width: 4),
           Text(
             assignedStation ?? 'No Station',
             style: AppTextStyles.bodySmall.copyWith(
-              color: hasStation ? AppColors.secondary : Colors.grey[600],
+              color: hasStation ? statusColor : Colors.grey[600],
               fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -121,19 +127,19 @@ class WalkInCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               Colors.white,
-              statusColor.withValues(alpha: 0.02),
+              statusColor.withValues(alpha: 0.03),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withValues(alpha: 0.08),
+              color: statusColor.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: statusColor.withValues(alpha: 0.2),
+            color: statusColor.withValues(alpha: 0.25),
             width: 1.5,
           ),
         ),
@@ -151,7 +157,7 @@ class WalkInCard extends StatelessWidget {
                           width: 4,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.15),
+                            color: statusColor.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                         )),
@@ -168,8 +174,8 @@ class WalkInCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        statusColor.withValues(alpha: 0.12),
-                        statusColor.withValues(alpha: 0.06),
+                        statusColor.withValues(alpha: 0.15),
+                        statusColor.withValues(alpha: 0.08),
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -182,13 +188,20 @@ class WalkInCard extends StatelessWidget {
                       // Status badge
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: statusColor, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -267,13 +280,13 @@ class WalkInCard extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              statusColor.withValues(alpha: 0.2),
-                              statusColor.withValues(alpha: 0.1),
+                              statusColor.withValues(alpha: 0.25),
+                              statusColor.withValues(alpha: 0.15),
                             ],
                           ),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: statusColor.withValues(alpha: 0.3),
+                            color: statusColor.withValues(alpha: 0.4),
                             width: 2,
                           ),
                         ),
@@ -298,9 +311,9 @@ class WalkInCard extends StatelessWidget {
                             Text(
                               customerName,
                               style: AppTextStyles.bodyLarge.copyWith(
-                                color: Colors.black87,
+                                color: Colors.black,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 15,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -325,9 +338,9 @@ class WalkInCard extends StatelessWidget {
                                           service['name'],
                                           style:
                                               AppTextStyles.bodySmall.copyWith(
-                                            color: Colors.grey[700],
+                                            color: Colors.grey[800],
                                             fontSize: 11,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -356,7 +369,7 @@ class WalkInCard extends StatelessWidget {
                               ),
                             // Station info
                             const SizedBox(height: 6),
-                            _buildStationInfo(),
+                            _buildStationInfo(status),
                           ],
                         ),
                       ),
