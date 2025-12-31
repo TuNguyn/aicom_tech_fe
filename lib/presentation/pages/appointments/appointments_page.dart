@@ -130,24 +130,22 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     return Container(
       color: AppColors.primary,
       padding: EdgeInsets.fromLTRB(
-        AppDimensions.spacingS,
-        MediaQuery.of(context).padding.top + AppDimensions.spacingXs,
-        AppDimensions.spacingS,
-        AppDimensions.spacingS,
+        AppDimensions.spacingXs,
+        MediaQuery.of(context).padding.top,
+        AppDimensions.spacingXs,
+        0,
       ),
       child: Column(
         children: [
           // Top row with icons and user name
           SizedBox(
-            height: 44,
+            height: 56,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
                   onPressed: () {
                     context.push(AppRoutes.notifications);
                   },
@@ -186,11 +184,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.exit_to_app, color: Colors.white, size: 22),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.exit_to_app, color: Colors.white, size: 24),
                   onPressed: () async {
+                    if (!mounted) return;
                     await ref.read(authNotifierProvider.notifier).logout();
+                    if (!mounted) return;
                     if (context.mounted) {
                       context.go(AppRoutes.login);
                     }
