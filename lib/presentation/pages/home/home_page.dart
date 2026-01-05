@@ -89,21 +89,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: IndexedStack(
-          index: _currentNavIndex,
-          children: [
-            // Home Tab (index 0)
-            _buildHomePage(),
-            // Walk-In Tab (index 1)
-            const WalkInPage(),
-            // Appointments Tab (index 2)
-            const AppointmentsPage(),
-            // Report Tab (index 3)
-            const ReportPage(),
-            // More Tab (index 4)
-            const MorePage(),
-          ],
-        ),
+      body: _buildCurrentPage(),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentNavIndex,
         useWhiteBackground: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4),
@@ -117,6 +103,23 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       ),
     );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_currentNavIndex) {
+      case 0:
+        return _buildHomePage();
+      case 1:
+        return const WalkInPage();
+      case 2:
+        return const AppointmentsPage();
+      case 3:
+        return const ReportPage();
+      case 4:
+        return const MorePage();
+      default:
+        return _buildHomePage();
+    }
   }
 
   Widget _buildHomePage() {
