@@ -6,7 +6,13 @@
       "Bash(flutter run:*)",
       "Bash(nc:*)",
       "Bash(flutter build:*)",
-      "Bash(Select-Object -First 30)"
+      "Bash(Select-Object -First 30)",
+      "Bash(flutter doctor:*)",
+      "Bash(adb devices:*)",
+      "Bash(adb kill-server:*)",
+      "Bash(adb start-server:*)",
+      "Bash(flutter clean:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

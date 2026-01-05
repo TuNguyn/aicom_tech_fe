@@ -420,7 +420,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
 
                           // Show more/less button
                           if (hasMultipleServices) ...[

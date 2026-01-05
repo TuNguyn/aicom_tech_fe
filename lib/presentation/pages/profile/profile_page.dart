@@ -121,7 +121,7 @@ class ProfilePage extends ConsumerWidget {
                       _InfoItem(
                         icon: Icons.email_outlined,
                         label: 'Email',
-                        value: user.email ?? '',
+                        value: user.email,
                       ),
                     ]),
 
