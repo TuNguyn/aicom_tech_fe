@@ -128,28 +128,21 @@ class _WalkInCardState extends State<WalkInCard> {
 
     return RepaintBoundary(
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: () {}, // Temporarily disabled navigation
         child: Container(
         margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              statusColor.withValues(alpha: 0.03),
-            ],
-          ),
+          color: const Color(0xFFF8F9FA), // White with slight gray tint
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withValues(alpha: 0.12),
+              color: Colors.black.withValues(alpha: 0.08), // Neutral shadow
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: statusColor.withValues(alpha: 0.25),
+            color: Colors.grey.withValues(alpha: 0.3), // Neutral border
             width: 1.5,
           ),
         ),
@@ -405,9 +398,9 @@ class _WalkInCardState extends State<WalkInCard> {
                                 ),
                               ),
                             ],
-                            // Station info
-                            const SizedBox(height: 6),
-                            _buildStationInfo(status),
+                            // Station info - Temporarily hidden
+                            // const SizedBox(height: 6),
+                            // _buildStationInfo(status),
                           ],
                         ),
                       ),

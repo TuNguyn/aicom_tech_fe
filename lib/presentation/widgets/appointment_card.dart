@@ -103,27 +103,20 @@ class _AppointmentCardState extends State<AppointmentCard> {
 
     return RepaintBoundary(
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: () {}, // Temporarily disabled navigation
         child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colors.gradient1,
-              colors.gradient2,
-            ],
-          ),
+          color: const Color(0xFFF8F9FA), // White with slight gray tint
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: colors.shadow,
+              color: Colors.black.withValues(alpha: 0.08), // Neutral shadow
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: colors.border,
+            color: Colors.grey.withValues(alpha: 0.3), // Neutral border
             width: 1.5,
           ),
         ),
