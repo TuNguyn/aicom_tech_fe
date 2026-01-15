@@ -4,12 +4,14 @@ import '../theme/app_dimensions.dart';
 
 class WalkInCard extends StatefulWidget {
   final Map<String, dynamic> walkIn;
+  final DateTime currentTime; // Performance optimization: Pass from parent
   final VoidCallback onTap;
   final Function(String?) onStationAssign; // Keep for compatibility but not used in UI
 
   const WalkInCard({
     super.key,
     required this.walkIn,
+    required this.currentTime,
     required this.onTap,
     required this.onStationAssign,
   });
@@ -55,7 +57,8 @@ class _WalkInCardState extends State<WalkInCard> {
   }
 
   String _getRelativeTime(DateTime checkInTime) {
-    final diff = DateTime.now().difference(checkInTime);
+    // Performance optimization: Use passed currentTime instead of calling DateTime.now()
+    final diff = widget.currentTime.difference(checkInTime);
     if (diff.inMinutes < 60) {
       return '${diff.inMinutes}m ago';
     } else if (diff.inHours < 24) {
@@ -123,9 +126,10 @@ class _WalkInCardState extends State<WalkInCard> {
     final hasMultipleServices = services.length > 3;
     final displayServices = _isExpanded ? services : services.take(3).toList();
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
         margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -414,6 +418,7 @@ class _WalkInCardState extends State<WalkInCard> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

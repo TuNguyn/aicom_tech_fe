@@ -19,6 +19,9 @@ class WalkInPage extends ConsumerStatefulWidget {
 class _WalkInPageState extends ConsumerState<WalkInPage> {
   final ScrollController _scrollController = ScrollController();
 
+  // Performance optimization: Cache sorted walk-ins
+  List<Map<String, dynamic>>? _cachedFilteredWalkIns;
+
   // Mock walk-in data
   final List<Map<String, dynamic>> _mockWalkIns = [
     {
@@ -128,7 +131,13 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
   ];
 
   List<Map<String, dynamic>> _getFilteredWalkIns() {
-    return _mockWalkIns
+    // Performance optimization: Check cache first
+    if (_cachedFilteredWalkIns != null) {
+      return _cachedFilteredWalkIns!;
+    }
+
+    // Sort walk-ins: waiting first, then by check-in time
+    final result = _mockWalkIns.toList()
       ..sort((a, b) {
         // Sort by status (waiting first) then by check-in time
         if (a['status'] == 'waiting' && b['status'] != 'waiting') return -1;
@@ -136,6 +145,9 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
         return (b['checkInTime'] as DateTime)
             .compareTo(a['checkInTime'] as DateTime);
       });
+
+    _cachedFilteredWalkIns = result;
+    return result;
   }
 
   void _handleStationAssign(int index, String? station) {
@@ -144,6 +156,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
       if (station != null) {
         _mockWalkIns[index]['status'] = 'inService';
       }
+      // Invalidate cache when data changes
+      _cachedFilteredWalkIns = null;
     });
   }
 
@@ -156,6 +170,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
           onSave: (updatedData) {
             setState(() {
               _mockWalkIns[index] = updatedData;
+              // Invalidate cache when data changes
+              _cachedFilteredWalkIns = null;
             });
           },
         ),
@@ -168,9 +184,11 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
     final walkIns = _getFilteredWalkIns();
     final walkInCount = walkIns.length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
+    return Container(
+      decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
         children: [
           _buildHeader(walkInCount),
           Expanded(
@@ -180,12 +198,13 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
           ),
         ],
       ),
+      ),
     );
   }
 
   Widget _buildHeader(int walkInCount) {
     return Container(
-      color: AppColors.primary,
+      color: Colors.transparent,
       padding: EdgeInsets.fromLTRB(
         AppDimensions.spacingXs,
         MediaQuery.of(context).padding.top,
@@ -262,6 +281,9 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
   }
 
   Widget _buildWalkInsList(List<Map<String, dynamic>> walkIns) {
+    // Performance optimization: Get current time once instead of per card
+    final currentTime = DateTime.now();
+
     return ListView.separated(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(
@@ -276,6 +298,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
       itemBuilder: (context, index) {
         return WalkInCard(
           walkIn: walkIns[index],
+          currentTime: currentTime,
           onTap: () {
             _navigateToEditDetail(index);
           },

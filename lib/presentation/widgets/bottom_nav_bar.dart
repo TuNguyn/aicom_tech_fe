@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_colors.dart';
@@ -20,31 +19,10 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Stack(
-        children: [
-          // Blur Effect (Only for gradient background)
-          if (!useWhiteBackground)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-
-          // Main Container (Background + Content)
-          Container(
+      child: Container(
             decoration: BoxDecoration(
-              color: useWhiteBackground ? Colors.white : null,
-              gradient: useWhiteBackground
-                  ? null
-                  : LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.9),
-                        Colors.white.withValues(alpha: 0.85),
-                      ],
-                    ),
+              // Use solid semi-transparent color instead of expensive BackdropFilter
+              color: useWhiteBackground ? Colors.white : Colors.white.withValues(alpha: 0.95),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
@@ -70,8 +48,6 @@ class BottomNavBar extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
     );
   }
 

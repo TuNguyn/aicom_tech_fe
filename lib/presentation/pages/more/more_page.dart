@@ -24,10 +24,12 @@ class MorePage extends ConsumerWidget {
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.primary,
+      child: Container(
+        decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+          backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
           title: Text(
@@ -118,6 +120,7 @@ class MorePage extends ConsumerWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

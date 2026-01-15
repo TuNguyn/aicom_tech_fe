@@ -23,37 +23,101 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentNavIndex = 0;
 
+  // Cache mock notifications data as static const
+  static final List<Map<String, dynamic>> _mockNotifications = [
+    {
+      'title': 'Appointment Reminder',
+      'message': 'Sarah Johnson at 10:00 AM',
+      'time': '5m ago',
+      'icon': Icons.event_available,
+      'color': AppColors.primary,
+    },
+    {
+      'title': 'New Walk-in Customer',
+      'message': 'Customer waiting at front desk',
+      'time': '12m ago',
+      'icon': Icons.person_add_outlined,
+      'color': AppColors.accent,
+    },
+    {
+      'title': 'Payment Received',
+      'message': 'Ticket #00003 - \$35.00',
+      'time': '1h ago',
+      'icon': Icons.payment,
+      'color': AppColors.success,
+    },
+    {
+      'title': 'Appointment Cancelled',
+      'message': 'Maria Garcia cancelled 2:30 PM slot',
+      'time': '2h ago',
+      'icon': Icons.event_busy,
+      'color': AppColors.error,
+    },
+    {
+      'title': 'New Review',
+      'message': 'Jennifer Smith left a 5-star review',
+      'time': '3h ago',
+      'icon': Icons.star,
+      'color': Colors.amber,
+    },
+    {
+      'title': 'Stock Alert',
+      'message': 'Gel polish running low - reorder needed',
+      'time': '4h ago',
+      'icon': Icons.inventory_2_outlined,
+      'color': AppColors.warning,
+    },
+  ];
+
+  // Cache SystemUiOverlayStyle objects to avoid recreating on every build
+  static final _overlayStyleHome = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  );
+
+  static final _overlayStyleWalkIn = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  );
+
+  static final _overlayStyleAppointments = SystemUiOverlayStyle(
+    statusBarColor: AppColors.primary,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  );
+
+  static final _overlayStyleReport = SystemUiOverlayStyle(
+    statusBarColor: AppColors.background,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  );
+
+  static final _overlayStyleMore = SystemUiOverlayStyle(
+    statusBarColor: AppColors.primary,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  );
+
+  SystemUiOverlayStyle get _currentOverlayStyle {
+    switch (_currentNavIndex) {
+      case 0: return _overlayStyleHome;
+      case 1: return _overlayStyleWalkIn;
+      case 2: return _overlayStyleAppointments;
+      case 3: return _overlayStyleReport;
+      case 4: return _overlayStyleMore;
+      default: return _overlayStyleHome;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
-    // Determine status bar color based on current tab
-    Color statusBarColor;
-    if (_currentNavIndex == 2 || _currentNavIndex == 4) {
-      // Appointments and More tabs: primary color
-      statusBarColor = AppColors.primary;
-    } else if (_currentNavIndex == 3) {
-      // Report tab: match app background color
-      statusBarColor = AppColors.background;
-    } else {
-      // Home and Walk-In tabs: transparent (show gradient)
-      statusBarColor = Colors.transparent;
-    }
-
-    // Icon brightness based on background color
-    final iconBrightness = (_currentNavIndex == 3)
-        ? Brightness.dark // Dark icons on report background
-        : (_currentNavIndex == 0 || _currentNavIndex == 1 || _currentNavIndex == 2 || _currentNavIndex == 4)
-            ? Brightness.light // Light icons on colored background
-            : Brightness.dark;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: statusBarColor,
-        statusBarIconBrightness: iconBrightness,
-        statusBarBrightness: (_currentNavIndex == 3) ? Brightness.light : Brightness.dark,
-      ),
+      value: _currentOverlayStyle,
       child: Container(
         decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
         child: Scaffold(
@@ -89,7 +153,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: _buildCurrentPage(),
+      body: IndexedStack(
+        index: _currentNavIndex,
+        children: [
+          _buildHomePage(),
+          const WalkInPage(),
+          const AppointmentsPage(),
+          const ReportPage(),
+          const MorePage(),
+        ],
+      ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentNavIndex,
         useWhiteBackground: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4),
@@ -97,29 +170,11 @@ class _HomePageState extends ConsumerState<HomePage> {
           setState(() {
             _currentNavIndex = index;
           });
-          // TODO: Navigate to different pages based on index
         },
       ),
       ),
       ),
     );
-  }
-
-  Widget _buildCurrentPage() {
-    switch (_currentNavIndex) {
-      case 0:
-        return _buildHomePage();
-      case 1:
-        return const WalkInPage();
-      case 2:
-        return const AppointmentsPage();
-      case 3:
-        return const ReportPage();
-      case 4:
-        return const MorePage();
-      default:
-        return _buildHomePage();
-    }
   }
 
   Widget _buildHomePage() {
@@ -262,52 +317,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 
   Widget _buildNotificationsSection() {
-    // Mock notifications data - more than 3 for testing
-    final notifications = [
-      {
-        'title': 'Appointment Reminder',
-        'message': 'Sarah Johnson at 10:00 AM',
-        'time': '5m ago',
-        'icon': Icons.event_available,
-        'color': AppColors.primary,
-      },
-      {
-        'title': 'New Walk-in Customer',
-        'message': 'Customer waiting at front desk',
-        'time': '12m ago',
-        'icon': Icons.person_add_outlined,
-        'color': AppColors.accent,
-      },
-      {
-        'title': 'Payment Received',
-        'message': 'Ticket #00003 - \$35.00',
-        'time': '1h ago',
-        'icon': Icons.payment,
-        'color': AppColors.success,
-      },
-      {
-        'title': 'Appointment Cancelled',
-        'message': 'Maria Garcia cancelled 2:30 PM slot',
-        'time': '2h ago',
-        'icon': Icons.event_busy,
-        'color': AppColors.error,
-      },
-      {
-        'title': 'New Review',
-        'message': 'Jennifer Smith left a 5-star review',
-        'time': '3h ago',
-        'icon': Icons.star,
-        'color': Colors.amber,
-      },
-      {
-        'title': 'Stock Alert',
-        'message': 'Gel polish running low - reorder needed',
-        'time': '4h ago',
-        'icon': Icons.inventory_2_outlined,
-        'color': AppColors.warning,
-      },
-    ];
-
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingM),
       decoration: BoxDecoration(
@@ -353,9 +362,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             height: 3 * 60.0, // Each notification ~60px height, show exactly 3
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: notifications.length,
+              itemCount: _mockNotifications.length,
               itemBuilder: (context, index) {
-                final notification = notifications[index];
+                final notification = _mockNotifications[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(

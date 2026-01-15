@@ -20,6 +20,48 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   DateTime _selectedDate = DateTime.now();
   final ScrollController _scrollController = ScrollController();
 
+  // Performance optimization: Pre-generate all appointments data at init
+  final Map<String, List<Map<String, dynamic>>> _allAppointments = {};
+  Map<DateTime, int> _weekAppointmentCounts = {};
+
+  // Cache DateFormat objects
+  static final _dayFormat = DateFormat('E');
+  static final _dateFormat = DateFormat('d');
+
+  // Cache color variations
+  late final Color _badgeBackgroundColor = Colors.white.withValues(alpha: 0.25);
+  late final Color _todayBackgroundColor = AppColors.primary.withValues(
+    alpha: 0.1,
+  );
+  late final Color _todayBorderColor = AppColors.primary.withValues(alpha: 0.3);
+  late final Color _emptyStateGradient1 = AppColors.primary.withValues(
+    alpha: 0.1,
+  );
+  late final Color _emptyStateGradient2 = AppColors.secondary.withValues(
+    alpha: 0.1,
+  );
+  late final Color _emptyStateIconColor = AppColors.primary.withValues(
+    alpha: 0.3,
+  );
+  late final Color _emptyStateAccentDot = AppColors.accent.withValues(
+    alpha: 0.5,
+  );
+  late final Color _emptyStateSecondaryDot = AppColors.secondary.withValues(
+    alpha: 0.5,
+  );
+  late final Color _emptyStateCardGradient1 = AppColors.primary.withValues(
+    alpha: 0.08,
+  );
+  late final Color _emptyStateCardGradient2 = AppColors.secondary.withValues(
+    alpha: 0.08,
+  );
+  late final Color _emptyStateCardBorder = AppColors.primary.withValues(
+    alpha: 0.2,
+  );
+  late final Color _emptyStateCardIconBg = AppColors.primary.withValues(
+    alpha: 0.15,
+  );
+
   // Generate mock appointments for any date
   List<Map<String, dynamic>> _generateMockAppointmentsForDate(DateTime date) {
     // Sunday (weekday % 7 == 0) - No appointments (closed)
@@ -60,7 +102,9 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           {'name': 'Pedicure Deluxe', 'duration': 75},
         ],
         'scheduledTime': DateTime(date.year, date.month, date.day, 13, 0),
-        'status': DateUtils.isSameDay(date, DateTime.now()) ? 'in_progress' : 'upcoming',
+        'status': DateUtils.isSameDay(date, DateTime.now())
+            ? 'in_progress'
+            : 'upcoming',
         'notes': 'Prefers technician Lisa - very gentle with cuticles',
       },
     ];
@@ -234,7 +278,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
             ],
             'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
             'status': 'upcoming',
-            'notes': 'VIP customer - full spa package, offer complimentary drink',
+            'notes':
+                'VIP customer - full spa package, offer complimentary drink',
           },
           {
             'id': '${date.day}-6',
@@ -277,16 +322,57 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Pre-generate appointments for current month + 2 weeks before/after
+    _preGenerateAppointments();
+    // Pre-compute week appointment counts for current week
+    _updateWeekCounts(_getWeekDates());
+  }
+
+  void _preGenerateAppointments() {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - 1, 1); // 1 month before
+    final endDate = DateTime(now.year, now.month + 2, 0); // 1 month after
+
+    for (var date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
+      final key = '${date.year}-${date.month}-${date.day}';
+      _allAppointments[key] = _generateMockAppointmentsForDate(date);
+    }
+  }
+
   List<DateTime> _getWeekDates() {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
     return List.generate(7, (index) => startOfWeek.add(Duration(days: index)));
   }
 
+  void _updateWeekCounts(List<DateTime> weekDates) {
+    _weekAppointmentCounts = {
+      for (var date in weekDates)
+        date: _getAppointmentsForDate(date).length,
+    };
+  }
+
+  List<Map<String, dynamic>> _getAppointmentsForDate(DateTime date) {
+    final key = '${date.year}-${date.month}-${date.day}';
+    if (_allAppointments.containsKey(key)) {
+      return _allAppointments[key]!;
+    }
+    // Fallback: generate on demand if not pre-generated
+    return _generateMockAppointmentsForDate(date);
+  }
+
   List<Map<String, dynamic>> _getAppointmentsForSelectedDate() {
-    return _generateMockAppointmentsForDate(_selectedDate)
-      ..sort((a, b) => (a['scheduledTime'] as DateTime)
-          .compareTo(b['scheduledTime'] as DateTime));
+    // Use pre-generated data and sort
+    final result = List<Map<String, dynamic>>.from(_getAppointmentsForDate(_selectedDate))
+      ..sort(
+        (a, b) => (a['scheduledTime'] as DateTime).compareTo(
+          b['scheduledTime'] as DateTime,
+        ),
+      );
+    return result;
   }
 
   @override
@@ -294,23 +380,26 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     final appointments = _getAppointmentsForSelectedDate();
     final appointmentCount = appointments.length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Header with date selector
-          _buildHeader(appointmentCount),
+    return Container(
+      decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            // Header with date selector
+            _buildHeader(appointmentCount),
 
-          // Week Calendar Selector
-          _buildWeekCalendar(),
+            // Week Calendar Selector
+            _buildWeekCalendar(),
 
-          // Appointments List
-          Expanded(
-            child: appointments.isEmpty
-                ? _buildEmptyState()
-                : _buildAppointmentsList(appointments),
-          ),
-        ],
+            // Appointments List
+            Expanded(
+              child: appointments.isEmpty
+                  ? _buildEmptyState()
+                  : _buildAppointmentsList(appointments),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -334,7 +423,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: () {
                     context.push(AppRoutes.notifications);
                   },
@@ -355,9 +448,12 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: _badgeBackgroundColor,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -373,7 +469,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.exit_to_app, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.exit_to_app,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: () async {
                     if (!mounted) return;
                     await ref.read(authNotifierProvider.notifier).logout();
@@ -406,8 +506,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           final isSelected = DateUtils.isSameDay(date, _selectedDate);
           final isToday = DateUtils.isSameDay(date, DateTime.now());
 
-          // Count appointments for this date
-          final appointmentsCount = _generateMockAppointmentsForDate(date).length;
+          // Use cached appointment count
+          final appointmentsCount = _weekAppointmentCounts[date] ?? 0;
 
           return Expanded(
             child: GestureDetector(
@@ -422,12 +522,12 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primary
-                      : (isToday ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent),
+                      : (isToday ? _todayBackgroundColor : Colors.transparent),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primary
-                        : (isToday ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent),
+                        : (isToday ? _todayBorderColor : Colors.transparent),
                     width: 1,
                   ),
                 ),
@@ -435,7 +535,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      DateFormat('E').format(date).substring(0, 1),
+                      _dayFormat.format(date).substring(0, 1),
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white
@@ -446,7 +546,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      DateFormat('d').format(date),
+                      _dateFormat.format(date),
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
                         fontWeight: FontWeight.bold,
@@ -486,7 +586,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         100, // Extra bottom padding to account for bottom nav bar
       ),
       itemCount: appointments.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppDimensions.spacingS),
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppDimensions.spacingS),
       itemBuilder: (context, index) {
         return AppointmentCard(
           appointment: appointments[index],
@@ -497,7 +598,6 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
       },
     );
   }
-
 
   Widget _buildEmptyState() {
     final isToday = DateUtils.isSameDay(_selectedDate, DateTime.now());
@@ -516,10 +616,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.1),
-                    AppColors.secondary.withValues(alpha: 0.1),
-                  ],
+                  colors: [_emptyStateGradient1, _emptyStateGradient2],
                 ),
                 shape: BoxShape.circle,
               ),
@@ -529,7 +626,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   Icon(
                     Icons.spa_outlined,
                     size: 60,
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: _emptyStateIconColor,
                   ),
                   Positioned(
                     right: 35,
@@ -538,7 +635,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.5),
+                        color: _emptyStateAccentDot,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -550,7 +647,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withValues(alpha: 0.5),
+                        color: _emptyStateSecondaryDot,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -574,9 +671,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
               isToday
                   ? 'Time to relax and prepare for tomorrow!'
                   : 'Enjoy your free time and stay refreshed',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
 
@@ -589,23 +684,17 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.08),
-                    AppColors.secondary.withValues(alpha: 0.08),
-                  ],
+                  colors: [_emptyStateCardGradient1, _emptyStateCardGradient2],
                 ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                  width: 1,
-                ),
+                border: Border.all(color: _emptyStateCardBorder, width: 1),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.15),
+                      color: _emptyStateCardIconBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(

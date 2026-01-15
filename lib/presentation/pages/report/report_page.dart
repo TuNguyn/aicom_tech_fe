@@ -29,6 +29,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   final int _initialPage = 1000;
   late final PageController _pageController;
 
+  // Performance optimization: Cache filtered transactions and summary
+  List<Map<String, dynamic>>? _cachedTransactions;
+  String? _cacheKey;
+  Map<String, double>? _cachedSummary;
+  List<Map<String, dynamic>>? _summaryTransactionsRef;
+
+  // Performance optimization: Pre-compute dates with data for O(1) lookup
+  late final Set<String> _datesWithData;
+
   // Mock data for testing
   final List<Map<String, dynamic>> _mockTransactions = [
     {
@@ -197,6 +206,28 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _initialPage);
+
+    // Performance optimization: Pre-compute dates with data for O(1) lookup
+    _datesWithData = _mockTransactions.map((t) {
+      final date = t['date'] as DateTime;
+      return '${date.year}_${date.month}_${date.day}';
+    }).toSet();
+  }
+
+  // Performance optimization: Generate cache key for current filter state
+  String _getCacheKey() {
+    if (_selectedPeriod == 'Day') {
+      return 'day_${_selectedDate.year}_${_selectedDate.month}_${_selectedDate.day}';
+    } else if (_selectedPeriod == 'Week') {
+      return 'week_${_selectedDate.year}_${_selectedDate.month}_${_selectedDate.day}';
+    } else if (_selectedPeriod == 'Month') {
+      return 'month_${_selectedDate.year}_${_selectedDate.month}';
+    } else if (_selectedPeriod == 'Year') {
+      return 'year_${_selectedDate.year}';
+    } else if (_selectedPeriod == 'Custom') {
+      return 'custom_${_customFromDate.year}_${_customFromDate.month}_${_customFromDate.day}_${_customToDate.year}_${_customToDate.month}_${_customToDate.day}';
+    }
+    return 'default';
   }
 
   @override
@@ -237,13 +268,19 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   bool _hasDataForDate(DateTime date) {
-    return _mockTransactions.any(
-      (t) => DateUtils.isSameDay(t['date'] as DateTime, date),
-    );
+    // Performance optimization: O(1) lookup instead of O(n) search
+    return _datesWithData.contains('${date.year}_${date.month}_${date.day}');
   }
 
   List<Map<String, dynamic>> _getTransactionsForSelectedDate() {
-    return _mockTransactions.where((transaction) {
+    // Performance optimization: Check cache first
+    final key = _getCacheKey();
+    if (_cacheKey == key && _cachedTransactions != null) {
+      return _cachedTransactions!;
+    }
+
+    // Filter transactions based on selected period
+    final result = _mockTransactions.where((transaction) {
       final transactionDate = transaction['date'] as DateTime;
 
       if (_selectedPeriod == 'Day') {
@@ -279,26 +316,45 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       }
       return DateUtils.isSameDay(transactionDate, _selectedDate);
     }).toList();
+
+    // Update cache
+    _cachedTransactions = result;
+    _cacheKey = key;
+    return result;
   }
 
   Map<String, double> _calculateSummary(
     List<Map<String, dynamic>> transactions,
   ) {
-    return {
-      'totalEarn': transactions.fold(
-        0.0,
-        (sum, t) => sum + (t['totalEarn'] as double),
-      ),
-      'discount': transactions.fold(
-        0.0,
-        (sum, t) => sum + (t['discount'] as double),
-      ),
-      'tips': transactions.fold(0.0, (sum, t) => sum + (t['tips'] as double)),
-      'empShare': transactions.fold(
-        0.0,
-        (sum, t) => sum + (t['empShare'] as double),
-      ),
+    // Performance optimization: Check cache first (reference equality)
+    if (_summaryTransactionsRef == transactions && _cachedSummary != null) {
+      return _cachedSummary!;
+    }
+
+    // Performance optimization: Single-pass calculation instead of 4 separate fold operations
+    double totalEarn = 0.0;
+    double discount = 0.0;
+    double tips = 0.0;
+    double empShare = 0.0;
+
+    for (final t in transactions) {
+      totalEarn += t['totalEarn'] as double;
+      discount += t['discount'] as double;
+      tips += t['tips'] as double;
+      empShare += t['empShare'] as double;
+    }
+
+    final result = {
+      'totalEarn': totalEarn,
+      'discount': discount,
+      'tips': tips,
+      'empShare': empShare,
     };
+
+    // Update cache
+    _cachedSummary = result;
+    _summaryTransactionsRef = transactions;
+    return result;
   }
 
   // --- Header Navigation Logic ---
@@ -371,82 +427,83 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final transactions = _getTransactionsForSelectedDate();
     final summary = _calculateSummary(transactions);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // --- FIXED HEADER SECTION ---
-            Container(
-              color: AppColors.background,
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                children: [
-                  // 1. Segmented Control
-                  _buildSegmentedControl(),
-
-                  const SizedBox(height: 12),
-
-                  // 2. Calendar Card
-                  _buildCompactCalendarCard(),
-
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-
-            // --- TABLE SECTION ---
-            if (transactions.isEmpty)
-              Expanded(child: _buildEmptyState())
-            else ...[
-              // Sticky table header
+    return Container(
+      decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // --- FIXED HEADER SECTION ---
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
+                color: Colors.transparent,
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  children: [
+                    // 1. Segmented Control
+                    _buildSegmentedControl(),
+
+                    const SizedBox(height: 12),
+
+                    // 2. Calendar Card
+                    _buildCompactCalendarCard(),
+
+                    const SizedBox(height: 12),
                   ],
                 ),
-                child: _buildTableHeader(),
               ),
-              // Scrollable data rows
-              Expanded(
-                child: Container(
+
+              // --- TABLE SECTION ---
+              if (transactions.isEmpty)
+                Expanded(child: _buildEmptyState())
+              else ...[
+                // Sticky table header
+                Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    physics: const ClampingScrollPhysics(),
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) {
-                      return _buildTableRow(transactions[index], index + 1);
-                    },
+                  child: _buildTableHeader(),
+                ),
+                // Scrollable data rows
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: const BoxDecoration(color: Colors.white),
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      physics: const ClampingScrollPhysics(),
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) {
+                        return _buildTableRow(transactions[index], index + 1);
+                      },
+                    ),
                   ),
                 ),
-              ),
-              // Sticky total row
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
-                child: _buildTotalRow(summary),
-              ),
+                // Sticky total row
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                  child: _buildTotalRow(summary),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
+        // Removed bottom TOTAL summary bar
+        // bottomNavigationBar: _buildBottomSummary(summary),
       ),
-      // Removed bottom TOTAL summary bar
-      // bottomNavigationBar: _buildBottomSummary(summary),
     );
   }
 
@@ -993,7 +1050,6 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-
   Widget _buildTableHeader() {
     final isPaymentTab = _selectedTab == 'Payment';
 
@@ -1044,10 +1100,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     );
   }
 
-  Widget _buildTableRow(
-    Map<String, dynamic> transaction,
-    int index,
-  ) {
+  Widget _buildTableRow(Map<String, dynamic> transaction, int index) {
     final isPaymentTab = _selectedTab == 'Payment';
 
     // Hiển thị "-" nếu giá trị = 0
@@ -1061,11 +1114,14 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       return services.map((s) => '- $s').join('\n');
     }
 
-    return Container(
+    return RepaintBoundary(
+      child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
         color: index % 2 == 0 ? Colors.white : Colors.grey[50],
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 0.5)),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1099,6 +1155,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                   flex: 2,
                 ),
               ],
+      ),
       ),
     );
   }
@@ -1242,5 +1299,4 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       ),
     );
   }
-
 }

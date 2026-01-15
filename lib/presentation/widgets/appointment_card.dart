@@ -21,6 +21,12 @@ class AppointmentCard extends StatefulWidget {
 class _AppointmentCardState extends State<AppointmentCard> {
   bool _isExpanded = false;
 
+  // Performance optimization: Cache DateFormat
+  static final _timeFormat = DateFormat('h:mm a');
+
+  // Performance optimization: Cache status-based colors
+  final Map<String, _StatusColors> _colorCache = {};
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'upcoming':
@@ -70,38 +76,54 @@ class _AppointmentCardState extends State<AppointmentCard> {
   Widget build(BuildContext context) {
     final scheduledTime = widget.appointment['scheduledTime'] as DateTime;
     final services = widget.appointment['services'] as List;
-    final totalDuration = services.fold<int>(
-      0,
-      (sum, service) => sum + (service['duration'] as int),
-    );
-    final endTime = scheduledTime.add(Duration(minutes: totalDuration));
     final status = widget.appointment['status'] as String;
     final statusColor = _getStatusColor(status);
     final hasMultipleServices = services.length > 2;
+
+    // Performance optimization: Pre-calculate all service times in single O(n) pass
+    final List<({DateTime start, DateTime end})> serviceTimes = [];
+    int cumulativeDuration = 0;
+    for (final service in services) {
+      final start = scheduledTime.add(Duration(minutes: cumulativeDuration));
+      final duration = service['duration'] as int;
+      final end = start.add(Duration(minutes: duration));
+      serviceTimes.add((start: start, end: end));
+      cumulativeDuration += duration;
+    }
+    final endTime = scheduledTime.add(Duration(minutes: cumulativeDuration));
+
+    // Get displayed services based on expansion state
     final displayedServices = _isExpanded ? services : services.take(2).toList();
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
+    // Performance optimization: Get cached colors for this status
+    final colors = _colorCache.putIfAbsent(
+      status,
+      () => _StatusColors(statusColor),
+    );
+
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white,
-              statusColor.withValues(alpha: 0.02),
+              colors.gradient1,
+              colors.gradient2,
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withValues(alpha: 0.08),
+              color: colors.shadow,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: statusColor.withValues(alpha: 0.2),
+            color: colors.border,
             width: 1.5,
           ),
         ),
@@ -117,7 +139,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                   width: 4,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
+                    color: colors.decorativeDot,
                     shape: BoxShape.circle,
                   ),
                 )),
@@ -134,8 +156,8 @@ class _AppointmentCardState extends State<AppointmentCard> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        statusColor.withValues(alpha: 0.12),
-                        statusColor.withValues(alpha: 0.06),
+                        colors.headerGradient1,
+                        colors.headerGradient2,
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -174,7 +196,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${DateFormat('h:mm a').format(scheduledTime)} - ${DateFormat('h:mm a').format(endTime)}',
+                                  '${_timeFormat.format(scheduledTime)} - ${_timeFormat.format(endTime)}',
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -247,13 +269,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  statusColor.withValues(alpha: 0.2),
-                                  statusColor.withValues(alpha: 0.1),
+                                  colors.avatarGradient1,
+                                  colors.avatarGradient2,
                                 ],
                               ),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: statusColor.withValues(alpha: 0.3),
+                                color: colors.avatarBorder,
                                 width: 2,
                               ),
                             ),
@@ -323,10 +345,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
                       Container(
                         padding: const EdgeInsets.all(AppDimensions.spacingS),
                         decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.04),
+                          color: colors.serviceContainer,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: statusColor.withValues(alpha: 0.1),
+                            color: colors.serviceContainerBorder,
                             width: 1,
                           ),
                         ),
@@ -336,14 +358,11 @@ class _AppointmentCardState extends State<AppointmentCard> {
                               final index = entry.key;
                               final service = entry.value;
 
-                              // Calculate start time for this service (using original index from full services list)
+                              // Performance optimization: Use pre-calculated service times
                               final originalIndex = services.indexOf(service);
-                              int cumulativeDuration = 0;
-                              for (int i = 0; i < originalIndex; i++) {
-                                cumulativeDuration += services[i]['duration'] as int;
-                              }
-                              final serviceStartTime = scheduledTime.add(Duration(minutes: cumulativeDuration));
-                              final serviceEndTime = serviceStartTime.add(Duration(minutes: service['duration'] as int));
+                              final serviceTime = serviceTimes[originalIndex];
+                              final serviceStartTime = serviceTime.start;
+                              final serviceEndTime = serviceTime.end;
 
                             return Padding(
                               padding: EdgeInsets.only(
@@ -356,10 +375,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                     width: 18,
                                     height: 18,
                                     decoration: BoxDecoration(
-                                      color: statusColor.withValues(alpha: 0.15),
+                                      color: colors.serviceDotBackground,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: statusColor.withValues(alpha: 0.4),
+                                        color: colors.serviceDotBorder,
                                         width: 1.5,
                                       ),
                                     ),
@@ -389,7 +408,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${DateFormat('h:mm a').format(serviceStartTime)} - ${DateFormat('h:mm a').format(serviceEndTime)}',
+                                          '${_timeFormat.format(serviceStartTime)} - ${_timeFormat.format(serviceEndTime)}',
                                           style: AppTextStyles.bodySmall.copyWith(
                                             color: Colors.grey[600],
                                             fontSize: 10,
@@ -525,6 +544,41 @@ class _AppointmentCardState extends State<AppointmentCard> {
           ],
         ),
       ),
+      ),
     );
   }
+}
+
+// Performance optimization: Cache color variations per status
+class _StatusColors {
+  final Color gradient1;
+  final Color gradient2;
+  final Color shadow;
+  final Color border;
+  final Color headerGradient1;
+  final Color headerGradient2;
+  final Color decorativeDot;
+  final Color avatarGradient1;
+  final Color avatarGradient2;
+  final Color avatarBorder;
+  final Color serviceContainer;
+  final Color serviceContainerBorder;
+  final Color serviceDotBackground;
+  final Color serviceDotBorder;
+
+  _StatusColors(Color base)
+      : gradient1 = Colors.white,
+        gradient2 = base.withValues(alpha: 0.02),
+        shadow = base.withValues(alpha: 0.08),
+        border = base.withValues(alpha: 0.2),
+        headerGradient1 = base.withValues(alpha: 0.12),
+        headerGradient2 = base.withValues(alpha: 0.06),
+        decorativeDot = base.withValues(alpha: 0.15),
+        avatarGradient1 = base.withValues(alpha: 0.2),
+        avatarGradient2 = base.withValues(alpha: 0.1),
+        avatarBorder = base.withValues(alpha: 0.3),
+        serviceContainer = base.withValues(alpha: 0.04),
+        serviceContainerBorder = base.withValues(alpha: 0.1),
+        serviceDotBackground = base.withValues(alpha: 0.15),
+        serviceDotBorder = base.withValues(alpha: 0.4);
 }
