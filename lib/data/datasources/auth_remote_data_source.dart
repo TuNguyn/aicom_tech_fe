@@ -1,11 +1,13 @@
 import '../../core/network/dio_client.dart';
 import '../../core/errors/exceptions.dart';
 import '../models/tech_user_model.dart';
+import '../models/employee_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<TechUserModel> login(String username, String password);
   Future<void> logout();
   Future<TechUserModel> refreshToken();
+  Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -55,6 +57,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return TechUserModel.fromJson(userJson, accessToken);
     } catch (e) {
       throw AuthException(message: 'Failed to refresh token');
+    }
+  }
+
+  @override
+  Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode) async {
+    try {
+      final response = await dioClient.post(
+        '/auth/verify-employee',
+        data: {'phone': phone, 'passCode': passCode},
+      );
+
+      final dataList = response.data['data'] as List<dynamic>;
+      return dataList
+          .map((json) => EmployeeModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on AuthException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'An unknown error occurred while verifying employee: $e',
+      );
     }
   }
 }

@@ -10,6 +10,7 @@ import 'domain/repositories/auth_repository.dart';
 import 'domain/usecases/auth/login_tech.dart';
 import 'domain/usecases/auth/logout_tech.dart';
 import 'domain/usecases/auth/get_cached_tech.dart';
+import 'domain/usecases/auth/get_employee_with_phone.dart';
 import 'presentation/providers/auth_provider.dart';
 
 // Core providers
@@ -55,6 +56,10 @@ final logoutTechUseCaseProvider = Provider<LogoutTech>((ref) {
 
 final getCachedTechUseCaseProvider = Provider<GetCachedTech>((ref) {
   return GetCachedTech(ref.read(authRepositoryProvider));
+});
+
+final getEmployeeWithPhoneUseCaseProvider = Provider<GetEmployeeWithPhone>((ref) {
+  return GetEmployeeWithPhone(ref.read(authRepositoryProvider));
 });
 
 // StateNotifier providers
