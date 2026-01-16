@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -17,9 +18,9 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _phoneController = TextEditingController();
+  final _passcodeController = TextEditingController();
+  bool _obscurePasscode = true;
   bool _rememberMe = false;
 
   @override
@@ -30,8 +31,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
+    _phoneController.dispose();
+    _passcodeController.dispose();
     super.dispose();
   }
 
@@ -45,13 +46,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final rememberMe = box.get(AppConstants.rememberMeKey, defaultValue: false) as bool;
 
       if (rememberMe) {
-        final savedUsername = box.get(AppConstants.savedUsernameKey) as String?;
-        final savedPassword = box.get(AppConstants.savedPasswordKey) as String?;
+        final savedPhone = box.get(AppConstants.savedUsernameKey) as String?;
+        final savedPasscode = box.get(AppConstants.savedPasswordKey) as String?;
 
-        if (savedUsername != null && savedPassword != null) {
+        if (savedPhone != null && savedPasscode != null) {
           setState(() {
-            _usernameController.text = savedUsername;
-            _passwordController.text = savedPassword;
+            _phoneController.text = savedPhone;
+            _passcodeController.text = savedPasscode;
             _rememberMe = true;
           });
         }
@@ -61,7 +62,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<void> _saveCredentials(String username, String password) async {
+  Future<void> _saveCredentials(String phone, String passcode) async {
     try {
       if (!Hive.isBoxOpen(AppConstants.settingsBoxName)) {
         return;
@@ -71,8 +72,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       await box.put(AppConstants.rememberMeKey, _rememberMe);
 
       if (_rememberMe) {
-        await box.put(AppConstants.savedUsernameKey, username);
-        await box.put(AppConstants.savedPasswordKey, password);
+        await box.put(AppConstants.savedUsernameKey, phone);
+        await box.put(AppConstants.savedPasswordKey, passcode);
       } else {
         await box.delete(AppConstants.savedUsernameKey);
         await box.delete(AppConstants.savedPasswordKey);
@@ -84,13 +85,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      final username = _usernameController.text.trim();
-      final password = _passwordController.text;
+      final phone = _phoneController.text.trim();
+      final passcode = _passcodeController.text;
 
       // Save credentials if remember me is checked
-      await _saveCredentials(username, password);
+      await _saveCredentials(phone, passcode);
 
-      await ref.read(authNotifierProvider.notifier).login(username, password);
+      await ref.read(authNotifierProvider.notifier).login(phone, passcode);
     }
   }
 
@@ -126,113 +127,182 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 constraints: const BoxConstraints(
                   maxWidth: AppDimensions.maxContentWidth,
                 ),
-                child: Card(
-                  elevation: AppDimensions.cardElevation,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.borderRadius),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.spacingL),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.spa,
-                            size: 60,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(height: AppDimensions.spacingL),
-                          Text(
-                            'Welcome Back',
-                            style: AppTextStyles.headlineLarge,
-                          ),
-                          const SizedBox(height: AppDimensions.spacingS),
-                          Text(
-                            'Sign in to continue',
-                            style: AppTextStyles.bodyMedium,
-                          ),
-                          const SizedBox(height: AppDimensions.spacingXl),
-                          TextFormField(
-                            controller: _usernameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Username',
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your username';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppDimensions.spacingM),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppDimensions.spacingM),
-                          Row(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.4),
+                            Colors.white.withValues(alpha: 0.2),
+                          ],
+                        ),
+                        border: Border.all(
+                          width: 1.5,
+                          color: Colors.transparent,
+                        ),
+                      ),
+                      foregroundDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                        border: Border.all(
+                          width: 1.5,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.2),
+                            Colors.transparent,
+                            Colors.white.withValues(alpha: 0.1),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppDimensions.spacingL),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _rememberMe = value ?? false;
-                                  });
-                                },
-                                activeColor: AppColors.primary,
+                              Icon(
+                                Icons.spa,
+                                size: 60,
+                                color: AppColors.primary,
                               ),
+                              const SizedBox(height: AppDimensions.spacingL),
                               Text(
-                                'Remember Me',
+                                'Welcome Back',
+                                style: AppTextStyles.headlineLarge,
+                              ),
+                              const SizedBox(height: AppDimensions.spacingS),
+                              Text(
+                                'Sign in to continue',
                                 style: AppTextStyles.bodyMedium,
+                              ),
+                              const SizedBox(height: AppDimensions.spacingXl),
+                              TextFormField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                decoration: InputDecoration(
+                                  labelText: 'Phone',
+                                  prefixIcon: const Icon(Icons.phone),
+                                  filled: true,
+                                  fillColor: Colors.white.withValues(alpha: 0.5),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppColors.primary.withValues(alpha: 0.5),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your phone number';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppDimensions.spacingM),
+                              TextFormField(
+                                controller: _passcodeController,
+                                obscureText: _obscurePasscode,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: 'Passcode',
+                                  prefixIcon: const Icon(Icons.pin),
+                                  filled: true,
+                                  fillColor: Colors.white.withValues(alpha: 0.5),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppColors.primary.withValues(alpha: 0.5),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePasscode
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePasscode = !_obscurePasscode;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your passcode';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppDimensions.spacingM),
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _rememberMe,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _rememberMe = value ?? false;
+                                      });
+                                    },
+                                    activeColor: AppColors.primary,
+                                  ),
+                                  Text(
+                                    'Remember Me',
+                                    style: AppTextStyles.bodyMedium,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppDimensions.spacingL),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: isLoading ? null : _handleLogin,
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Sign In'),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppDimensions.spacingL),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isLoading ? null : _handleLogin,
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                      ),
-                                    )
-                                  : const Text('Sign In'),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
