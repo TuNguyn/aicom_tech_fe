@@ -12,7 +12,8 @@
       "Bash(adb kill-server:*)",
       "Bash(adb start-server:*)",
       "Bash(flutter clean:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(git checkout:*)"
     ]
   }
 }

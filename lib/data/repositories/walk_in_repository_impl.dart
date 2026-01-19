@@ -37,4 +37,32 @@ class WalkInRepositoryImpl implements WalkInRepository {
       );
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> startWalkInLine(String lineId) async {
+    try {
+      await remoteDataSource.startWalkInLine(lineId);
+      return const Right(unit);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Failed to start service: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> completeWalkInLine(String lineId) async {
+    try {
+      await remoteDataSource.completeWalkInLine(lineId);
+      return const Right(unit);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Failed to complete service: ${e.toString()}'));
+    }
+  }
 }

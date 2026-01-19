@@ -17,6 +17,8 @@ import 'domain/repositories/appointment_lines_repository.dart';
 import 'data/datasources/appointment_remote_data_source.dart';
 import 'data/repositories/appointment_lines_repository_impl.dart';
 import 'domain/usecases/walk_ins/get_walk_in_lines.dart';
+import 'domain/usecases/walk_ins/start_walk_in_line.dart';
+import 'domain/usecases/walk_ins/complete_walk_in_line.dart';
 import 'domain/repositories/walk_in_repository.dart';
 import 'data/datasources/walk_in_remote_data_source.dart';
 import 'data/repositories/walk_in_repository_impl.dart';
@@ -120,7 +122,19 @@ final getWalkInLinesUseCaseProvider = Provider<GetWalkInLines>((ref) {
   return GetWalkInLines(ref.read(walkInRepositoryProvider));
 });
 
+final startWalkInLineUseCaseProvider = Provider<StartWalkInLine>((ref) {
+  return StartWalkInLine(ref.read(walkInRepositoryProvider));
+});
+
+final completeWalkInLineUseCaseProvider = Provider<CompleteWalkInLine>((ref) {
+  return CompleteWalkInLine(ref.read(walkInRepositoryProvider));
+});
+
 final walkInsNotifierProvider =
     StateNotifierProvider<WalkInsNotifier, WalkInsState>((ref) {
-  return WalkInsNotifier(ref.read(getWalkInLinesUseCaseProvider));
+  return WalkInsNotifier(
+    ref.read(getWalkInLinesUseCaseProvider),
+    ref.read(startWalkInLineUseCaseProvider),
+    ref.read(completeWalkInLineUseCaseProvider),
+  );
 });

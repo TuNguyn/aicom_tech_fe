@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/walk_in_ticket.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../theme/app_strings.dart';
+import '../../app_dependencies.dart';
 
 /// Card widget to display a single service line
-class WalkInLineCard extends StatelessWidget {
+class WalkInLineCard extends ConsumerWidget {
   final String customerName;
   final WalkInServiceLine serviceLine;
   final DateTime createdAt;
-  final VoidCallback onTap;
 
   const WalkInLineCard({
     super.key,
     required this.customerName,
     required this.serviceLine,
     required this.createdAt,
-    required this.onTap,
   });
 
   Color _getStatusColor(WalkInLineStatus status) {
@@ -32,11 +33,11 @@ class WalkInLineCard extends StatelessWidget {
   String _getStatusText(WalkInLineStatus status) {
     switch (status) {
       case WalkInLineStatus.waiting:
-        return 'WAITING';
+        return AppStrings.statusWaiting;
       case WalkInLineStatus.serving:
-        return 'IN SERVICE';
+        return AppStrings.statusInService;
       case WalkInLineStatus.done:
-        return 'DONE';
+        return AppStrings.statusDone;
     }
   }
 
@@ -63,14 +64,32 @@ class WalkInLineCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = serviceLine.status;
     final statusColor = _getStatusColor(status);
 
+    // Enable swipe for WAITING and SERVING status
+    final canSwipe = status == WalkInLineStatus.waiting ||
+                     status == WalkInLineStatus.serving;
+
+    if (!canSwipe) {
+      return _buildCardContent(context, status, statusColor);
+    }
+
+    return Dismissible(
+      key: ValueKey(serviceLine.id),
+      direction: DismissDirection.endToStart,
+      background: _buildSwipeBackground(status),
+      confirmDismiss: (direction) async {
+        return await _handleSwipeDismiss(context, ref, status);
+      },
+      child: _buildCardContent(context, status, statusColor),
+    );
+  }
+
+  Widget _buildCardContent(BuildContext context, WalkInLineStatus status, Color statusColor) {
     return RepaintBoundary(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+      child: Container(
           margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
           decoration: BoxDecoration(
             color: const Color(0xFFF8F9FA),
@@ -98,8 +117,8 @@ class WalkInLineCard extends StatelessWidget {
                       3,
                       (index) => Container(
                             margin: const EdgeInsets.only(left: 3),
-                            width: 4,
-                            height: 4,
+                            width: AppDimensions.decorativeDotSize,
+                            height: AppDimensions.decorativeDotSize,
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
@@ -152,7 +171,7 @@ class WalkInLineCard extends StatelessWidget {
                             children: [
                               Icon(
                                 _getStatusIcon(status),
-                                size: 12,
+                                size: AppDimensions.statusIconSize,
                                 color: statusColor,
                               ),
                               const SizedBox(width: 4),
@@ -191,7 +210,7 @@ class WalkInLineCard extends StatelessWidget {
                               const Icon(
                                 Icons.access_time_rounded,
                                 color: Colors.white,
-                                size: 14,
+                                size: AppDimensions.statusBadgeIconSize,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -217,8 +236,8 @@ class WalkInLineCard extends StatelessWidget {
                       children: [
                         // Avatar
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: AppDimensions.avatarSize,
+                          height: AppDimensions.avatarSize,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -240,7 +259,7 @@ class WalkInLineCard extends StatelessWidget {
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: statusColor,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: AppDimensions.avatarFontSize,
                               ),
                             ),
                           ),
@@ -267,8 +286,8 @@ class WalkInLineCard extends StatelessWidget {
                               Row(
                                 children: [
                                   Container(
-                                    width: 4,
-                                    height: 4,
+                                    width: AppDimensions.decorativeDotSize,
+                                    height: AppDimensions.decorativeDotSize,
                                     decoration: BoxDecoration(
                                       color: statusColor,
                                       shape: BoxShape.circle,
@@ -319,8 +338,72 @@ class WalkInLineCard extends StatelessWidget {
               ),
             ],
           ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeBackground(WalkInLineStatus status) {
+    // Different color and icon based on status
+    final backgroundColor = status == WalkInLineStatus.waiting
+        ? const Color(0xFF00A86B) // Green for start
+        : const Color(0xFF2196F3); // Blue for complete
+
+    final icon = status == WalkInLineStatus.waiting
+        ? Icons.play_arrow // Play icon for start
+        : Icons.check_circle; // Check icon for complete
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: backgroundColor,
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 32,
+          ),
         ),
       ),
     );
+  }
+
+  Future<bool> _handleSwipeDismiss(
+    BuildContext context,
+    WidgetRef ref,
+    WalkInLineStatus status,
+  ) async {
+    final notifier = ref.read(walkInsNotifierProvider.notifier);
+
+    // Call appropriate API based on status
+    final bool success;
+    final String errorMessage;
+
+    if (status == WalkInLineStatus.waiting) {
+      // Start the service
+      success = await notifier.startServiceLine(serviceLine.id);
+      errorMessage = 'Failed to start service. Please try again.';
+    } else {
+      // Complete the service (SERVING status)
+      success = await notifier.completeServiceLine(serviceLine.id);
+      errorMessage = 'Failed to complete service. Please try again.';
+    }
+
+    if (!success && context.mounted) {
+      // Show error and keep card in place
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return false; // Don't dismiss card
+    }
+
+    // Success - allow dismissal (card will refresh with new status)
+    return true;
   }
 }

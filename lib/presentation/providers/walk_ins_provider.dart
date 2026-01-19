@@ -3,6 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/ticket_line_model.dart';
 import '../../domain/entities/walk_in_ticket.dart';
 import '../../domain/usecases/walk_ins/get_walk_in_lines.dart';
+import '../../domain/usecases/walk_ins/start_walk_in_line.dart';
+import '../../domain/usecases/walk_ins/complete_walk_in_line.dart';
+
+/// Display model for individual service lines with customer info
+class ServiceLineDisplay extends Equatable {
+  final String customerName;
+  final WalkInServiceLine serviceLine;
+  final DateTime createdAt;
+
+  const ServiceLineDisplay({
+    required this.customerName,
+    required this.serviceLine,
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [customerName, serviceLine, createdAt];
+}
 
 class WalkInsState extends Equatable {
   final List<WalkInTicket> walkInTickets;
@@ -15,30 +33,73 @@ class WalkInsState extends Equatable {
 
   List<WalkInTicket> get sortedTickets {
     final tickets = List<WalkInTicket>.from(walkInTickets);
-    tickets.sort((a, b) {
-      // Waiting status first, then serving, then done
-      if (a.overallStatus == WalkInLineStatus.waiting &&
-          b.overallStatus != WalkInLineStatus.waiting) {
-        return -1;
-      }
-      if (a.overallStatus != WalkInLineStatus.waiting &&
-          b.overallStatus == WalkInLineStatus.waiting) {
-        return 1;
-      }
-      if (a.overallStatus == WalkInLineStatus.serving &&
-          b.overallStatus != WalkInLineStatus.serving &&
-          b.overallStatus != WalkInLineStatus.waiting) {
-        return -1;
-      }
-      if (a.overallStatus != WalkInLineStatus.serving &&
-          a.overallStatus != WalkInLineStatus.waiting &&
-          b.overallStatus == WalkInLineStatus.serving) {
-        return 1;
-      }
-      // Then by creation time (newest first)
-      return b.createdAt.compareTo(a.createdAt);
-    });
+    tickets.sort((a, b) => _compareByStatus(
+          a.overallStatus,
+          b.overallStatus,
+          a.createdAt,
+          b.createdAt,
+        ));
     return tickets;
+  }
+
+  /// Returns flattened and sorted service lines from all tickets
+  List<ServiceLineDisplay> get sortedServiceLines {
+    // Flatten service lines from tickets
+    final lines = <ServiceLineDisplay>[];
+    for (final ticket in walkInTickets) {
+      for (final serviceLine in ticket.serviceLines) {
+        lines.add(
+          ServiceLineDisplay(
+            customerName: ticket.customerName,
+            serviceLine: serviceLine,
+            createdAt: ticket.createdAt,
+          ),
+        );
+      }
+    }
+
+    // Sort lines: waiting first, then serving, then done, then by creation time
+    lines.sort((a, b) => _compareByStatus(
+          a.serviceLine.status,
+          b.serviceLine.status,
+          a.createdAt,
+          b.createdAt,
+        ));
+
+    return lines;
+  }
+
+  /// Compare two items by status priority and creation time
+  static int _compareByStatus(
+    WalkInLineStatus statusA,
+    WalkInLineStatus statusB,
+    DateTime createdAtA,
+    DateTime createdAtB,
+  ) {
+    // Waiting status first
+    if (statusA == WalkInLineStatus.waiting &&
+        statusB != WalkInLineStatus.waiting) {
+      return -1;
+    }
+    if (statusA != WalkInLineStatus.waiting &&
+        statusB == WalkInLineStatus.waiting) {
+      return 1;
+    }
+
+    // Serving status second
+    if (statusA == WalkInLineStatus.serving &&
+        statusB != WalkInLineStatus.serving &&
+        statusB != WalkInLineStatus.waiting) {
+      return -1;
+    }
+    if (statusA != WalkInLineStatus.serving &&
+        statusA != WalkInLineStatus.waiting &&
+        statusB == WalkInLineStatus.serving) {
+      return 1;
+    }
+
+    // Then by creation time (newest first)
+    return createdAtB.compareTo(createdAtA);
   }
 
   WalkInsState copyWith({
@@ -57,8 +118,14 @@ class WalkInsState extends Equatable {
 
 class WalkInsNotifier extends StateNotifier<WalkInsState> {
   final GetWalkInLines _getWalkInLines;
+  final StartWalkInLine _startWalkInLine;
+  final CompleteWalkInLine _completeWalkInLine;
 
-  WalkInsNotifier(this._getWalkInLines) : super(const WalkInsState());
+  WalkInsNotifier(
+    this._getWalkInLines,
+    this._startWalkInLine,
+    this._completeWalkInLine,
+  ) : super(const WalkInsState());
 
   Future<void> loadWalkIns({List<String>? statuses}) async {
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
@@ -119,5 +186,33 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
 
   Future<void> refreshWalkIns() async {
     await loadWalkIns();
+  }
+
+  /// Start a walk-in service line. Returns true if successful.
+  Future<bool> startServiceLine(String lineId) async {
+    final result = await _startWalkInLine(lineId);
+
+    return result.fold(
+      (failure) => false, // Failed
+      (_) {
+        // Success - refresh to get updated status
+        refreshWalkIns();
+        return true;
+      },
+    );
+  }
+
+  /// Complete a walk-in service line. Returns true if successful.
+  Future<bool> completeServiceLine(String lineId) async {
+    final result = await _completeWalkInLine(lineId);
+
+    return result.fold(
+      (failure) => false, // Failed
+      (_) {
+        // Success - refresh to get updated status
+        refreshWalkIns();
+        return true;
+      },
+    );
   }
 }

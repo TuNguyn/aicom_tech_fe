@@ -3,24 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
-import '../../../domain/entities/walk_in_ticket.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
+import '../../theme/app_strings.dart';
 import '../../widgets/walk_in_line_card.dart';
-
-// Helper class to hold line data with customer info
-class WalkInLineDisplay {
-  final String customerName;
-  final WalkInServiceLine serviceLine;
-  final DateTime createdAt;
-
-  WalkInLineDisplay({
-    required this.customerName,
-    required this.serviceLine,
-    required this.createdAt,
-  });
-}
+import '../../providers/walk_ins_provider.dart';
 
 class WalkInPage extends ConsumerStatefulWidget {
   const WalkInPage({super.key});
@@ -56,44 +44,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
   @override
   Widget build(BuildContext context) {
     final walkInsState = ref.watch(walkInsNotifierProvider);
-    final tickets = walkInsState.sortedTickets;
+    final lines = walkInsState.sortedServiceLines;
     final isLoading = walkInsState.loadingStatus.isLoading;
-
-    // Flatten service lines from tickets
-    final lines = <WalkInLineDisplay>[];
-    for (final ticket in tickets) {
-      for (final serviceLine in ticket.serviceLines) {
-        lines.add(WalkInLineDisplay(
-          customerName: ticket.customerName,
-          serviceLine: serviceLine,
-          createdAt: ticket.createdAt,
-        ));
-      }
-    }
-
-    // Sort lines: waiting first, then serving, then done, then by creation time
-    lines.sort((a, b) {
-      if (a.serviceLine.status == WalkInLineStatus.waiting &&
-          b.serviceLine.status != WalkInLineStatus.waiting) {
-        return -1;
-      }
-      if (a.serviceLine.status != WalkInLineStatus.waiting &&
-          b.serviceLine.status == WalkInLineStatus.waiting) {
-        return 1;
-      }
-      if (a.serviceLine.status == WalkInLineStatus.serving &&
-          b.serviceLine.status != WalkInLineStatus.serving &&
-          b.serviceLine.status != WalkInLineStatus.waiting) {
-        return -1;
-      }
-      if (a.serviceLine.status != WalkInLineStatus.serving &&
-          a.serviceLine.status != WalkInLineStatus.waiting &&
-          b.serviceLine.status == WalkInLineStatus.serving) {
-        return 1;
-      }
-      // Then by creation time (newest first)
-      return b.createdAt.compareTo(a.createdAt);
-    });
 
     // Listen to loading status changes
     ref.listen<AsyncValue<void>>(
@@ -131,8 +83,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
               child: (isLoading && _isInitialLoad && lines.isEmpty)
                   ? _buildLoadingState()
                   : lines.isEmpty
-                      ? _buildEmptyState()
-                      : _buildLinesList(lines, isLoading),
+                  ? _buildEmptyState()
+                  : _buildLinesList(lines, isLoading),
             ),
           ],
         ),
@@ -159,8 +111,11 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_outlined,
-                      color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: () {
                     context.push(AppRoutes.notifications);
                   },
@@ -171,7 +126,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Walk-Ins',
+                        AppStrings.walkInsTitle,
                         style: AppTextStyles.bodyLarge.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -181,7 +136,10 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(10),
@@ -199,8 +157,11 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.exit_to_app,
-                      color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.exit_to_app,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: () async {
                     if (!mounted) return;
                     await ref.read(authNotifierProvider.notifier).logout();
@@ -218,7 +179,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
     );
   }
 
-  Widget _buildLinesList(List<WalkInLineDisplay> lines, bool isLoading) {
+  Widget _buildLinesList(List<ServiceLineDisplay> lines, bool isLoading) {
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
@@ -241,9 +202,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
             customerName: line.customerName,
             serviceLine: line.serviceLine,
             createdAt: line.createdAt,
-            onTap: () {
-              // Temporarily disabled - do not navigate to detail page
-            },
           );
         },
       ),
@@ -317,7 +275,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
             ),
             const SizedBox(height: AppDimensions.spacingL),
             Text(
-              'No Walk-Ins',
+              AppStrings.walkInsEmptyTitle,
               style: AppTextStyles.headlineLarge.copyWith(
                 color: Colors.black87,
                 fontWeight: FontWeight.bold,
@@ -325,10 +283,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
             ),
             const SizedBox(height: AppDimensions.spacingS),
             Text(
-              'Ready to serve customers!',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.grey[600],
-              ),
+              AppStrings.walkInsEmptyMessage,
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.spacingL),
@@ -367,7 +323,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Pro Tip',
+                          AppStrings.walkInsProTipTitle,
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.accent,
                             fontWeight: FontWeight.bold,
@@ -375,7 +331,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Assign stations to walk-ins to track their service status',
+                          AppStrings.walkInsProTipMessage,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.grey[600],
                           ),

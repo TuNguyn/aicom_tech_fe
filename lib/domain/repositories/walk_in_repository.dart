@@ -9,4 +9,8 @@ abstract class WalkInRepository {
     int limit = 100,
     String sortBy = 'displayOrder:ASC',
   });
+
+  Future<Either<Failure, Unit>> startWalkInLine(String lineId);
+
+  Future<Either<Failure, Unit>> completeWalkInLine(String lineId);
 }

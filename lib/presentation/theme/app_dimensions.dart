@@ -33,6 +33,12 @@ class AppDimensions {
   static const double avatarSize = 40.0;
   static const double cardElevation = 2.0;
 
+  // Walk-in card specific
+  static const double decorativeDotSize = 4.0;
+  static const double statusIconSize = 12.0;
+  static const double statusBadgeIconSize = 14.0;
+  static const double avatarFontSize = 16.0;
+
   // Layout
   static const double maxContentWidth = 600.0;
   static const double bottomNavHeight = 56.0;
