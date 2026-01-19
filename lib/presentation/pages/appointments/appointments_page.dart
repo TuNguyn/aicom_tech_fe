@@ -53,7 +53,9 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
-    final appointments = appointmentsState.getAppointmentsForDate(_selectedDate);
+    final appointments = appointmentsState.getAppointmentsForDate(
+      _selectedDate,
+    );
     final isLoading = appointmentsState.loadingStatus.isLoading;
     final appointmentCount = appointments.length;
 
@@ -88,7 +90,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     );
 
     // Only show loading spinner on initial load, not on refresh
-    final shouldShowLoading = isLoading && _isInitialLoad && appointments.isEmpty;
+    final shouldShowLoading =
+        isLoading && _isInitialLoad && appointments.isEmpty;
 
     return Container(
       decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
@@ -107,8 +110,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
               child: shouldShowLoading
                   ? _buildLoadingState()
                   : appointments.isEmpty
-                      ? _buildEmptyState()
-                      : _buildAppointmentsList(appointments),
+                  ? _buildEmptyState()
+                  : _buildAppointmentsList(appointments),
             ),
           ],
         ),
@@ -177,11 +180,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
               ),
             ),
             IconButton(
-              icon: const Icon(
-                Icons.logout,
-                color: Colors.white,
-                size: 24,
-              ),
+              icon: const Icon(Icons.logout, color: Colors.white, size: 24),
               onPressed: () {
                 ref.read(authNotifierProvider.notifier).logout();
               },
@@ -213,11 +212,13 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   }
 
   Widget _buildDateItem(DateTime date) {
-    final isSelected = date.year == _selectedDate.year &&
+    final isSelected =
+        date.year == _selectedDate.year &&
         date.month == _selectedDate.month &&
         date.day == _selectedDate.day;
 
-    final isToday = date.year == DateTime.now().year &&
+    final isToday =
+        date.year == DateTime.now().year &&
         date.month == DateTime.now().month &&
         date.day == DateTime.now().day;
 
@@ -235,8 +236,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           color: isSelected
               ? Colors.white
               : isToday
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : null,
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : null,
           borderRadius: BorderRadius.circular(12),
           border: isToday && !isSelected
               ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
@@ -275,14 +276,16 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.only(bottom: 100),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.calendar_today_outlined,
             size: 64,
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: AppColors.primary,
           ),
           const SizedBox(height: 16),
           Text(
@@ -306,7 +309,9 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   Widget _buildAppointmentsList(List<AppointmentLineModel> appointments) {
     return RefreshIndicator(
       onRefresh: () async {
-        await ref.read(appointmentsNotifierProvider.notifier).refreshAppointments();
+        await ref
+            .read(appointmentsNotifierProvider.notifier)
+            .refreshAppointments();
       },
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
