@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
+import '../../../data/models/appointment_line_model.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
-import '../../widgets/appointment_card.dart';
+import '../../widgets/appointment_card_api.dart';
 
 class AppointmentsPage extends ConsumerStatefulWidget {
   const AppointmentsPage({super.key});
@@ -18,367 +19,76 @@ class AppointmentsPage extends ConsumerStatefulWidget {
 
 class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   DateTime _selectedDate = DateTime.now();
-  final ScrollController _scrollController = ScrollController();
-
-  // Performance optimization: Pre-generate all appointments data at init
-  final Map<String, List<Map<String, dynamic>>> _allAppointments = {};
-  Map<DateTime, int> _weekAppointmentCounts = {};
+  bool _isInitialLoad = true;
 
   // Cache DateFormat objects
   static final _dayFormat = DateFormat('E');
   static final _dateFormat = DateFormat('d');
 
-  // Cache color variations
-  late final Color _badgeBackgroundColor = Colors.white.withValues(alpha: 0.25);
-  late final Color _todayBackgroundColor = AppColors.primary.withValues(
-    alpha: 0.1,
-  );
-  late final Color _todayBorderColor = AppColors.primary.withValues(alpha: 0.3);
-  late final Color _emptyStateGradient1 = AppColors.primary.withValues(
-    alpha: 0.1,
-  );
-  late final Color _emptyStateGradient2 = AppColors.secondary.withValues(
-    alpha: 0.1,
-  );
-  late final Color _emptyStateIconColor = AppColors.primary.withValues(
-    alpha: 0.3,
-  );
-  late final Color _emptyStateAccentDot = AppColors.accent.withValues(
-    alpha: 0.5,
-  );
-  late final Color _emptyStateSecondaryDot = AppColors.secondary.withValues(
-    alpha: 0.5,
-  );
-  late final Color _emptyStateCardGradient1 = AppColors.primary.withValues(
-    alpha: 0.08,
-  );
-  late final Color _emptyStateCardGradient2 = AppColors.secondary.withValues(
-    alpha: 0.08,
-  );
-  late final Color _emptyStateCardBorder = AppColors.primary.withValues(
-    alpha: 0.2,
-  );
-  late final Color _emptyStateCardIconBg = AppColors.primary.withValues(
-    alpha: 0.15,
-  );
-
-  // Generate mock appointments for any date
-  List<Map<String, dynamic>> _generateMockAppointmentsForDate(DateTime date) {
-    // Sunday (weekday % 7 == 0) - No appointments (closed)
-    if (date.weekday % 7 == 0) {
-      return [];
-    }
-
-    // Base appointments that appear on most days
-    final baseAppointments = [
-      {
-        'id': '${date.day}-1',
-        'customerName': 'Sarah Johnson',
-        'customerPhone': '(555) 123-4567',
-        'services': [
-          {'name': 'Gel Manicure', 'duration': 60},
-        ],
-        'scheduledTime': DateTime(date.year, date.month, date.day, 9, 0),
-        'status': 'upcoming',
-        'notes': 'Customer prefers soft pink color',
-      },
-      {
-        'id': '${date.day}-2',
-        'customerName': 'Maria Garcia',
-        'customerPhone': '(555) 234-5678',
-        'services': [
-          {'name': 'Acrylic Full Set', 'duration': 90},
-          {'name': 'Nail Art', 'duration': 30},
-        ],
-        'scheduledTime': DateTime(date.year, date.month, date.day, 10, 30),
-        'status': 'in_progress',
-        'notes': 'Allergic to certain nail polish - check ingredients first',
-      },
-      {
-        'id': '${date.day}-3',
-        'customerName': 'Jennifer Smith',
-        'customerPhone': '(555) 345-6789',
-        'services': [
-          {'name': 'Pedicure Deluxe', 'duration': 75},
-        ],
-        'scheduledTime': DateTime(date.year, date.month, date.day, 13, 0),
-        'status': DateUtils.isSameDay(date, DateTime.now())
-            ? 'in_progress'
-            : 'upcoming',
-        'notes': 'Prefers technician Lisa - very gentle with cuticles',
-      },
-    ];
-
-    // Different number of appointments for each day
-    switch (date.weekday) {
-      case DateTime.monday: // Monday - 3 appointments (slow day)
-        return baseAppointments;
-
-      case DateTime.tuesday: // Tuesday - 4 appointments
-        return [
-          ...baseAppointments,
-          {
-            'id': '${date.day}-4',
-            'customerName': 'Emma Wilson',
-            'customerPhone': '(555) 456-7890',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-              {'name': 'Foot Massage', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-            'status': 'upcoming',
-            'notes': '',
-          },
-        ];
-
-      case DateTime.wednesday: // Wednesday - 5 appointments
-        return [
-          ...baseAppointments,
-          {
-            'id': '${date.day}-4',
-            'customerName': 'Emma Wilson',
-            'customerPhone': '(555) 456-7890',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-            'status': 'in_progress',
-            'notes': 'Regular customer - knows her favorite color (OPI #15)',
-          },
-          {
-            'id': '${date.day}-5',
-            'customerName': 'Olivia Brown',
-            'customerPhone': '(555) 678-9012',
-            'services': [
-              {'name': 'Spa Pedicure', 'duration': 60},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 15, 45),
-            'status': 'upcoming',
-            'notes': '',
-          },
-        ];
-
-      case DateTime.thursday: // Thursday - 6 appointments (busy)
-        return [
-          ...baseAppointments,
-          {
-            'id': '${date.day}-4',
-            'customerName': 'Emma Wilson',
-            'customerPhone': '(555) 456-7890',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-              {'name': 'Foot Massage', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-            'status': 'upcoming',
-            'notes': '',
-          },
-          {
-            'id': '${date.day}-5',
-            'customerName': 'Isabella Martinez',
-            'customerPhone': '(555) 567-8901',
-            'services': [
-              {'name': 'Acrylic Full Set', 'duration': 90},
-              {'name': 'Nail Art', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
-            'status': 'in_progress',
-            'notes': 'VIP customer - full spa package, prefersStation 3',
-          },
-          {
-            'id': '${date.day}-6',
-            'customerName': 'Sophia Lee',
-            'customerPhone': '(555) 789-0123',
-            'services': [
-              {'name': 'Manicure', 'duration': 45},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 30),
-            'status': 'upcoming',
-            'notes': '',
-          },
-        ];
-
-      case DateTime.friday: // Friday - 7 appointments (very busy)
-        return [
-          ...baseAppointments,
-          {
-            'id': '${date.day}-4',
-            'customerName': 'Emma Wilson',
-            'customerPhone': '(555) 456-7890',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-              {'name': 'Foot Massage', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-            'status': 'upcoming',
-            'notes': '',
-          },
-          {
-            'id': '${date.day}-5',
-            'customerName': 'Isabella Martinez',
-            'customerPhone': '(555) 567-8901',
-            'services': [
-              {'name': 'Acrylic Full Set', 'duration': 90},
-              {'name': 'Nail Art', 'duration': 30},
-              {'name': 'Gel Polish', 'duration': 20},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
-            'status': 'in_progress',
-            'notes': 'Birthday girl! Wants something extra special and sparkly',
-          },
-          {
-            'id': '${date.day}-6',
-            'customerName': 'Sophia Lee',
-            'customerPhone': '(555) 789-0123',
-            'services': [
-              {'name': 'Pedicure', 'duration': 60},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 45),
-            'status': 'upcoming',
-            'notes': '',
-          },
-          {
-            'id': '${date.day}-7',
-            'customerName': 'Ava Taylor',
-            'customerPhone': '(555) 890-1234',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 18, 50),
-            'status': 'upcoming',
-            'notes': 'First time customer - explain all services and prices',
-          },
-        ];
-
-      case DateTime.saturday: // Saturday - 8 appointments (busiest day)
-        return [
-          ...baseAppointments,
-          {
-            'id': '${date.day}-4',
-            'customerName': 'Emma Wilson',
-            'customerPhone': '(555) 456-7890',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-              {'name': 'Foot Massage', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 14, 30),
-            'status': 'in_progress',
-            'notes': 'Has wedding next week - wants color recommendation',
-          },
-          {
-            'id': '${date.day}-5',
-            'customerName': 'Isabella Martinez',
-            'customerPhone': '(555) 567-8901',
-            'services': [
-              {'name': 'Acrylic Full Set', 'duration': 90},
-              {'name': 'Nail Art', 'duration': 30},
-              {'name': 'Gel Polish', 'duration': 20},
-              {'name': 'Hand Massage', 'duration': 15},
-              {'name': 'Paraffin Treatment', 'duration': 20},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 16, 0),
-            'status': 'upcoming',
-            'notes':
-                'VIP customer - full spa package, offer complimentary drink',
-          },
-          {
-            'id': '${date.day}-6',
-            'customerName': 'Sophia Lee',
-            'customerPhone': '(555) 789-0123',
-            'services': [
-              {'name': 'Pedicure Deluxe', 'duration': 75},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 17, 30),
-            'status': 'upcoming',
-            'notes': '',
-          },
-          {
-            'id': '${date.day}-7',
-            'customerName': 'Ava Taylor',
-            'customerPhone': '(555) 890-1234',
-            'services': [
-              {'name': 'Gel Manicure', 'duration': 60},
-              {'name': 'Nail Art', 'duration': 30},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 18, 50),
-            'status': 'upcoming',
-            'notes': '',
-          },
-          {
-            'id': '${date.day}-8',
-            'customerName': 'Mia Anderson',
-            'customerPhone': '(555) 901-2345',
-            'services': [
-              {'name': 'Manicure', 'duration': 45},
-            ],
-            'scheduledTime': DateTime(date.year, date.month, date.day, 20, 0),
-            'status': 'upcoming',
-            'notes': 'Closing time customer - please accommodate if possible',
-          },
-        ];
-
-      default:
-        return baseAppointments;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    // Pre-generate appointments for current month + 2 weeks before/after
-    _preGenerateAppointments();
-    // Pre-compute week appointment counts for current week
-    _updateWeekCounts(_getWeekDates());
+    // Load appointments for current month on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAppointmentsForMonth(DateTime.now());
+    });
   }
 
-  void _preGenerateAppointments() {
-    final now = DateTime.now();
-    final startDate = DateTime(now.year, now.month - 1, 1); // 1 month before
-    final endDate = DateTime(now.year, now.month + 2, 0); // 1 month after
+  void _loadAppointmentsForMonth(DateTime date) {
+    final startDate = DateTime(date.year, date.month, 1);
+    final endDate = DateTime(date.year, date.month + 1, 0);
 
-    for (var date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
-      final key = '${date.year}-${date.month}-${date.day}';
-      _allAppointments[key] = _generateMockAppointmentsForDate(date);
-    }
+    ref
+        .read(appointmentsNotifierProvider.notifier)
+        .loadAppointmentsForDateRange(startDate, endDate);
   }
 
   List<DateTime> _getWeekDates() {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
-    return List.generate(7, (index) => startOfWeek.add(Duration(days: index)));
-  }
+    final weekday = _selectedDate.weekday;
+    final monday = _selectedDate.subtract(Duration(days: weekday - 1));
 
-  void _updateWeekCounts(List<DateTime> weekDates) {
-    _weekAppointmentCounts = {
-      for (var date in weekDates)
-        date: _getAppointmentsForDate(date).length,
-    };
-  }
-
-  List<Map<String, dynamic>> _getAppointmentsForDate(DateTime date) {
-    final key = '${date.year}-${date.month}-${date.day}';
-    if (_allAppointments.containsKey(key)) {
-      return _allAppointments[key]!;
-    }
-    // Fallback: generate on demand if not pre-generated
-    return _generateMockAppointmentsForDate(date);
-  }
-
-  List<Map<String, dynamic>> _getAppointmentsForSelectedDate() {
-    // Use pre-generated data and sort
-    final result = List<Map<String, dynamic>>.from(_getAppointmentsForDate(_selectedDate))
-      ..sort(
-        (a, b) => (a['scheduledTime'] as DateTime).compareTo(
-          b['scheduledTime'] as DateTime,
-        ),
-      );
-    return result;
+    return List.generate(7, (index) => monday.add(Duration(days: index)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final appointments = _getAppointmentsForSelectedDate();
+    final appointmentsState = ref.watch(appointmentsNotifierProvider);
+    final appointments = appointmentsState.getAppointmentsForDate(_selectedDate);
+    final isLoading = appointmentsState.loadingStatus.isLoading;
     final appointmentCount = appointments.length;
+
+    // Listen to loading status changes
+    ref.listen<AsyncValue<void>>(
+      appointmentsNotifierProvider.select((state) => state.loadingStatus),
+      (previous, next) {
+        next.whenOrNull(
+          data: (_) {
+            // When data loads successfully, mark initial load as complete
+            if (_isInitialLoad) {
+              setState(() {
+                _isInitialLoad = false;
+              });
+            }
+          },
+          error: (error, stack) {
+            if (_isInitialLoad) {
+              setState(() {
+                _isInitialLoad = false;
+              });
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(error.toString()),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    // Only show loading spinner on initial load, not on refresh
+    final shouldShowLoading = isLoading && _isInitialLoad && appointments.isEmpty;
 
     return Container(
       decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
@@ -394,9 +104,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
 
             // Appointments List
             Expanded(
-              child: appointments.isEmpty
-                  ? _buildEmptyState()
-                  : _buildAppointmentsList(appointments),
+              child: shouldShowLoading
+                  ? _buildLoadingState()
+                  : appointments.isEmpty
+                      ? _buildEmptyState()
+                      : _buildAppointmentsList(appointments),
             ),
           ],
         ),
@@ -411,82 +123,71 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         AppDimensions.spacingXs,
         MediaQuery.of(context).padding.top,
         AppDimensions.spacingXs,
-        0,
+        4,
       ),
-      child: Column(
-        children: [
-          // Top row with icons and user name
-          SizedBox(
-            height: 56,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_outlined,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  onPressed: () {
-                    context.push(AppRoutes.notifications);
-                  },
-                ),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Appointments',
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _badgeBackgroundColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '$appointmentCount',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.exit_to_app,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  onPressed: () async {
-                    if (!mounted) return;
-                    await ref.read(authNotifierProvider.notifier).logout();
-                    if (!mounted) return;
-                    if (context.mounted) {
-                      context.go(AppRoutes.login);
-                    }
-                  },
-                ),
-              ],
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () {
+                context.push(AppRoutes.notifications);
+              },
             ),
-          ),
-        ],
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Appointments',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$appointmentCount',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(
+                Icons.logout,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () {
+                ref.read(authNotifierProvider.notifier).logout();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -495,242 +196,128 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     final weekDates = _getWeekDates();
 
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingS,
-        vertical: AppDimensions.spacingXs,
+      height: 88,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: weekDates.map((date) {
-          final isSelected = DateUtils.isSameDay(date, _selectedDate);
-          final isToday = DateUtils.isSameDay(date, DateTime.now());
-
-          // Use cached appointment count
-          final appointmentsCount = _weekAppointmentCounts[date] ?? 0;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedDate = date;
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isToday ? _todayBackgroundColor : Colors.transparent),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isToday ? _todayBorderColor : Colors.transparent),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _dayFormat.format(date).substring(0, 1),
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : (isToday ? AppColors.primary : Colors.grey[600]),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _dateFormat.format(date),
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (appointmentsCount > 0) ...[
-                      const SizedBox(height: 2),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 6),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
+        children: weekDates.map((date) => _buildDateItem(date)).toList(),
       ),
     );
   }
 
-  Widget _buildAppointmentsList(List<Map<String, dynamic>> appointments) {
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.spacingM,
-        AppDimensions.spacingS,
-        AppDimensions.spacingM,
-        100, // Extra bottom padding to account for bottom nav bar
-      ),
-      itemCount: appointments.length,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: AppDimensions.spacingS),
-      itemBuilder: (context, index) {
-        return AppointmentCard(
-          appointment: appointments[index],
-          onTap: () {
-            // Navigation to detail page removed
-          },
-        );
+  Widget _buildDateItem(DateTime date) {
+    final isSelected = date.year == _selectedDate.year &&
+        date.month == _selectedDate.month &&
+        date.day == _selectedDate.day;
+
+    final isToday = date.year == DateTime.now().year &&
+        date.month == DateTime.now().month &&
+        date.day == DateTime.now().day;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedDate = date;
+        });
+        ref.read(appointmentsNotifierProvider.notifier).selectDate(date);
       },
-    );
-  }
-
-  Widget _buildEmptyState() {
-    final isToday = DateUtils.isSameDay(_selectedDate, DateTime.now());
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.spacingL),
+      child: Container(
+        width: 48,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.white
+              : isToday
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : null,
+          borderRadius: BorderRadius.circular(12),
+          border: isToday && !isSelected
+              ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
+              : null,
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Decorative nail-themed illustration
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [_emptyStateGradient1, _emptyStateGradient2],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Icon(
-                    Icons.spa_outlined,
-                    size: 60,
-                    color: _emptyStateIconColor,
-                  ),
-                  Positioned(
-                    right: 35,
-                    top: 30,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _emptyStateAccentDot,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 30,
-                    bottom: 35,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: _emptyStateSecondaryDot,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppDimensions.spacingL),
-
-            // Message
             Text(
-              isToday ? 'No Appointments Today' : 'No Appointments',
-              style: AppTextStyles.headlineLarge.copyWith(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
+              _dayFormat.format(date),
+              style: AppTextStyles.labelSmall.copyWith(
+                color: isSelected ? AppColors.primary : Colors.white,
+                fontWeight: FontWeight.w500,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimensions.spacingS),
+            const SizedBox(height: 4),
             Text(
-              isToday
-                  ? 'Time to relax and prepare for tomorrow!'
-                  : 'Enjoy your free time and stay refreshed',
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: AppDimensions.spacingXl),
-
-            // Motivational card
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.spacingM),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [_emptyStateCardGradient1, _emptyStateCardGradient2],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _emptyStateCardBorder, width: 1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _emptyStateCardIconBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.lightbulb_outline,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.spacingM),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Pro Tip',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Use this time to organize your station and prepare tools for upcoming appointments',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.grey[700],
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              _dateFormat.format(date),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isSelected ? AppColors.primary : Colors.white,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 64,
+            color: AppColors.primary.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No appointments',
+            style: AppTextStyles.titleLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You have no appointments for this date',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentsList(List<AppointmentLineModel> appointments) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(appointmentsNotifierProvider.notifier).refreshAppointments();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        itemCount: appointments.length,
+        itemBuilder: (context, index) {
+          final appointment = appointments[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: AppointmentCardApi(appointment: appointment),
+          );
+        },
       ),
     );
   }

@@ -12,7 +12,12 @@ import 'domain/usecases/auth/login_with_store.dart';
 import 'domain/usecases/auth/logout_tech.dart';
 import 'domain/usecases/auth/get_cached_tech.dart';
 import 'domain/usecases/auth/get_employee_with_phone.dart';
+import 'domain/usecases/appointments/get_appointment_lines.dart';
+import 'domain/repositories/appointment_lines_repository.dart';
+import 'data/datasources/appointment_remote_data_source.dart';
+import 'data/repositories/appointment_lines_repository_impl.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/appointments_provider.dart';
 
 // Core providers
 final dioProvider = Provider<Dio>((ref) => Dio());
@@ -77,4 +82,22 @@ final authNotifierProvider =
     ref.read(getCachedTechUseCaseProvider),
     ref.read(getEmployeeWithPhoneUseCaseProvider),
   );
+});
+
+// Appointment providers
+final appointmentRemoteDataSourceProvider = Provider<AppointmentRemoteDataSource>((ref) {
+  return AppointmentRemoteDataSourceImpl(ref.read(dioClientProvider));
+});
+
+final appointmentLinesRepositoryProvider = Provider<AppointmentLinesRepository>((ref) {
+  return AppointmentLinesRepositoryImpl(ref.read(appointmentRemoteDataSourceProvider));
+});
+
+final getAppointmentLinesUseCaseProvider = Provider<GetAppointmentLines>((ref) {
+  return GetAppointmentLines(ref.read(appointmentLinesRepositoryProvider));
+});
+
+final appointmentsNotifierProvider =
+    StateNotifierProvider<AppointmentsNotifier, AppointmentsState>((ref) {
+  return AppointmentsNotifier(ref.read(getAppointmentLinesUseCaseProvider));
 });
