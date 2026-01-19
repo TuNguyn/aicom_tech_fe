@@ -1,37 +1,48 @@
 import 'package:equatable/equatable.dart';
 
 class TechUser extends Equatable {
-  final int id;
-  final String username;
-  final String fullName;
-  final String email;
-  final String? phoneNumber;
-  final String? avatarUrl;
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? phone;
+  final String? avatarColorHex;
+  final String? avatarForeColorHex;
+  final String? avatarMode;
+  final String? image;
+  final String? jobTitle;
+  final String? storeId;
+  final String? storeName;
   final String token;
   final bool isActive;
 
   const TechUser({
     required this.id,
-    required this.username,
-    required this.fullName,
-    required this.email,
-    this.phoneNumber,
-    this.avatarUrl,
+    required this.firstName,
+    required this.lastName,
+    this.phone,
+    this.avatarColorHex,
+    this.avatarForeColorHex,
+    this.avatarMode,
+    this.image,
+    this.jobTitle,
+    this.storeId,
+    this.storeName,
     required this.token,
     this.isActive = true,
   });
 
-  static final empty = TechUser(
-    id: -1,
-    username: '',
-    fullName: '',
-    email: '',
+  String get fullName => '$firstName $lastName';
+
+  static const empty = TechUser(
+    id: '',
+    firstName: '',
+    lastName: '',
     token: '',
     isActive: false,
   );
 
-  bool get isAuthenticated => token.isNotEmpty && id > 0;
+  bool get isAuthenticated => token.isNotEmpty && id.isNotEmpty;
 
   @override
-  List<Object?> get props => [id, username, email, token];
+  List<Object?> get props => [id, firstName, lastName, token, storeId];
 }

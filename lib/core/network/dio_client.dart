@@ -16,6 +16,20 @@ class DioClient {
         'Content-Type': 'application/json; charset=UTF-8',
       };
 
+    // Add logging interceptor (only in debug mode)
+    _dio.interceptors.add(
+      LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: false,
+        responseBody: true,
+        error: true,
+        // ignore: avoid_print
+        logPrint: (log) => print('[DIO] $log'),
+      ),
+    );
+
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -27,9 +41,13 @@ class DioClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
+          // ignore: avoid_print
+          print('[DioClient] ${options.method} ${options.baseUrl}${options.path}');
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
+          // ignore: avoid_print
+          print('[DioClient] Error: ${error.type} - ${error.message}');
           if (error.response?.statusCode == 401) {
             // Handle 401 - clear auth and redirect to login
             final authBox = Hive.box(AppConstants.authBoxName);

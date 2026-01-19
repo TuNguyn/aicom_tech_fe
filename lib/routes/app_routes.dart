@@ -4,6 +4,7 @@ class AppRoutes {
   // Auth routes
   static const String splash = '/';
   static const String login = '/login';
+  static const String storeSelection = '/store-selection';
 
   // Main routes
   static const String home = '/home';

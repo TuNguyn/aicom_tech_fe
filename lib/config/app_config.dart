@@ -9,7 +9,7 @@ class AppConfig {
 
     switch (env) {
       case Environment.dev:
-        baseUrl = 'http://localhost:3000/api';
+        baseUrl = 'http://172.232.3.34:3002';
         break;
       case Environment.staging:
         baseUrl = 'https://staging-api.nailtech.com/api';

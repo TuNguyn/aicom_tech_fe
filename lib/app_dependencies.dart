@@ -8,6 +8,7 @@ import 'data/datasources/local_data_source.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/usecases/auth/login_tech.dart';
+import 'domain/usecases/auth/login_with_store.dart';
 import 'domain/usecases/auth/logout_tech.dart';
 import 'domain/usecases/auth/get_cached_tech.dart';
 import 'domain/usecases/auth/get_employee_with_phone.dart';
@@ -62,12 +63,18 @@ final getEmployeeWithPhoneUseCaseProvider = Provider<GetEmployeeWithPhone>((ref)
   return GetEmployeeWithPhone(ref.read(authRepositoryProvider));
 });
 
+final loginWithStoreUseCaseProvider = Provider<LoginWithStore>((ref) {
+  return LoginWithStore(ref.read(authRepositoryProvider));
+});
+
 // StateNotifier providers
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
     ref.read(loginTechUseCaseProvider),
+    ref.read(loginWithStoreUseCaseProvider),
     ref.read(logoutTechUseCaseProvider),
     ref.read(getCachedTechUseCaseProvider),
+    ref.read(getEmployeeWithPhoneUseCaseProvider),
   );
 });

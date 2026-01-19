@@ -5,6 +5,7 @@ import '../models/employee_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<TechUserModel> login(String username, String password);
+  Future<TechUserModel> loginWithStore(String phone, String passCode, String storeId);
   Future<void> logout();
   Future<TechUserModel> refreshToken();
   Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode);
@@ -27,6 +28,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final userJson = response.data['data']['user'] as Map<String, dynamic>;
 
       return TechUserModel.fromJson(userJson, accessToken);
+    } on AuthException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'An unknown error occurred during login: $e',
+      );
+    }
+  }
+
+  @override
+  Future<TechUserModel> loginWithStore(String phone, String passCode, String storeId) async {
+    try {
+      final response = await dioClient.post(
+        '/auth/employee/login',
+        data: {'phone': phone, 'passCode': passCode, 'storeId': storeId},
+      );
+
+      final accessToken = response.data['data']['access_token'] as String;
+      final employeeJson = response.data['data']['employee'] as Map<String, dynamic>;
+
+      return TechUserModel.fromLoginResponse(employeeJson, accessToken);
     } on AuthException {
       rethrow;
     } on ServerException {
@@ -64,7 +88,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode) async {
     try {
       final response = await dioClient.post(
-        '/auth/verify-employee',
+        '/auth/employee/lookup',
         data: {'phone': phone, 'passCode': passCode},
       );
 

@@ -116,12 +116,12 @@ class ProfilePage extends ConsumerWidget {
                       _InfoItem(
                         icon: Icons.phone_iphone_rounded,
                         label: 'Phone Number',
-                        value: user.phoneNumber ?? 'Not provided',
+                        value: user.phone ?? 'Not provided',
                       ),
                       _InfoItem(
-                        icon: Icons.email_outlined,
-                        label: 'Email',
-                        value: user.email,
+                        icon: Icons.store_outlined,
+                        label: 'Store',
+                        value: user.storeName ?? 'Not assigned',
                       ),
                     ]),
 

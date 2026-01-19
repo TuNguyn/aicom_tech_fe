@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../app_dependencies.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../routes/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -91,18 +93,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // Save credentials if remember me is checked
       await _saveCredentials(phone, passcode);
 
-      await ref.read(authNotifierProvider.notifier).login(phone, passcode);
+      await ref.read(authNotifierProvider.notifier).verifyEmployee(phone, passcode);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.loginStatus.isLoading;
+    final isLoading = authState.verifyStatus.isLoading;
 
-    // Show error if login failed
+    // Navigate to store selection when employees are verified
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      next.loginStatus.whenOrNull(
+      // Navigate to store selection when we have verified employees
+      if (previous?.verifiedEmployees.isEmpty == true &&
+          next.verifiedEmployees.isNotEmpty) {
+        context.push(AppRoutes.storeSelection);
+      }
+
+      // Show error if verification failed
+      next.verifyStatus.whenOrNull(
         error: (error, stack) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

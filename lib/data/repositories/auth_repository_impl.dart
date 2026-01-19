@@ -6,7 +6,6 @@ import '../../domain/entities/employee.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/local_data_source.dart';
-import '../models/tech_user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -20,23 +19,29 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      // Mock login for testing (username: 123, password: 123)
-      if (username == '123' && password == '123') {
-        final mockUser = TechUserModel(
-          id: 1,
-          username: '123',
-          fullName: 'Test User',
-          email: 'test@aicomtech.com',
-          phoneNumber: '0123456789',
-          token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-          isActive: true,
-        );
-        await localDataSource.cacheUser(mockUser);
-        return Right(mockUser);
-      }
-
-      // Real API login
       final userModel = await remoteDataSource.login(username, password);
+      await localDataSource.cacheUser(userModel);
+      return Right(userModel);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure(
+            'An unexpected error occurred during login: ${e.toString()}'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, TechUser>> loginWithStore(
+    String phone,
+    String passCode,
+    String storeId,
+  ) async {
+    try {
+      final userModel = await remoteDataSource.loginWithStore(phone, passCode, storeId);
       await localDataSource.cacheUser(userModel);
       return Right(userModel);
     } on AuthException catch (e) {

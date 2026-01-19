@@ -29,98 +29,104 @@ class MorePage extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            'More',
-            style: AppTextStyles.headlineMedium.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              'More',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                onPressed: () => context.push(AppRoutes.notifications),
+              ),
+            ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
-              onPressed: () => context.push(AppRoutes.notifications),
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              children: [
-                    // Profile Section
-                    _buildProfileSection(context, user),
-                    const SizedBox(height: 32),
+          body: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                children: [
+                  // Profile Section
+                  _buildProfileSection(context, user),
+                  const SizedBox(height: 32),
 
-                    // Menu Groups
-                    _buildMenuLabel('Account'),
-                    const SizedBox(height: 12),
-                    _buildMenuContainer([
-                      _MenuItem(
-                        icon: Icons.person_outline_rounded,
-                        title: 'Edit Profile',
-                        onTap: () {},
-                      ),
-                      _MenuItem(
-                        icon: Icons.calendar_today_rounded,
-                        title: 'My Appointments',
-                        onTap: () {},
-                      ),
-                      _MenuItem(
-                        icon: Icons.history_rounded,
-                        title: 'History',
-                        onTap: () {},
-                      ),
-                      _MenuItem(
-                        icon: Icons.payment_rounded,
-                        title: 'Payment Methods',
-                        onTap: () {},
-                      ),
-                    ]),
+                  // Menu Groups
+                  _buildMenuLabel('Account'),
+                  const SizedBox(height: 12),
+                  _buildMenuContainer([
+                    _MenuItem(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Edit Profile',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.calendar_today_rounded,
+                      title: 'My Appointments',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.history_rounded,
+                      title: 'History',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.payment_rounded,
+                      title: 'Payment Methods',
+                      onTap: () {},
+                    ),
+                  ]),
 
-                    const SizedBox(height: 32),
-                    _buildMenuLabel('General'),
-                    const SizedBox(height: 12),
-                    _buildMenuContainer([
-                      _MenuItem(
-                        icon: Icons.settings_outlined,
-                        title: 'Settings',
-                        onTap: () {},
-                      ),
-                      _MenuItem(
-                        icon: Icons.help_outline_rounded,
-                        title: 'Help & Support',
-                        onTap: () {},
-                      ),
-                      _MenuItem(
-                        icon: Icons.info_outline_rounded,
-                        title: 'About',
-                        onTap: () {},
-                      ),
-                    ]),
+                  const SizedBox(height: 32),
+                  _buildMenuLabel('General'),
+                  const SizedBox(height: 12),
+                  _buildMenuContainer([
+                    _MenuItem(
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.help_outline_rounded,
+                      title: 'Help & Support',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.info_outline_rounded,
+                      title: 'About',
+                      onTap: () {},
+                    ),
+                  ]),
 
-                    const SizedBox(height: 32),
-                    _buildLogoutButton(context, ref),
-                    
-                    const SizedBox(height: 40),
-                    // Version info
-                    Center(
-                      child: Text(
-                        'Version 1.0.0',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
-                        ),
+                  const SizedBox(height: 32),
+                  _buildLogoutButton(context, ref),
+
+                  const SizedBox(height: 40),
+                  // Version info
+                  Center(
+                    child: Text(
+                      'Version 1.0.0',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
                       ),
                     ),
-                const SizedBox(height: 100), // Extra bottom padding to account for bottom nav bar
-              ],
+                  ),
+                  const SizedBox(
+                    height: 100,
+                  ), // Extra bottom padding to account for bottom nav bar
+                ],
+              ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -132,9 +138,9 @@ class MorePage extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const ProfilePage()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const ProfilePage()));
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -156,7 +162,10 @@ class MorePage extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 2),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    width: 2,
+                  ),
                 ),
                 child: CircleAvatar(
                   radius: 36,
@@ -180,7 +189,7 @@ class MorePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    user.email ?? '',
+                    user.storeName ?? user.phone ?? 'No store assigned',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -189,7 +198,10 @@ class MorePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(20),
@@ -258,7 +270,10 @@ class MorePage extends ConsumerWidget {
                   child: InkWell(
                     onTap: item.onTap,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -286,7 +301,9 @@ class MorePage extends ConsumerWidget {
                           Icon(
                             Icons.chevron_right_rounded,
                             size: 22,
-                            color: AppColors.textSecondary.withValues(alpha: 0.5),
+                            color: AppColors.textSecondary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         ],
                       ),
@@ -373,9 +390,5 @@ class _MenuItem {
   final String title;
   final VoidCallback onTap;
 
-  _MenuItem({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
+  _MenuItem({required this.icon, required this.title, required this.onTap});
 }

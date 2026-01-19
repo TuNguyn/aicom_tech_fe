@@ -3,49 +3,90 @@ import '../../domain/entities/tech_user.dart';
 class TechUserModel extends TechUser {
   const TechUserModel({
     required super.id,
-    required super.username,
-    required super.fullName,
-    required super.email,
-    super.phoneNumber,
-    super.avatarUrl,
+    required super.firstName,
+    required super.lastName,
+    super.phone,
+    super.avatarColorHex,
+    super.avatarForeColorHex,
+    super.avatarMode,
+    super.image,
+    super.jobTitle,
+    super.storeId,
+    super.storeName,
     required super.token,
     super.isActive,
   });
 
+  factory TechUserModel.fromLoginResponse(Map<String, dynamic> json, String token) {
+    final store = json['store'] as Map<String, dynamic>?;
+    final status = json['status'] as String?;
+
+    return TechUserModel(
+      id: json['id'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
+      phone: json['phone'] as String?,
+      avatarColorHex: json['avatarColorHex'] as String?,
+      avatarForeColorHex: json['avatarForeColorHex'] as String?,
+      avatarMode: json['avatarMode'] as String?,
+      image: json['image'] as String?,
+      jobTitle: json['jobTitle'] as String?,
+      storeId: store?['id'] as String?,
+      storeName: store?['name'] as String?,
+      token: token,
+      isActive: status == 'ACTIVE',
+    );
+  }
+
   factory TechUserModel.fromJson(Map<String, dynamic> json, String token) {
     return TechUserModel(
-      id: json['id'] as int,
-      username: json['username'] as String,
-      fullName: json['full_name'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phone_number'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      id: json['id'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
+      phone: json['phone'] as String?,
+      avatarColorHex: json['avatarColorHex'] as String?,
+      avatarForeColorHex: json['avatarForeColorHex'] as String?,
+      avatarMode: json['avatarMode'] as String?,
+      image: json['image'] as String?,
+      jobTitle: json['jobTitle'] as String?,
+      storeId: json['storeId'] as String?,
+      storeName: json['storeName'] as String?,
       token: token,
-      isActive: json['is_active'] as bool? ?? true,
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'username': username,
-      'full_name': fullName,
-      'email': email,
-      'phone_number': phoneNumber,
-      'avatar_url': avatarUrl,
+      'firstName': firstName,
+      'lastName': lastName,
+      'phone': phone,
+      'avatarColorHex': avatarColorHex,
+      'avatarForeColorHex': avatarForeColorHex,
+      'avatarMode': avatarMode,
+      'image': image,
+      'jobTitle': jobTitle,
+      'storeId': storeId,
+      'storeName': storeName,
       'token': token,
-      'is_active': isActive,
+      'isActive': isActive,
     };
   }
 
   TechUser toEntity() {
     return TechUser(
       id: id,
-      username: username,
-      fullName: fullName,
-      email: email,
-      phoneNumber: phoneNumber,
-      avatarUrl: avatarUrl,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      avatarColorHex: avatarColorHex,
+      avatarForeColorHex: avatarForeColorHex,
+      avatarMode: avatarMode,
+      image: image,
+      jobTitle: jobTitle,
+      storeId: storeId,
+      storeName: storeName,
       token: token,
       isActive: isActive,
     );

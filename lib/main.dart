@@ -29,6 +29,9 @@ void main() async {
   // Initialize App Config
   AppConfig.init(env: Environment.dev);
 
+  // ignore: avoid_print
+  print('[App] Base URL: ${AppConfig.baseUrl}');
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
