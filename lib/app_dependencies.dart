@@ -22,9 +22,14 @@ import 'domain/usecases/walk_ins/complete_walk_in_line.dart';
 import 'domain/repositories/walk_in_repository.dart';
 import 'data/datasources/walk_in_remote_data_source.dart';
 import 'data/repositories/walk_in_repository_impl.dart';
+import 'domain/usecases/reports/get_report_transactions.dart';
+import 'domain/repositories/report_repository.dart';
+import 'data/datasources/report_remote_data_source.dart';
+import 'data/repositories/report_repository_impl.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/appointments_provider.dart';
 import 'presentation/providers/walk_ins_provider.dart';
+import 'presentation/providers/reports_provider.dart';
 
 // Core providers
 final dioProvider = Provider<Dio>((ref) => Dio());
@@ -137,4 +142,22 @@ final walkInsNotifierProvider =
     ref.read(startWalkInLineUseCaseProvider),
     ref.read(completeWalkInLineUseCaseProvider),
   );
+});
+
+// Report providers
+final reportRemoteDataSourceProvider = Provider<ReportRemoteDataSource>((ref) {
+  return ReportRemoteDataSourceImpl(ref.read(dioClientProvider));
+});
+
+final reportRepositoryProvider = Provider<ReportRepository>((ref) {
+  return ReportRepositoryImpl(ref.read(reportRemoteDataSourceProvider));
+});
+
+final getReportTransactionsUseCaseProvider = Provider<GetReportTransactions>((ref) {
+  return GetReportTransactions(ref.read(reportRepositoryProvider));
+});
+
+final reportsNotifierProvider =
+    StateNotifierProvider<ReportsNotifier, ReportsState>((ref) {
+  return ReportsNotifier(ref.read(getReportTransactionsUseCaseProvider));
 });
