@@ -16,8 +16,13 @@ import 'domain/usecases/appointments/get_appointment_lines.dart';
 import 'domain/repositories/appointment_lines_repository.dart';
 import 'data/datasources/appointment_remote_data_source.dart';
 import 'data/repositories/appointment_lines_repository_impl.dart';
+import 'domain/usecases/walk_ins/get_walk_in_lines.dart';
+import 'domain/repositories/walk_in_repository.dart';
+import 'data/datasources/walk_in_remote_data_source.dart';
+import 'data/repositories/walk_in_repository_impl.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/appointments_provider.dart';
+import 'presentation/providers/walk_ins_provider.dart';
 
 // Core providers
 final dioProvider = Provider<Dio>((ref) => Dio());
@@ -100,4 +105,22 @@ final getAppointmentLinesUseCaseProvider = Provider<GetAppointmentLines>((ref) {
 final appointmentsNotifierProvider =
     StateNotifierProvider<AppointmentsNotifier, AppointmentsState>((ref) {
   return AppointmentsNotifier(ref.read(getAppointmentLinesUseCaseProvider));
+});
+
+// Walk-in providers
+final walkInRemoteDataSourceProvider = Provider<WalkInRemoteDataSource>((ref) {
+  return WalkInRemoteDataSourceImpl(ref.read(dioClientProvider));
+});
+
+final walkInRepositoryProvider = Provider<WalkInRepository>((ref) {
+  return WalkInRepositoryImpl(ref.read(walkInRemoteDataSourceProvider));
+});
+
+final getWalkInLinesUseCaseProvider = Provider<GetWalkInLines>((ref) {
+  return GetWalkInLines(ref.read(walkInRepositoryProvider));
+});
+
+final walkInsNotifierProvider =
+    StateNotifierProvider<WalkInsNotifier, WalkInsState>((ref) {
+  return WalkInsNotifier(ref.read(getWalkInLinesUseCaseProvider));
 });

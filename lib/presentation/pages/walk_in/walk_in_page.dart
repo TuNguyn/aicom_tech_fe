@@ -3,11 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
+import '../../../domain/entities/walk_in_ticket.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
-import '../../widgets/walk_in_card.dart';
-import 'walk_in_edit_detail_page.dart';
+import '../../widgets/walk_in_line_card.dart';
+
+// Helper class to hold line data with customer info
+class WalkInLineDisplay {
+  final String customerName;
+  final WalkInServiceLine serviceLine;
+  final DateTime createdAt;
+
+  WalkInLineDisplay({
+    required this.customerName,
+    required this.serviceLine,
+    required this.createdAt,
+  });
+}
 
 class WalkInPage extends ConsumerStatefulWidget {
   const WalkInPage({super.key});
@@ -18,186 +31,111 @@ class WalkInPage extends ConsumerStatefulWidget {
 
 class _WalkInPageState extends ConsumerState<WalkInPage> {
   final ScrollController _scrollController = ScrollController();
+  bool _isInitialLoad = true;
 
-  // Performance optimization: Cache sorted walk-ins
-  List<Map<String, dynamic>>? _cachedFilteredWalkIns;
-
-  // Mock walk-in data
-  final List<Map<String, dynamic>> _mockWalkIns = [
-    {
-      'id': '1',
-      'customerName': 'John Smith',
-      'customerPhone': '(555) 111-2222',
-      'services': [
-        {
-          'name': 'Classic Manicure',
-          'duration': 45,
-          'price': 35.0,
-          'categoryName': 'Manicures'
-        },
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 15)),
-      'status': 'waiting',
-      'assignedStation': null,
-      'notes': '',
-    },
-    {
-      'id': '2',
-      'customerName': 'Emily Davis',
-      'customerPhone': '(555) 333-4444',
-      'services': [
-        {
-          'name': 'Gel Pedicure',
-          'duration': 60,
-          'price': 50.0,
-          'categoryName': 'Pedicures'
-        },
-        {'name': 'Nail Art', 'duration': 30, 'price': 25.0, 'categoryName': 'Manicures'},
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 30)),
-      'status': 'inService',
-      'assignedStation': 'SPA2',
-      'notes': 'Prefers natural colors',
-    },
-    {
-      'id': '3',
-      'customerName': 'Michael Brown',
-      'customerPhone': '(555) 555-6666',
-      'services': [
-        {
-          'name': 'Acrylic Full Set',
-          'duration': 90,
-          'price': 60.0,
-          'categoryName': 'ACRYLICS'
-        },
-        {'name': 'Nail Art', 'duration': 30, 'price': 25.0, 'categoryName': 'Manicures'},
-        {
-          'name': 'Paraffin Treatment',
-          'duration': 20,
-          'price': 15.0,
-          'categoryName': 'WAC'
-        },
-        {'name': 'Gel Polish', 'duration': 25, 'price': 20.0, 'categoryName': 'Manicures'},
-        {'name': 'Hand Massage', 'duration': 15, 'price': 10.0, 'categoryName': 'WAC'},
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 5)),
-      'status': 'waiting',
-      'assignedStation': null,
-      'notes': 'First time customer',
-    },
-    {
-      'id': '4',
-      'customerName': 'Sarah Johnson',
-      'customerPhone': '(555) 777-8888',
-      'services': [
-        {'name': 'Spa Pedicure', 'duration': 75, 'price': 55.0, 'categoryName': 'Pedicures'},
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 45)),
-      'status': 'inService',
-      'assignedStation': 'SPA1',
-      'notes': '',
-    },
-    {
-      'id': '5',
-      'customerName': 'Jessica Martinez',
-      'customerPhone': '(555) 999-0000',
-      'services': [
-        {'name': 'Deluxe Pedicure', 'duration': 60, 'price': 50.0, 'categoryName': 'Pedicures'},
-        {'name': 'Classic Manicure', 'duration': 45, 'price': 35.0, 'categoryName': 'Manicures'},
-        {'name': 'Paraffin Treatment', 'duration': 20, 'price': 15.0, 'categoryName': 'WAC'},
-        {'name': 'Nail Art', 'duration': 30, 'price': 25.0, 'categoryName': 'Manicures'},
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 20)),
-      'status': 'waiting',
-      'assignedStation': null,
-      'notes': 'VIP customer - prefers gentle massage',
-    },
-    {
-      'id': '6',
-      'customerName': 'David Lee',
-      'customerPhone': '(555) 888-7777',
-      'services': [
-        {'name': 'Acrylic Fill', 'duration': 60, 'price': 40.0, 'categoryName': 'ACRYLICS'},
-        {'name': 'Gel Polish', 'duration': 25, 'price': 20.0, 'categoryName': 'Manicures'},
-        {'name': 'Callus Treatment', 'duration': 20, 'price': 15.0, 'categoryName': 'Pedicures'},
-        {'name': 'Nail Repair', 'duration': 15, 'price': 10.0, 'categoryName': 'Manicures'},
-        {'name': 'Hand Massage', 'duration': 15, 'price': 10.0, 'categoryName': 'WAC'},
-      ],
-      'checkInTime': DateTime.now().subtract(const Duration(minutes: 35)),
-      'status': 'waiting',
-      'assignedStation': null,
-      'notes': '',
-    },
-  ];
-
-  List<Map<String, dynamic>> _getFilteredWalkIns() {
-    // Performance optimization: Check cache first
-    if (_cachedFilteredWalkIns != null) {
-      return _cachedFilteredWalkIns!;
-    }
-
-    // Sort walk-ins: waiting first, then by check-in time
-    final result = _mockWalkIns.toList()
-      ..sort((a, b) {
-        // Sort by status (waiting first) then by check-in time
-        if (a['status'] == 'waiting' && b['status'] != 'waiting') return -1;
-        if (a['status'] != 'waiting' && b['status'] == 'waiting') return 1;
-        return (b['checkInTime'] as DateTime)
-            .compareTo(a['checkInTime'] as DateTime);
-      });
-
-    _cachedFilteredWalkIns = result;
-    return result;
-  }
-
-  void _handleStationAssign(int index, String? station) {
-    setState(() {
-      _mockWalkIns[index]['assignedStation'] = station;
-      if (station != null) {
-        _mockWalkIns[index]['status'] = 'inService';
-      }
-      // Invalidate cache when data changes
-      _cachedFilteredWalkIns = null;
+  @override
+  void initState() {
+    super.initState();
+    // Load walk-ins on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
     });
   }
 
-  Future<void> _navigateToEditDetail(int index) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WalkInEditDetailPage(
-          walkInData: _mockWalkIns[index],
-          onSave: (updatedData) {
-            setState(() {
-              _mockWalkIns[index] = updatedData;
-              // Invalidate cache when data changes
-              _cachedFilteredWalkIns = null;
-            });
-          },
-        ),
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final walkIns = _getFilteredWalkIns();
-    final walkInCount = walkIns.length;
+    final walkInsState = ref.watch(walkInsNotifierProvider);
+    final tickets = walkInsState.sortedTickets;
+    final isLoading = walkInsState.loadingStatus.isLoading;
+
+    // Flatten service lines from tickets
+    final lines = <WalkInLineDisplay>[];
+    for (final ticket in tickets) {
+      for (final serviceLine in ticket.serviceLines) {
+        lines.add(WalkInLineDisplay(
+          customerName: ticket.customerName,
+          serviceLine: serviceLine,
+          createdAt: ticket.createdAt,
+        ));
+      }
+    }
+
+    // Sort lines: waiting first, then serving, then done, then by creation time
+    lines.sort((a, b) {
+      if (a.serviceLine.status == WalkInLineStatus.waiting &&
+          b.serviceLine.status != WalkInLineStatus.waiting) {
+        return -1;
+      }
+      if (a.serviceLine.status != WalkInLineStatus.waiting &&
+          b.serviceLine.status == WalkInLineStatus.waiting) {
+        return 1;
+      }
+      if (a.serviceLine.status == WalkInLineStatus.serving &&
+          b.serviceLine.status != WalkInLineStatus.serving &&
+          b.serviceLine.status != WalkInLineStatus.waiting) {
+        return -1;
+      }
+      if (a.serviceLine.status != WalkInLineStatus.serving &&
+          a.serviceLine.status != WalkInLineStatus.waiting &&
+          b.serviceLine.status == WalkInLineStatus.serving) {
+        return 1;
+      }
+      // Then by creation time (newest first)
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+    // Listen to loading status changes
+    ref.listen<AsyncValue<void>>(
+      walkInsNotifierProvider.select((state) => state.loadingStatus),
+      (previous, next) {
+        next.whenOrNull(
+          data: (_) {
+            // When data loads successfully, mark initial load as complete
+            if (_isInitialLoad) {
+              setState(() {
+                _isInitialLoad = false;
+              });
+            }
+          },
+          error: (error, stack) {
+            if (_isInitialLoad) {
+              setState(() {
+                _isInitialLoad = false;
+              });
+            }
+            _showErrorSnackBar(error.toString());
+          },
+        );
+      },
+    );
 
     return Container(
       decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
-        children: [
-          _buildHeader(walkInCount),
-          Expanded(
-            child: walkIns.isEmpty
-                ? _buildEmptyState()
-                : _buildWalkInsList(walkIns),
-          ),
-        ],
-      ),
+          children: [
+            _buildHeader(lines.length),
+            Expanded(
+              child: (isLoading && _isInitialLoad && lines.isEmpty)
+                  ? _buildLoadingState()
+                  : lines.isEmpty
+                      ? _buildEmptyState()
+                      : _buildLinesList(lines, isLoading),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -280,33 +218,43 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
     );
   }
 
-  Widget _buildWalkInsList(List<Map<String, dynamic>> walkIns) {
-    // Performance optimization: Get current time once instead of per card
-    final currentTime = DateTime.now();
-
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.spacingM,
-        AppDimensions.spacingS,
-        AppDimensions.spacingM,
-        100, // Extra bottom padding to account for bottom nav bar
-      ),
-      itemCount: walkIns.length,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: AppDimensions.spacingS),
-      itemBuilder: (context, index) {
-        return WalkInCard(
-          walkIn: walkIns[index],
-          currentTime: currentTime,
-          onTap: () {
-            _navigateToEditDetail(index);
-          },
-          onStationAssign: (station) {
-            _handleStationAssign(index, station);
-          },
-        );
+  Widget _buildLinesList(List<WalkInLineDisplay> lines, bool isLoading) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
       },
+      child: ListView.separated(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppDimensions.spacingM,
+          AppDimensions.spacingS,
+          AppDimensions.spacingM,
+          100, // Extra bottom padding to account for bottom nav bar
+        ),
+        itemCount: lines.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: AppDimensions.spacingS),
+        itemBuilder: (context, index) {
+          final line = lines[index];
+          return WalkInLineCard(
+            customerName: line.customerName,
+            serviceLine: line.serviceLine,
+            createdAt: line.createdAt,
+            onTap: () {
+              // Temporarily disabled - do not navigate to detail page
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation(AppColors.primary),
+      ),
     );
   }
 
