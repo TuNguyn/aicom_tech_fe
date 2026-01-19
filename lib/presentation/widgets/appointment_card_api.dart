@@ -1,34 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/appointment_line_model.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 
 class AppointmentCardApi extends StatelessWidget {
   final AppointmentLineModel appointment;
 
-  const AppointmentCardApi({
-    super.key,
-    required this.appointment,
-  });
-
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'SCHEDULED':
-        return AppColors.primary;
-      case 'IN_PROGRESS':
-      case 'CHECKED_IN':
-        return Colors.orange;
-      case 'COMPLETED':
-        return Colors.green;
-      case 'CANCELLED':
-      case 'NO_SHOW':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  const AppointmentCardApi({super.key, required this.appointment});
 
   String _getStatusText(String status) {
     switch (status.toUpperCase()) {
@@ -53,6 +32,8 @@ class AppointmentCardApi extends StatelessWidget {
     switch (status.toUpperCase()) {
       case 'SCHEDULED':
         return Icons.schedule;
+      case 'CONFIRMED':
+        return Icons.check_circle;
       case 'IN_PROGRESS':
       case 'CHECKED_IN':
         return Icons.play_circle_outline;
@@ -62,15 +43,13 @@ class AppointmentCardApi extends StatelessWidget {
       case 'NO_SHOW':
         return Icons.cancel_outlined;
       default:
-        return Icons.help_outline;
+        return Icons.event_available;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(appointment.appointment.status);
     final timeFormat = DateFormat('h:mm a');
-
     const blueColor = Color(0xFF6B8CD9);
 
     return Container(
@@ -84,10 +63,7 @@ class AppointmentCardApi extends StatelessWidget {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(
-          color: blueColor.withValues(alpha: 0.4),
-          width: 1.5,
-        ),
+        border: Border.all(color: blueColor.withValues(alpha: 0.4), width: 1.5),
       ),
       child: Stack(
         children: [
@@ -120,10 +96,7 @@ class AppointmentCardApi extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF9DB4E8),
-                      const Color(0xFFB8C9F0),
-                    ],
+                    colors: [const Color(0xFF9DB4E8), const Color(0xFFB8C9F0)],
                   ),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(14),
@@ -144,7 +117,9 @@ class AppointmentCardApi extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF6B8CD9).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF6B8CD9,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -246,7 +221,8 @@ class AppointmentCardApi extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              appointment.appointment.customer.firstName[0].toUpperCase(),
+                              appointment.appointment.customer.firstName[0]
+                                  .toUpperCase(),
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: blueColor,
                                 fontWeight: FontWeight.bold,
