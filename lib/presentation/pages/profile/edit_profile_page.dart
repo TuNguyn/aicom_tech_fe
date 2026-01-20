@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app_dependencies.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/unfocus_wrapper.dart';
+import '../../widgets/custom_text_field.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -92,7 +94,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       ),
-      child: Scaffold(
+      child: UnfocusWrapper(
+        child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.primary,
@@ -122,157 +125,111 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
           ),
         ),
-        body: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _buildTextField(
-                    controller: _firstNameController,
-                    label: 'First Name',
-                    icon: Icons.person_outline_rounded,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter first name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _lastNameController,
-                    label: 'Last Name',
-                    icon: Icons.person_outline_rounded,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter last name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    icon: Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _ssnController,
-                    label: 'SSN',
-                    icon: Icons.confirmation_number_outlined,
-                    keyboardType: TextInputType.text,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _addressController,
-                    label: 'Address',
-                    icon: Icons.location_on_outlined,
-                    keyboardType: TextInputType.streetAddress,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomTextField(
+                        controller: _firstNameController,
+                        label: 'First Name',
+                        icon: Icons.person_outline_rounded,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter first name';
+                          }
+                          return null;
+                        },
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              'Save Changes',
-                              style: AppTextStyles.titleLarge.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
+                      const SizedBox(height: 20),
+                      CustomTextField(
+                        controller: _lastNameController,
+                        label: 'Last Name',
+                        icon: Icons.person_outline_rounded,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter last name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      CustomTextField(
+                        controller: _emailController,
+                        label: 'Email',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 20),
+                      CustomTextField(
+                        controller: _ssnController,
+                        label: 'SSN',
+                        icon: Icons.confirmation_number_outlined,
+                        keyboardType: TextInputType.text,
+                      ),
+                      const SizedBox(height: 20),
+                      CustomTextField(
+                        controller: _addressController,
+                        label: 'Address',
+                        icon: Icons.location_on_outlined,
+                        keyboardType: TextInputType.streetAddress,
+                        maxLines: 3,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+            // Fixed bottom button
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          'Save Changes',
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        validator: validator,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: AppColors.primary.withValues(alpha: 0.7),
-            size: 22,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: AppColors.primary.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
-          ),
-          filled: true,
-          fillColor: AppColors.surface,
-          contentPadding: const EdgeInsets.all(16),
-        ),
-      ),
-    );
-  }
 }

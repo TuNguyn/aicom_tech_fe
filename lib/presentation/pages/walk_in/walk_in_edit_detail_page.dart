@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/unfocus_wrapper.dart';
 import 'service_station_selection_page.dart';
 
 class WalkInEditDetailPage extends StatefulWidget {
@@ -228,9 +229,10 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
+    return UnfocusWrapper(
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -273,6 +275,7 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
         ],
       ),
       bottomSheet: _buildBottomActions(),
+      ),
     );
   }
 

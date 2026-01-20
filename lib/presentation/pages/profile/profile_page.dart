@@ -26,7 +26,7 @@ class ProfilePage extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           slivers: [
             // Consistent Header with MorePage
             SliverAppBar(

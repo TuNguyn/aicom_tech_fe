@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/unfocus_wrapper.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -123,12 +124,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
     });
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.mainBackgroundGradient,
-        ),
-        child: SafeArea(
+    return UnfocusWrapper(
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: AppColors.mainBackgroundGradient,
+          ),
+          child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.spacingL),
@@ -320,6 +322,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

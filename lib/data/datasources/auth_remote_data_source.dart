@@ -111,21 +111,33 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<TechUserModel> updateProfile(String id, Map<String, dynamic> data) async {
     try {
-      final response = await dioClient.put(
-        '/tech-user/$id',
+      final response = await dioClient.patch(
+        '/employee-app/profile',
         data: data,
       );
 
-      final userJson = response.data['data'] as Map<String, dynamic>;
-      // Assuming the token is not refreshed on profile update, or if it is, handle it.
-      // For now, we might need to retrieve the current token from somewhere or it might be in the response.
-      // If the API doesn't return the token, we might need to pass the existing one.
-      // Let's assume the response contains the updated user object.
-      // We'll use an empty token for now as it's not provided in the update response typically,
-      // but the model requires it. ideally we should get it from the state.
-      // However, data source doesn't have access to state.
-      // We will handle token preservation in the repository or notifier.
-      return TechUserModel.fromJson(userJson, ''); 
+      // Check if response has data
+      if (response.data == null) {
+        throw ServerException(message: 'Empty response from server');
+      }
+
+      // Try to get data from response
+      final responseData = response.data;
+      Map<String, dynamic> userJson;
+
+      // Check if response has 'data' field or is the data itself
+      if (responseData is Map<String, dynamic>) {
+        if (responseData.containsKey('data')) {
+          userJson = responseData['data'] as Map<String, dynamic>;
+        } else {
+          userJson = responseData;
+        }
+      } else {
+        throw ServerException(message: 'Invalid response format');
+      }
+
+      // Use fromLoginResponse as it handles store object properly
+      return TechUserModel.fromLoginResponse(userJson, '');
     } on AuthException {
       rethrow;
     } on ServerException {
