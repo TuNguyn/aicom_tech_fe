@@ -193,7 +193,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         customerName: firstLine.ticket.customer.fullName,
         customerId: firstLine.ticket.customer.id,
         serviceLines: lines
-            .map((line) => WalkInServiceLine.fromTicketLineModel(line))
+            .map((line) => line.toEntity())
             .toList()
           ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder)),
         createdAt: firstLine.ticket.createdAt,

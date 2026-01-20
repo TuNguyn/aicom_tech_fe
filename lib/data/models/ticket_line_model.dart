@@ -1,5 +1,6 @@
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
+import '../../domain/entities/walk_in_ticket.dart';
 
 class TicketLineModel {
   final String id;
@@ -92,6 +93,23 @@ class TicketLineModel {
       'employee': employee.toJson(),
       'ticket': ticket.toJson(),
     };
+  }
+
+  WalkInServiceLine toEntity() {
+    return WalkInServiceLine(
+      id: id,
+      lineDescription: lineDescription,
+      unitPrice: unitPrice,
+      qty: qty,
+      tips: tips,
+      tax: tax,
+      discount: discount,
+      durationInMinutes: durationInMinutes,
+      status: WalkInLineStatus.fromString(status),
+      employeeName: employeeName,
+      displayOrder: displayOrder,
+      employeeId: employee.id,
+    );
   }
 }
 

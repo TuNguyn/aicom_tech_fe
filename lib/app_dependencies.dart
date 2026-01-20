@@ -7,7 +7,6 @@ import 'data/datasources/auth_remote_data_source.dart';
 import 'data/datasources/local_data_source.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
-import 'domain/usecases/auth/login_tech.dart';
 import 'domain/usecases/auth/login_with_store.dart';
 import 'domain/usecases/auth/logout_tech.dart';
 import 'domain/usecases/auth/get_cached_tech.dart';
@@ -65,10 +64,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 // Use case providers
-final loginTechUseCaseProvider = Provider<LoginTech>((ref) {
-  return LoginTech(ref.read(authRepositoryProvider));
-});
-
 final logoutTechUseCaseProvider = Provider<LogoutTech>((ref) {
   return LogoutTech(ref.read(authRepositoryProvider));
 });
@@ -93,7 +88,6 @@ final updateProfileUseCaseProvider = Provider<UpdateProfile>((ref) {
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
-    ref.read(loginTechUseCaseProvider),
     ref.read(loginWithStoreUseCaseProvider),
     ref.read(logoutTechUseCaseProvider),
     ref.read(getCachedTechUseCaseProvider),

@@ -15,27 +15,6 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.remoteDataSource, this.localDataSource);
 
   @override
-  Future<Either<Failure, TechUser>> login(
-    String username,
-    String password,
-  ) async {
-    try {
-      final userModel = await remoteDataSource.login(username, password);
-      await localDataSource.cacheUser(userModel);
-      return Right(userModel);
-    } on AuthException catch (e) {
-      return Left(AuthFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure(
-            'An unexpected error occurred during login: ${e.toString()}'),
-      );
-    }
-  }
-
-  @override
   Future<Either<Failure, TechUser>> loginWithStore(
     String phone,
     String passCode,
@@ -82,19 +61,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('Failed to get cached user: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> refreshToken() async {
-    try {
-      final userModel = await remoteDataSource.refreshToken();
-      await localDataSource.cacheUser(userModel);
-      return const Right(null);
-    } on AuthException catch (e) {
-      return Left(AuthFailure(e.message));
-    } catch (e) {
-      return Left(AuthFailure('Failed to refresh token: ${e.toString()}'));
     }
   }
 

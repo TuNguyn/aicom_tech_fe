@@ -15,7 +15,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(git checkout:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(done)",
+      "Bash(ls:*)"
     ]
   }
 }

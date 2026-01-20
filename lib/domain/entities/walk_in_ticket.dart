@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../data/models/ticket_line_model.dart';
 
 enum WalkInLineStatus {
   waiting,
@@ -120,23 +119,6 @@ class WalkInServiceLine extends Equatable {
     required this.displayOrder,
     this.employeeId,
   });
-
-  factory WalkInServiceLine.fromTicketLineModel(TicketLineModel model) {
-    return WalkInServiceLine(
-      id: model.id,
-      lineDescription: model.lineDescription,
-      unitPrice: model.unitPrice,
-      qty: model.qty,
-      tips: model.tips,
-      tax: model.tax,
-      discount: model.discount,
-      durationInMinutes: model.durationInMinutes,
-      status: WalkInLineStatus.fromString(model.status),
-      employeeName: model.employeeName,
-      displayOrder: model.displayOrder,
-      employeeId: model.employee.id,
-    );
-  }
 
   @override
   List<Object?> get props => [

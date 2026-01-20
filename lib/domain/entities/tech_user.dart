@@ -50,5 +50,22 @@ class TechUser extends Equatable {
   bool get isAuthenticated => token.isNotEmpty && id.isNotEmpty;
 
   @override
-  List<Object?> get props => [id, firstName, lastName, token, storeId];
+  List<Object?> get props => [
+        id,
+        firstName,
+        lastName,
+        phone,
+        avatarColorHex,
+        avatarForeColorHex,
+        avatarMode,
+        image,
+        jobTitle,
+        storeId,
+        storeName,
+        email,
+        ssn,
+        address,
+        token,
+        isActive,
+      ];
 }

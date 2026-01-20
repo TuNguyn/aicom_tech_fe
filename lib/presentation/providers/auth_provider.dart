@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/tech_user.dart';
 import '../../domain/entities/employee.dart';
-import '../../domain/usecases/auth/login_tech.dart';
 import '../../domain/usecases/auth/login_with_store.dart';
 import '../../domain/usecases/auth/logout_tech.dart';
 import '../../domain/usecases/auth/get_cached_tech.dart';
@@ -56,7 +55,6 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  final LoginTech _loginTech;
   final LoginWithStore _loginWithStore;
   final LogoutTech _logoutTech;
   final GetCachedTech _getCachedTech;
@@ -64,7 +62,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final UpdateProfile _updateProfile;
 
   AuthNotifier(
-    this._loginTech,
     this._loginWithStore,
     this._logoutTech,
     this._getCachedTech,
@@ -165,25 +162,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(
       verifiedEmployees: [],
       clearPendingCredentials: true,
-    );
-  }
-
-  Future<void> login(String username, String password) async {
-    state = state.copyWith(loginStatus: const AsyncValue.loading());
-    final result = await _loginTech(username, password);
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          loginStatus: AsyncValue.error(failure.message, StackTrace.current),
-        );
-      },
-      (user) {
-        state = state.copyWith(
-          user: user,
-          loginStatus: const AsyncValue.data(null),
-        );
-      },
     );
   }
 
