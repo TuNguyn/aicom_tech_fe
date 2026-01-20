@@ -492,15 +492,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Watch walk-in provider for real-time data
     final walkInsState = ref.watch(walkInsNotifierProvider);
 
-    // Calculate today's counts by status
-    final completedCount = walkInsState.walkInTickets
-        .where((ticket) => ticket.overallStatus == WalkInLineStatus.done)
+    // Calculate today's counts by service line status (not ticket status)
+    final serviceLines = walkInsState.sortedServiceLines;
+    final completedCount = serviceLines
+        .where((line) => line.serviceLine.status == WalkInLineStatus.done)
         .length;
-    final inProgressCount = walkInsState.walkInTickets
-        .where((ticket) => ticket.overallStatus == WalkInLineStatus.serving)
+    final inProgressCount = serviceLines
+        .where((line) => line.serviceLine.status == WalkInLineStatus.serving)
         .length;
-    final canceledCount = walkInsState.walkInTickets
-        .where((ticket) => ticket.overallStatus == WalkInLineStatus.canceled)
+    final canceledCount = serviceLines
+        .where((line) => line.serviceLine.status == WalkInLineStatus.canceled)
         .length;
 
     return Container(
@@ -571,7 +572,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
                 Text(
-                  '12',
+                  '${serviceLines.length}',
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.secondary,

@@ -177,7 +177,12 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
       ticketsMap.putIfAbsent(line.ticket.id, () => []).add(line);
     }
 
-    // Transform to WalkInTicket entities
+    // Get today's date range
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+
+    // Transform to WalkInTicket entities and filter for today only
     return ticketsMap.entries.map((entry) {
       final lines = entry.value;
       final firstLine = lines.first;
@@ -200,6 +205,10 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         totalTax: firstLine.ticket.totalTax,
         totalPaid: firstLine.ticket.totalPaid,
       );
+    }).where((ticket) {
+      // Filter: only include tickets created today
+      return ticket.createdAt.isAfter(today.subtract(const Duration(seconds: 1))) &&
+          ticket.createdAt.isBefore(tomorrow);
     }).toList();
   }
 
