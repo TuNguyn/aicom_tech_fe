@@ -112,9 +112,16 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
             Expanded(
               child: shouldShowLoading
                   ? _buildLoadingState()
-                  : appointments.isEmpty
-                  ? _buildEmptyState()
-                  : _buildAppointmentsList(appointments),
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        await ref
+                            .read(appointmentsNotifierProvider.notifier)
+                            .refreshAppointments();
+                      },
+                      child: appointments.isEmpty
+                          ? _buildEmptyState()
+                          : _buildAppointmentsList(appointments),
+                    ),
             ),
           ],
         ),
@@ -279,54 +286,55 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      alignment: Alignment.center,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 100),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: AppColors.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No appointments',
-            style: AppTextStyles.titleLarge.copyWith(
-              color: AppColors.textSecondary,
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No appointments',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You have no appointments for this date',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'You have no appointments for this date',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildAppointmentsList(List<AppointmentLineModel> appointments) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        await ref
-            .read(appointmentsNotifierProvider.notifier)
-            .refreshAppointments();
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      itemCount: appointments.length,
+      itemBuilder: (context, index) {
+        final appointment = appointments[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: AppointmentCardApi(appointment: appointment),
+        );
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        itemCount: appointments.length,
-        itemBuilder: (context, index) {
-          final appointment = appointments[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: AppointmentCardApi(appointment: appointment),
-          );
-        },
-      ),
     );
   }
 }

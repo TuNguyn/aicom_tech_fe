@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:email_validator/email_validator.dart';
 import '../../../app_dependencies.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -21,6 +22,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _emailController;
   late TextEditingController _ssnController;
   late TextEditingController _addressController;
+  bool _isEmailValid = true;
 
   @override
   void initState() {
@@ -31,6 +33,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _emailController = TextEditingController(text: user.email);
     _ssnController = TextEditingController(text: user.ssn);
     _addressController = TextEditingController(text: user.address);
+
+    // Listen to email changes and validate
+    _emailController.addListener(_validateEmail);
+  }
+
+  void _validateEmail() {
+    final email = _emailController.text.trim();
+    final isValid = email.isEmpty || EmailValidator.validate(email);
+    if (_isEmailValid != isValid) {
+      setState(() {
+        _isEmailValid = isValid;
+      });
+    }
   }
 
   @override
@@ -165,6 +180,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         label: 'Email',
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter email';
+                          }
+                          if (!EmailValidator.validate(value.trim())) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 20),
                       CustomTextField(
@@ -195,7 +219,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : _submit,
+                  onPressed: (isLoading || !_isEmailValid) ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
