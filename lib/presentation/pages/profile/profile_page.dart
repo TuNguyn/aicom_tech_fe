@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app_dependencies.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -14,7 +15,7 @@ class ProfilePage extends ConsumerWidget {
     final user = authState.user;
 
     // Sample avatar URL
-    const String avatarUrl = 'https://i.pravatar.cc/300?img=47';
+    final String avatarUrl = user.image ?? 'https://i.pravatar.cc/300?img=47';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -89,7 +90,11 @@ class ProfilePage extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, color: Colors.white),
                   onPressed: () {
-                    // TODO: Navigate to edit profile
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfilePage(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -123,33 +128,23 @@ class ProfilePage extends ConsumerWidget {
                         label: 'Store',
                         value: user.storeName ?? 'Not assigned',
                       ),
+                      _InfoItem(
+                        icon: Icons.email_outlined,
+                        label: 'Email',
+                        value: user.email ?? 'Not provided',
+                      ),
+                      _InfoItem(
+                        icon: Icons.confirmation_number_outlined,
+                        label: 'SSN',
+                        value: user.ssn ?? 'Not provided',
+                      ),
+                      _InfoItem(
+                        icon: Icons.location_on_outlined,
+                        label: 'Address',
+                        value: user.address ?? 'Not provided',
+                      ),
                     ]),
 
-                    const SizedBox(height: 32),
-                    
-                    // Quick Actions (Optional, but good to have consistent style)
-                    _buildSectionLabel('Quick Actions'),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.calendar_month_rounded,
-                            label: 'Appointments',
-                            onTap: () {},
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.favorite_border_rounded,
-                            label: 'Favorites',
-                            onTap: () {},
-                          ),
-                        ),
-                      ],
-                    ),
-                    
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -318,55 +313,6 @@ class ProfilePage extends ConsumerWidget {
               ],
             );
           }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          splashColor: AppColors.primary.withValues(alpha: 0.05),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 28,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

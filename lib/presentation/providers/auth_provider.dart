@@ -6,12 +6,14 @@ import '../../domain/usecases/auth/login_with_store.dart';
 import '../../domain/usecases/auth/logout_tech.dart';
 import '../../domain/usecases/auth/get_cached_tech.dart';
 import '../../domain/usecases/auth/get_employee_with_phone.dart';
+import '../../domain/usecases/auth/update_profile.dart';
 
 class AuthState {
   final TechUser user;
   final AsyncValue<void> loginStatus;
   final AsyncValue<void> logoutStatus;
   final AsyncValue<void> verifyStatus;
+  final AsyncValue<void> updateProfileStatus;
   final List<Employee> verifiedEmployees;
   final String? pendingPhone;
   final String? pendingPassCode;
@@ -23,6 +25,7 @@ class AuthState {
     this.loginStatus = const AsyncValue.data(null),
     this.logoutStatus = const AsyncValue.data(null),
     this.verifyStatus = const AsyncValue.data(null),
+    this.updateProfileStatus = const AsyncValue.data(null),
     this.verifiedEmployees = const [],
     this.pendingPhone,
     this.pendingPassCode,
@@ -33,6 +36,7 @@ class AuthState {
     AsyncValue<void>? loginStatus,
     AsyncValue<void>? logoutStatus,
     AsyncValue<void>? verifyStatus,
+    AsyncValue<void>? updateProfileStatus,
     List<Employee>? verifiedEmployees,
     String? pendingPhone,
     String? pendingPassCode,
@@ -43,6 +47,7 @@ class AuthState {
       loginStatus: loginStatus ?? this.loginStatus,
       logoutStatus: logoutStatus ?? this.logoutStatus,
       verifyStatus: verifyStatus ?? this.verifyStatus,
+      updateProfileStatus: updateProfileStatus ?? this.updateProfileStatus,
       verifiedEmployees: verifiedEmployees ?? this.verifiedEmployees,
       pendingPhone: clearPendingCredentials ? null : (pendingPhone ?? this.pendingPhone),
       pendingPassCode: clearPendingCredentials ? null : (pendingPassCode ?? this.pendingPassCode),
@@ -56,6 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final LogoutTech _logoutTech;
   final GetCachedTech _getCachedTech;
   final GetEmployeeWithPhone _getEmployeeWithPhone;
+  final UpdateProfile _updateProfile;
 
   AuthNotifier(
     this._loginTech,
@@ -63,6 +69,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._logoutTech,
     this._getCachedTech,
     this._getEmployeeWithPhone,
+    this._updateProfile,
   ) : super(AuthState(user: TechUser.empty)) {
     _checkAuth();
   }
@@ -75,6 +82,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         if (user != null) {
           state = state.copyWith(user: user);
         }
+      },
+    );
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    state = state.copyWith(updateProfileStatus: const AsyncValue.loading());
+    final result = await _updateProfile(state.user.id, data);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          updateProfileStatus: AsyncValue.error(failure.message, StackTrace.current),
+        );
+      },
+      (user) {
+        state = state.copyWith(
+          user: user,
+          updateProfileStatus: const AsyncValue.data(null),
+        );
       },
     );
   }

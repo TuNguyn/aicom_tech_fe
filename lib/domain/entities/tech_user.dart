@@ -12,6 +12,9 @@ class TechUser extends Equatable {
   final String? jobTitle;
   final String? storeId;
   final String? storeName;
+  final String? email;
+  final String? ssn;
+  final String? address;
   final String token;
   final bool isActive;
 
@@ -27,6 +30,9 @@ class TechUser extends Equatable {
     this.jobTitle,
     this.storeId,
     this.storeName,
+    this.email,
+    this.ssn,
+    this.address,
     required this.token,
     this.isActive = true,
   });

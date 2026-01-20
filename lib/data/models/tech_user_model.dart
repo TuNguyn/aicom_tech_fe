@@ -13,6 +13,9 @@ class TechUserModel extends TechUser {
     super.jobTitle,
     super.storeId,
     super.storeName,
+    super.email,
+    super.ssn,
+    super.address,
     required super.token,
     super.isActive,
   });
@@ -33,6 +36,9 @@ class TechUserModel extends TechUser {
       jobTitle: json['jobTitle'] as String?,
       storeId: store?['id'] as String?,
       storeName: store?['name'] as String?,
+      email: json['email'] as String?,
+      ssn: json['ssn'] as String?,
+      address: json['address'] as String?,
       token: token,
       isActive: status == 'ACTIVE',
     );
@@ -51,6 +57,9 @@ class TechUserModel extends TechUser {
       jobTitle: json['jobTitle'] as String?,
       storeId: json['storeId'] as String?,
       storeName: json['storeName'] as String?,
+      email: json['email'] as String?,
+      ssn: json['ssn'] as String?,
+      address: json['address'] as String?,
       token: token,
       isActive: json['isActive'] as bool? ?? true,
     );
@@ -69,6 +78,9 @@ class TechUserModel extends TechUser {
       'jobTitle': jobTitle,
       'storeId': storeId,
       'storeName': storeName,
+      'email': email,
+      'ssn': ssn,
+      'address': address,
       'token': token,
       'isActive': isActive,
     };
@@ -87,6 +99,9 @@ class TechUserModel extends TechUser {
       jobTitle: jobTitle,
       storeId: storeId,
       storeName: storeName,
+      email: email,
+      ssn: ssn,
+      address: address,
       token: token,
       isActive: isActive,
     );

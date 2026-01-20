@@ -193,43 +193,44 @@ class WalkInLineCard extends ConsumerWidget {
                           ),
                         ),
                         const Spacer(),
-                        // Created time badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: statusColor.withValues(alpha: 0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.access_time_rounded,
-                                color: Colors.white,
-                                size: AppDimensions.statusBadgeIconSize,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _getRelativeTime(createdAt),
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
+                        // Created time badge - only show for WAITING status
+                        if (status == WalkInLineStatus.waiting)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: statusColor.withValues(alpha: 0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.access_time_rounded,
+                                  color: Colors.white,
+                                  size: AppDimensions.statusBadgeIconSize,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _getRelativeTime(createdAt),
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -310,26 +311,6 @@ class WalkInLineCard extends ConsumerWidget {
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              // Employee name
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    size: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    serviceLine.employeeName,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: Colors.grey[600],
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],

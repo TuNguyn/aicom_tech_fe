@@ -53,7 +53,7 @@ class MorePage extends ConsumerWidget {
           body: SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 24),
               child: Column(
                 children: [
                   // Profile Section
@@ -61,32 +61,6 @@ class MorePage extends ConsumerWidget {
                   const SizedBox(height: 32),
 
                   // Menu Groups
-                  _buildMenuLabel('Account'),
-                  const SizedBox(height: 12),
-                  _buildMenuContainer([
-                    _MenuItem(
-                      icon: Icons.person_outline_rounded,
-                      title: 'Edit Profile',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      icon: Icons.calendar_today_rounded,
-                      title: 'My Appointments',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      icon: Icons.history_rounded,
-                      title: 'History',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      icon: Icons.payment_rounded,
-                      title: 'Payment Methods',
-                      onTap: () {},
-                    ),
-                  ]),
-
-                  const SizedBox(height: 32),
                   _buildMenuLabel('General'),
                   const SizedBox(height: 12),
                   _buildMenuContainer([
@@ -134,7 +108,7 @@ class MorePage extends ConsumerWidget {
 
   Widget _buildProfileSection(BuildContext context, dynamic user) {
     // Placeholder avatar if none provided
-    const String avatarUrl = 'https://i.pravatar.cc/300?img=47';
+    final String avatarUrl = user.image ?? 'https://i.pravatar.cc/300?img=47';
 
     return GestureDetector(
       onTap: () {
@@ -169,7 +143,7 @@ class MorePage extends ConsumerWidget {
                 ),
                 child: CircleAvatar(
                   radius: 36,
-                  backgroundImage: const NetworkImage(avatarUrl),
+                  backgroundImage: NetworkImage(avatarUrl),
                   backgroundColor: AppColors.primary.withValues(alpha: 0.05),
                   onBackgroundImageError: (_, __) {},
                 ),

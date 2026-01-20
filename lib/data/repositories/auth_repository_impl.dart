@@ -6,6 +6,7 @@ import '../../domain/entities/employee.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/local_data_source.dart';
+import '../models/tech_user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -117,5 +118,71 @@ class AuthRepositoryImpl implements AuthRepository {
         ),
       );
     }
+  }
+
+  @override
+  Future<Either<Failure, TechUser>> updateProfile(String id, Map<String, dynamic> data) async {
+    try {
+      final updatedUserModel = await remoteDataSource.updateProfile(id, data);
+      
+      // We need to preserve the token from the current session as the update response might not include it
+      final currentUser = await localDataSource.getCachedUser();
+      final token = currentUser?.token ?? '';
+      
+      final userToCache = updatedUserModel.copyWith(token: token);
+      
+      await localDataSource.cacheUser(userToCache);
+      return Right(userToCache);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure(
+          'An unexpected error occurred while updating profile: ${e.toString()}',
+        ),
+      );
+    }
+  }
+}
+
+extension TechUserModelExtension on TechUserModel {
+    TechUserModel copyWith({
+    String? id,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatarColorHex,
+    String? avatarForeColorHex,
+    String? avatarMode,
+    String? image,
+    String? jobTitle,
+    String? storeId,
+    String? storeName,
+    String? email,
+    String? ssn,
+    String? address,
+    String? token,
+    bool? isActive,
+  }) {
+    return TechUserModel(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phone: phone ?? this.phone,
+      avatarColorHex: avatarColorHex ?? this.avatarColorHex,
+      avatarForeColorHex: avatarForeColorHex ?? this.avatarForeColorHex,
+      avatarMode: avatarMode ?? this.avatarMode,
+      image: image ?? this.image,
+      jobTitle: jobTitle ?? this.jobTitle,
+      storeId: storeId ?? this.storeId,
+      storeName: storeName ?? this.storeName,
+      email: email ?? this.email,
+      ssn: ssn ?? this.ssn,
+      address: address ?? this.address,
+      token: token ?? this.token,
+      isActive: isActive ?? this.isActive,
+    );
   }
 }
