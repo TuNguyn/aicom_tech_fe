@@ -38,6 +38,16 @@ class TicketLineModel {
   });
 
   factory TicketLineModel.fromJson(Map<String, dynamic> json) {
+    final employeeJson = json['employee'];
+    final ticketJson = json['ticket'];
+
+    if (employeeJson == null || employeeJson is! Map<String, dynamic>) {
+      throw Exception('Invalid employee data');
+    }
+    if (ticketJson == null || ticketJson is! Map<String, dynamic>) {
+      throw Exception('Invalid ticket data');
+    }
+
     return TicketLineModel(
       id: json['id'] as String,
       itemType: json['itemType'] as String,
@@ -54,8 +64,8 @@ class TicketLineModel {
       status: json['status'] as String,
       employeeName: json['employeeName'] as String,
       displayOrder: json['displayOrder'] as int,
-      employee: EmployeeInfoModel.fromJson(json['employee'] as Map<String, dynamic>),
-      ticket: TicketInfoModel.fromJson(json['ticket'] as Map<String, dynamic>),
+      employee: EmployeeInfoModel.fromJson(employeeJson),
+      ticket: TicketInfoModel.fromJson(ticketJson),
     );
   }
 
@@ -112,6 +122,11 @@ class TicketInfoModel {
   });
 
   factory TicketInfoModel.fromJson(Map<String, dynamic> json) {
+    final customerJson = json['customer'];
+    if (customerJson == null || customerJson is! Map<String, dynamic>) {
+      throw Exception('Invalid customer data for ticket ${json['ticketCode']}');
+    }
+
     return TicketInfoModel(
       id: json['id'] as String,
       ticketCode: json['ticketCode'] as String,
@@ -123,7 +138,7 @@ class TicketInfoModel {
       totalPaid: (json['totalPaid'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      customer: CustomerInfoModel.fromJson(json['customer'] as Map<String, dynamic>),
+      customer: CustomerInfoModel.fromJson(customerJson),
       payments: json['payments'] as List<dynamic>,
     );
   }
@@ -168,11 +183,7 @@ class CustomerInfoModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'firstName': firstName,
-      'lastName': lastName,
-    };
+    return {'id': id, 'firstName': firstName, 'lastName': lastName};
   }
 }
 
@@ -198,11 +209,7 @@ class EmployeeInfoModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'firstName': firstName,
-      'lastName': lastName,
-    };
+    return {'id': id, 'firstName': firstName, 'lastName': lastName};
   }
 }
 
@@ -218,12 +225,22 @@ class TicketLinesResponse {
   });
 
   factory TicketLinesResponse.fromJson(Map<String, dynamic> json) {
+    final dataList = json['data'] as List<dynamic>;
+    final parsedLines = <TicketLineModel>[];
+
+    for (var item in dataList) {
+      try {
+        parsedLines.add(TicketLineModel.fromJson(item as Map<String, dynamic>));
+      } catch (e) {
+        // Skip invalid records (e.g., missing customer data)
+        continue;
+      }
+    }
+
     return TicketLinesResponse(
       statusCode: json['statusCode'] as int,
       message: json['message'] as String,
-      data: (json['data'] as List<dynamic>)
-          .map((item) => TicketLineModel.fromJson(item as Map<String, dynamic>))
-          .toList(),
+      data: parsedLines,
     );
   }
 

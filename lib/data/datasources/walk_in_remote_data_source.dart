@@ -1,4 +1,5 @@
 import '../../core/network/dio_client.dart';
+import '../../core/errors/exceptions.dart';
 import '../models/ticket_line_model.dart';
 
 abstract class WalkInRemoteDataSource {
@@ -26,16 +27,36 @@ class WalkInRemoteDataSourceImpl implements WalkInRemoteDataSource {
     int limit = 100,
     String sortBy = 'displayOrder:ASC',
   }) async {
-    final response = await dioClient.get(
-      '/employee-app/tickets/lines',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-        'sortBy': sortBy,
-        if (statuses != null && statuses.isNotEmpty) 'statuses': statuses.join(','),
-      },
-    );
-    return TicketLinesResponse.fromJson(response.data);
+    try {
+      final response = await dioClient.get(
+        '/employee-app/tickets/lines',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+          'sortBy': sortBy,
+          if (statuses != null && statuses.isNotEmpty)
+            'statuses': statuses.join(','),
+        },
+      );
+
+      if (response.data == null) {
+        throw ServerException(message: 'No data received from server');
+      }
+
+      if (response.data is! Map<String, dynamic>) {
+        throw ServerException(message: 'Invalid response format');
+      }
+
+      return TicketLinesResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on AuthException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: 'Failed to fetch walk-ins: $e');
+    }
   }
 
   @override

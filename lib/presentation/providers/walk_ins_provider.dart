@@ -98,6 +98,16 @@ class WalkInsState extends Equatable {
       return 1;
     }
 
+    // Done status third
+    if (statusA == WalkInLineStatus.done &&
+        statusB == WalkInLineStatus.canceled) {
+      return -1;
+    }
+    if (statusA == WalkInLineStatus.canceled &&
+        statusB == WalkInLineStatus.done) {
+      return 1;
+    }
+
     // Then by creation time (newest first)
     return createdAtB.compareTo(createdAtA);
   }
@@ -131,7 +141,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
 
     final result = await _getWalkInLines(
-      statuses: statuses ?? ['WAITING', 'SERVING', 'DONE'],
+      statuses: statuses ?? ['WAITING', 'SERVING', 'DONE', 'CANCELED'],
     );
 
     result.fold(

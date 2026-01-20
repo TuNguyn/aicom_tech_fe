@@ -27,6 +27,8 @@ class WalkInLineCard extends ConsumerWidget {
         return const Color(0xFF00A86B); // Vibrant jade green
       case WalkInLineStatus.done:
         return Colors.grey;
+      case WalkInLineStatus.canceled:
+        return const Color(0xFFE53935); // Red for canceled
     }
   }
 
@@ -38,6 +40,8 @@ class WalkInLineCard extends ConsumerWidget {
         return AppStrings.statusInService;
       case WalkInLineStatus.done:
         return AppStrings.statusDone;
+      case WalkInLineStatus.canceled:
+        return 'Cancelled';
     }
   }
 
@@ -49,6 +53,8 @@ class WalkInLineCard extends ConsumerWidget {
         return Icons.spa_outlined;
       case WalkInLineStatus.done:
         return Icons.check_circle_outline;
+      case WalkInLineStatus.canceled:
+        return Icons.cancel;
     }
   }
 
@@ -68,7 +74,7 @@ class WalkInLineCard extends ConsumerWidget {
     final status = serviceLine.status;
     final statusColor = _getStatusColor(status);
 
-    // Enable swipe for WAITING and SERVING status
+    // Enable swipe for WAITING and SERVING status only (not for DONE or CANCELED)
     final canSwipe = status == WalkInLineStatus.waiting ||
                      status == WalkInLineStatus.serving;
 

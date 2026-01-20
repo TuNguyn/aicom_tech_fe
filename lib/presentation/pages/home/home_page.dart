@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../routes/app_routes.dart';
+import '../../../domain/entities/walk_in_ticket.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
@@ -22,6 +23,33 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentNavIndex = 0;
+  bool _isDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load data when home page is first displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDataLoaded) {
+        _loadHomeData();
+        _isDataLoaded = true;
+      }
+    });
+  }
+
+  void _loadHomeData() {
+    // Load today's appointments
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day);
+    final endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    ref
+        .read(appointmentsNotifierProvider.notifier)
+        .loadAppointmentsForDateRange(startDate, endDate);
+
+    // Load walk-in tickets
+    ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
+  }
 
   // Cache mock notifications data as static const
   static final List<Map<String, dynamic>> _mockNotifications = [
@@ -102,12 +130,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   SystemUiOverlayStyle get _currentOverlayStyle {
     switch (_currentNavIndex) {
-      case 0: return _overlayStyleHome;
-      case 1: return _overlayStyleWalkIn;
-      case 2: return _overlayStyleAppointments;
-      case 3: return _overlayStyleReport;
-      case 4: return _overlayStyleMore;
-      default: return _overlayStyleHome;
+      case 0:
+        return _overlayStyleHome;
+      case 1:
+        return _overlayStyleWalkIn;
+      case 2:
+        return _overlayStyleAppointments;
+      case 3:
+        return _overlayStyleReport;
+      case 4:
+        return _overlayStyleMore;
+      default:
+        return _overlayStyleHome;
     }
   }
 
@@ -121,58 +155,70 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Container(
         decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
         child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        // Hide AppBar when on Walk-In, Appointments, Report, or More tab (index 1, 2, 3, 4) to save space
-        appBar: (_currentNavIndex == 1 || _currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4) ? null : AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {
-            context.push(AppRoutes.notifications);
-          },
-        ),
-        title: Text(
-          user.fullName,
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+          backgroundColor: Colors.transparent,
+          extendBody: true,
+          // Hide AppBar when on Walk-In, Appointments, Report, or More tab (index 1, 2, 3, 4) to save space
+          appBar:
+              (_currentNavIndex == 1 ||
+                  _currentNavIndex == 2 ||
+                  _currentNavIndex == 3 ||
+                  _currentNavIndex == 4)
+              ? null
+              : AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      context.push(AppRoutes.notifications);
+                    },
+                  ),
+                  title: Text(
+                    user.fullName,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  centerTitle: true,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.exit_to_app, color: Colors.white),
+                      onPressed: () async {
+                        await ref.read(authNotifierProvider.notifier).logout();
+                        if (context.mounted) {
+                          context.go(AppRoutes.login);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+          body: IndexedStack(
+            index: _currentNavIndex,
+            children: [
+              _buildHomePage(),
+              const WalkInPage(),
+              const AppointmentsPage(),
+              const ReportPage(),
+              const MorePage(),
+            ],
           ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app, color: Colors.white),
-            onPressed: () async {
-              await ref.read(authNotifierProvider.notifier).logout();
-              if (context.mounted) {
-                context.go(AppRoutes.login);
-              }
+          bottomNavigationBar: BottomNavBar(
+            currentIndex: _currentNavIndex,
+            useWhiteBackground:
+                (_currentNavIndex == 2 ||
+                _currentNavIndex == 3 ||
+                _currentNavIndex == 4),
+            onTap: (index) {
+              setState(() {
+                _currentNavIndex = index;
+              });
             },
           ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _currentNavIndex,
-        children: [
-          _buildHomePage(),
-          const WalkInPage(),
-          const AppointmentsPage(),
-          const ReportPage(),
-          const MorePage(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentNavIndex,
-        useWhiteBackground: (_currentNavIndex == 2 || _currentNavIndex == 3 || _currentNavIndex == 4),
-        onTap: (index) {
-          setState(() {
-            _currentNavIndex = index;
-          });
-        },
-      ),
-      ),
+        ),
       ),
     );
   }
@@ -203,15 +249,29 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-
   Widget _buildQuickStatsSection() {
+    // Watch providers for real-time data
+    final appointmentsState = ref.watch(appointmentsNotifierProvider);
+    final walkInsState = ref.watch(walkInsNotifierProvider);
+
+    // Calculate today's counts - get appointments for today
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final todayApptCount = appointmentsState
+        .getAppointmentsForDate(today)
+        .length;
+
+    final waitingCount = walkInsState.walkInTickets
+        .where((ticket) => ticket.overallStatus == WalkInLineStatus.waiting)
+        .length;
+
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             icon: Icons.event_available,
             title: 'Today',
-            value: '8',
+            value: '$todayApptCount',
             subtitle: 'Appointments',
             color: AppColors.primary,
           ),
@@ -221,7 +281,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: _buildStatCard(
             icon: Icons.people_outline,
             title: 'Waiting',
-            value: '3',
+            value: '$waitingCount',
             subtitle: 'Customers',
             color: AppColors.accent,
           ),
@@ -282,7 +342,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-
   Widget _buildSummaryItem({
     required IconData icon,
     required String label,
@@ -302,9 +361,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: AppTextStyles.titleLarge.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
@@ -314,7 +371,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ],
     );
   }
-
 
   Widget _buildNotificationsSection() {
     return Container(
@@ -368,7 +424,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(8),
@@ -378,7 +437,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: (notification['color'] as Color).withValues(alpha: 0.1),
+                            color: (notification['color'] as Color).withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -429,6 +490,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildCombinedSummaryPerformance() {
+    // Watch walk-in provider for real-time data
+    final walkInsState = ref.watch(walkInsNotifierProvider);
+
+    // Calculate today's counts by status
+    final completedCount = walkInsState.walkInTickets
+        .where((ticket) => ticket.overallStatus == WalkInLineStatus.done)
+        .length;
+    final inProgressCount = walkInsState.walkInTickets
+        .where((ticket) => ticket.overallStatus == WalkInLineStatus.serving)
+        .length;
+    final canceledCount = walkInsState.walkInTickets
+        .where((ticket) => ticket.overallStatus == WalkInLineStatus.canceled)
+        .length;
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingL),
       decoration: BoxDecoration(
@@ -452,120 +527,59 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          // Completed, In Progress, Cancelled
+          // Completed and In Progress only
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildSummaryItem(
                 icon: Icons.check_circle,
                 label: 'Completed',
-                value: '5',
+                value: '$completedCount',
                 color: AppColors.success,
               ),
               _buildSummaryItem(
                 icon: Icons.access_time,
                 label: 'In Progress',
-                value: '2',
+                value: '$inProgressCount',
                 color: AppColors.warning,
               ),
               _buildSummaryItem(
                 icon: Icons.cancel,
                 label: 'Cancelled',
-                value: '1',
+                value: '$canceledCount',
                 color: AppColors.error,
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.spacingL),
-          // Performance - Total Earn and Turns
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(AppDimensions.spacingM),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
-                    border: Border.all(
-                      color: Colors.grey[300]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.attach_money,
-                        color: AppColors.success,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppDimensions.spacingS),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '\$450',
-                              style: AppTextStyles.titleLarge.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Total Earn',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+          const SizedBox(height: AppDimensions.spacingM),
+          // Total Turns
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.spacingM),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+              border: Border.all(color: Colors.grey[300]!, width: 1.5),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.sync, color: AppColors.secondary, size: 20),
+                const SizedBox(width: AppDimensions.spacingS),
+                Text(
+                  'Total Turns: ',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.grey[600],
                   ),
                 ),
-              ),
-              const SizedBox(width: AppDimensions.spacingM),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(AppDimensions.spacingM),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
-                    border: Border.all(
-                      color: Colors.grey[300]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.sync,
-                        color: AppColors.secondary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppDimensions.spacingS),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '12',
-                              style: AppTextStyles.titleLarge.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Turns',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                Text(
+                  '12',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

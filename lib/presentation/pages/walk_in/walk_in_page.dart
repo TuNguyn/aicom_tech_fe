@@ -217,123 +217,94 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.spacingL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Decorative illustration
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.1),
-                    AppColors.secondary.withValues(alpha: 0.1),
-                  ],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Stack(
-                alignment: Alignment.center,
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - 200,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.spacingL),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Decorative illustration
                   Icon(
                     Icons.people_outline,
-                    size: 60,
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    size: 64,
+                    color: AppColors.primary,
                   ),
-                  Positioned(
-                    right: 35,
-                    top: 30,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
+                  const SizedBox(height: AppDimensions.spacingL),
+                  Text(
+                    AppStrings.walkInsEmptyTitle,
+                    style: AppTextStyles.headlineLarge.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Positioned(
-                    left: 30,
-                    bottom: 35,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
+                  const SizedBox(height: AppDimensions.spacingS),
+                  Text(
+                    AppStrings.walkInsEmptyMessage,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.grey[600],
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppDimensions.spacingL),
-            Text(
-              AppStrings.walkInsEmptyTitle,
-              style: AppTextStyles.headlineLarge.copyWith(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.spacingS),
-            Text(
-              AppStrings.walkInsEmptyMessage,
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.spacingL),
-            // Pro tip card
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.spacingM),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
+                  const SizedBox(height: AppDimensions.spacingL),
+                  // Pro tip card
                   Container(
-                    width: 40,
-                    height: 40,
+                    padding: const EdgeInsets.all(AppDimensions.spacingM),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.borderRadius,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Icon(
-                      Icons.lightbulb_outline,
-                      color: AppColors.accent,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.spacingM),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          AppStrings.walkInsProTipTitle,
-                          style: AppTextStyles.labelLarge.copyWith(
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.lightbulb_outline,
                             color: AppColors.accent,
-                            fontWeight: FontWeight.bold,
+                            size: 20,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          AppStrings.walkInsProTipMessage,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.grey[600],
+                        const SizedBox(width: AppDimensions.spacingM),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppStrings.walkInsProTipTitle,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                AppStrings.walkInsProTipMessage,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -342,7 +313,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

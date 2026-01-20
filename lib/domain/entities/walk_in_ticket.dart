@@ -4,7 +4,8 @@ import '../../data/models/ticket_line_model.dart';
 enum WalkInLineStatus {
   waiting,
   serving,
-  done;
+  done,
+  canceled;
 
   static WalkInLineStatus fromString(String status) {
     switch (status.toUpperCase()) {
@@ -14,6 +15,8 @@ enum WalkInLineStatus {
         return serving;
       case 'DONE':
         return done;
+      case 'CANCELED':
+        return canceled;
       default:
         return waiting;
     }
@@ -59,6 +62,10 @@ class WalkInTicket extends Equatable {
     // If all are waiting, ticket is waiting
     if (serviceLines.every((line) => line.status == WalkInLineStatus.waiting)) {
       return WalkInLineStatus.waiting;
+    }
+    // If all are canceled, ticket is canceled
+    if (serviceLines.every((line) => line.status == WalkInLineStatus.canceled)) {
+      return WalkInLineStatus.canceled;
     }
     // Otherwise done
     return WalkInLineStatus.done;
