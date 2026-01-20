@@ -88,7 +88,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateProfile(Map<String, dynamic> data) async {
     state = state.copyWith(updateProfileStatus: const AsyncValue.loading());
-    final result = await _updateProfile(state.user.id, data);
+    final result = await _updateProfile(data);
 
     result.fold(
       (failure) {

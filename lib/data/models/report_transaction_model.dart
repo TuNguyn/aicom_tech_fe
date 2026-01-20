@@ -1,4 +1,4 @@
-import 'appointment_line_model.dart';
+import 'common/pagination_models.dart';
 
 /// Model for individual transaction item
 class ReportTransactionModel {
@@ -37,6 +37,20 @@ class ReportTransactionModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'ticketCode': ticketCode,
+      'itemName': itemName,
+      'qty': qty,
+      'price': price,
+      'total': total,
+      'tips': tips,
+      'commission': commission,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
 }
 
 /// Summary model for aggregated data
@@ -57,6 +71,14 @@ class ReportSummaryModel {
       totalTips: (json['totalTips'] as num).toDouble(),
       totalCommission: (json['totalCommission'] as num).toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'totalSales': totalSales,
+      'totalTips': totalTips,
+      'totalCommission': totalCommission,
+    };
   }
 }
 
@@ -85,5 +107,16 @@ class ReportTransactionsResponse {
       links: PaginationLinks.fromJson(dataMap['links'] as Map<String, dynamic>),
       summary: ReportSummaryModel.fromJson(dataMap['summary'] as Map<String, dynamic>),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': {
+        'data': data.map((item) => item.toJson()).toList(),
+        'meta': meta.toJson(),
+        'links': links.toJson(),
+        'summary': summary.toJson(),
+      },
+    };
   }
 }

@@ -9,7 +9,7 @@ abstract class AuthRemoteDataSource {
   Future<void> logout();
   Future<TechUserModel> refreshToken();
   Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode);
-  Future<TechUserModel> updateProfile(String id, Map<String, dynamic> data);
+  Future<TechUserModel> updateProfile(Map<String, dynamic> data);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -109,7 +109,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<TechUserModel> updateProfile(String id, Map<String, dynamic> data) async {
+  Future<TechUserModel> updateProfile(Map<String, dynamic> data) async {
     try {
       final response = await dioClient.patch(
         '/employee-app/profile',

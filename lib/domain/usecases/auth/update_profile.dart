@@ -9,9 +9,8 @@ class UpdateProfile {
   UpdateProfile(this.repository);
 
   Future<Either<Failure, TechUser>> call(
-    String id,
     Map<String, dynamic> data,
   ) async {
-    return await repository.updateProfile(id, data);
+    return await repository.updateProfile(data);
   }
 }

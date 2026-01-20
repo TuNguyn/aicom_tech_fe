@@ -1,3 +1,6 @@
+import 'common/customer_info_model.dart';
+import 'common/employee_info_model.dart';
+
 class TicketLineModel {
   final String id;
   final String itemType; // CATEGORY, PRODUCT
@@ -158,58 +161,6 @@ class TicketInfoModel {
       'customer': customer.toJson(),
       'payments': payments,
     };
-  }
-}
-
-class CustomerInfoModel {
-  final String id;
-  final String firstName;
-  final String lastName;
-
-  CustomerInfoModel({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-  });
-
-  String get fullName => '$firstName $lastName';
-
-  factory CustomerInfoModel.fromJson(Map<String, dynamic> json) {
-    return CustomerInfoModel(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'firstName': firstName, 'lastName': lastName};
-  }
-}
-
-class EmployeeInfoModel {
-  final String id;
-  final String firstName;
-  final String lastName;
-
-  EmployeeInfoModel({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-  });
-
-  String get fullName => '$firstName $lastName';
-
-  factory EmployeeInfoModel.fromJson(Map<String, dynamic> json) {
-    return EmployeeInfoModel(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'firstName': firstName, 'lastName': lastName};
   }
 }
 

@@ -1,3 +1,7 @@
+import 'common/customer_info_model.dart';
+import 'common/employee_info_model.dart';
+import 'common/pagination_models.dart';
+
 class AppointmentLineModel {
   final String id;
   final DateTime beginTime;
@@ -29,6 +33,18 @@ class AppointmentLineModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'beginTime': beginTime.toIso8601String(),
+      'durationMinute': durationMinute,
+      'type': type,
+      'service': service.toJson(),
+      'appointment': appointment.toJson(),
+      'employee': employee.toJson(),
+    };
+  }
+
   DateTime get endTime => beginTime.add(Duration(minutes: durationMinute));
 }
 
@@ -46,6 +62,13 @@ class ServiceInfoModel {
       id: json['id'] as String,
       name: json['name'] as String,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
   }
 }
 
@@ -73,52 +96,15 @@ class AppointmentInfoModel {
       customer: CustomerInfoModel.fromJson(json['customer'] as Map<String, dynamic>),
     );
   }
-}
 
-class CustomerInfoModel {
-  final String id;
-  final String firstName;
-  final String lastName;
-  final String phone;
-
-  CustomerInfoModel({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.phone,
-  });
-
-  String get fullName => '$firstName $lastName';
-
-  factory CustomerInfoModel.fromJson(Map<String, dynamic> json) {
-    return CustomerInfoModel(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      phone: json['phone'] as String,
-    );
-  }
-}
-
-class EmployeeInfoModel {
-  final String id;
-  final String firstName;
-  final String lastName;
-
-  EmployeeInfoModel({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-  });
-
-  String get fullName => '$firstName $lastName';
-
-  factory EmployeeInfoModel.fromJson(Map<String, dynamic> json) {
-    return EmployeeInfoModel(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-    );
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'appointmentTime': appointmentTime.toIso8601String(),
+      'status': status,
+      'note': note,
+      'customer': customer.toJson(),
+    };
   }
 }
 
@@ -144,44 +130,14 @@ class AppointmentLinesResponse {
       links: PaginationLinks.fromJson(dataMap['links'] as Map<String, dynamic>),
     );
   }
-}
 
-class PaginationMeta {
-  final int itemsPerPage;
-  final int totalItems;
-  final int currentPage;
-  final int totalPages;
-  final List<List<String>> sortBy;
-
-  PaginationMeta({
-    required this.itemsPerPage,
-    required this.totalItems,
-    required this.currentPage,
-    required this.totalPages,
-    required this.sortBy,
-  });
-
-  factory PaginationMeta.fromJson(Map<String, dynamic> json) {
-    return PaginationMeta(
-      itemsPerPage: json['itemsPerPage'] as int,
-      totalItems: json['totalItems'] as int,
-      currentPage: json['currentPage'] as int,
-      totalPages: json['totalPages'] as int,
-      sortBy: (json['sortBy'] as List<dynamic>)
-          .map((item) => (item as List<dynamic>).cast<String>())
-          .toList(),
-    );
-  }
-}
-
-class PaginationLinks {
-  final String current;
-
-  PaginationLinks({required this.current});
-
-  factory PaginationLinks.fromJson(Map<String, dynamic> json) {
-    return PaginationLinks(
-      current: json['current'] as String,
-    );
+  Map<String, dynamic> toJson() {
+    return {
+      'data': {
+        'data': data.map((item) => item.toJson()).toList(),
+        'meta': meta.toJson(),
+        'links': links.toJson(),
+      },
+    };
   }
 }

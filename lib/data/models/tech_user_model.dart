@@ -107,3 +107,43 @@ class TechUserModel extends TechUser {
     );
   }
 }
+
+extension TechUserModelExtension on TechUserModel {
+  TechUserModel copyWith({
+    String? id,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatarColorHex,
+    String? avatarForeColorHex,
+    String? avatarMode,
+    String? image,
+    String? jobTitle,
+    String? storeId,
+    String? storeName,
+    String? email,
+    String? ssn,
+    String? address,
+    String? token,
+    bool? isActive,
+  }) {
+    return TechUserModel(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phone: phone ?? this.phone,
+      avatarColorHex: avatarColorHex ?? this.avatarColorHex,
+      avatarForeColorHex: avatarForeColorHex ?? this.avatarForeColorHex,
+      avatarMode: avatarMode ?? this.avatarMode,
+      image: image ?? this.image,
+      jobTitle: jobTitle ?? this.jobTitle,
+      storeId: storeId ?? this.storeId,
+      storeName: storeName ?? this.storeName,
+      email: email ?? this.email,
+      ssn: ssn ?? this.ssn,
+      address: address ?? this.address,
+      token: token ?? this.token,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+}

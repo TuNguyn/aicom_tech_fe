@@ -121,9 +121,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, TechUser>> updateProfile(String id, Map<String, dynamic> data) async {
+  Future<Either<Failure, TechUser>> updateProfile(Map<String, dynamic> data) async {
     try {
-      final updatedUserModel = await remoteDataSource.updateProfile(id, data);
+      final updatedUserModel = await remoteDataSource.updateProfile(data);
       
       // We need to preserve the token from the current session as the update response might not include it
       final currentUser = await localDataSource.getCachedUser();
@@ -144,45 +144,5 @@ class AuthRepositoryImpl implements AuthRepository {
         ),
       );
     }
-  }
-}
-
-extension TechUserModelExtension on TechUserModel {
-    TechUserModel copyWith({
-    String? id,
-    String? firstName,
-    String? lastName,
-    String? phone,
-    String? avatarColorHex,
-    String? avatarForeColorHex,
-    String? avatarMode,
-    String? image,
-    String? jobTitle,
-    String? storeId,
-    String? storeName,
-    String? email,
-    String? ssn,
-    String? address,
-    String? token,
-    bool? isActive,
-  }) {
-    return TechUserModel(
-      id: id ?? this.id,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
-      phone: phone ?? this.phone,
-      avatarColorHex: avatarColorHex ?? this.avatarColorHex,
-      avatarForeColorHex: avatarForeColorHex ?? this.avatarForeColorHex,
-      avatarMode: avatarMode ?? this.avatarMode,
-      image: image ?? this.image,
-      jobTitle: jobTitle ?? this.jobTitle,
-      storeId: storeId ?? this.storeId,
-      storeName: storeName ?? this.storeName,
-      email: email ?? this.email,
-      ssn: ssn ?? this.ssn,
-      address: address ?? this.address,
-      token: token ?? this.token,
-      isActive: isActive ?? this.isActive,
-    );
   }
 }

@@ -10,5 +10,5 @@ abstract class AuthRepository {
   Future<Either<Failure, TechUser?>> getCachedUser();
   Future<Either<Failure, void>> refreshToken();
   Future<Either<Failure, List<Employee>>> getEmployeeWithPhone(String phone, String passCode);
-  Future<Either<Failure, TechUser>> updateProfile(String id, Map<String, dynamic> data);
+  Future<Either<Failure, TechUser>> updateProfile(Map<String, dynamic> data);
 }
