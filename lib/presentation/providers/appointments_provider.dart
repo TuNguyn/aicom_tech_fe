@@ -34,10 +34,17 @@ class AppointmentsState {
 class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
   final GetAppointmentLines _getAppointmentLines;
 
+  bool _isDataLoaded = false;
+
   AppointmentsNotifier(this._getAppointmentLines)
       : super(AppointmentsState(selectedDate: DateTime.now()));
 
   Future<void> loadAppointmentsForDateRange(DateTime startDate, DateTime endDate) async {
+    // Skip if already loaded or currently loading
+    if (_isDataLoaded || state.loadingStatus.isLoading) {
+      return;
+    }
+
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
 
     final result = await _getAppointmentLines(
@@ -50,6 +57,7 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
         state = state.copyWith(
           loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
         );
+        // Don't set _isDataLoaded on error
       },
       (response) {
         // Group appointments by date
@@ -72,6 +80,7 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
           appointmentsByDate: groupedAppointments,
           loadingStatus: const AsyncValue.data(null),
         );
+        _isDataLoaded = true; // Mark as loaded on success
       },
     );
   }
@@ -81,10 +90,13 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
   }
 
   Future<void> refreshAppointments() async {
-    // Reload appointments for current month
+    _isDataLoaded = false; // Reset flag to allow reload
+
+    // Reload appointments for current week
     final now = DateTime.now();
-    final startDate = DateTime(now.year, now.month, 1);
-    final endDate = DateTime(now.year, now.month + 1, 0);
+    final weekday = now.weekday;
+    final startDate = now.subtract(Duration(days: weekday - 1)); // Monday
+    final endDate = startDate.add(const Duration(days: 6)); // Sunday
 
     await loadAppointmentsForDateRange(startDate, endDate);
   }

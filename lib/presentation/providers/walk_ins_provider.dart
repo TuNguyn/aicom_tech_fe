@@ -131,6 +131,8 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
   final StartWalkInLine _startWalkInLine;
   final CompleteWalkInLine _completeWalkInLine;
 
+  bool _isDataLoaded = false;
+
   WalkInsNotifier(
     this._getWalkInLines,
     this._startWalkInLine,
@@ -138,6 +140,11 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
   ) : super(const WalkInsState());
 
   Future<void> loadWalkIns({List<String>? statuses}) async {
+    // Skip if already loaded or currently loading
+    if (_isDataLoaded || state.loadingStatus.isLoading) {
+      return;
+    }
+
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
 
     final result = await _getWalkInLines(
@@ -149,6 +156,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         state = state.copyWith(
           loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
         );
+        // Don't set _isDataLoaded on error
       },
       (response) {
         final tickets = _groupTicketLines(response.data);
@@ -156,6 +164,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
           walkInTickets: tickets,
           loadingStatus: const AsyncValue.data(null),
         );
+        _isDataLoaded = true; // Mark as loaded on success
       },
     );
   }
@@ -195,6 +204,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
   }
 
   Future<void> refreshWalkIns() async {
+    _isDataLoaded = false; // Reset flag to allow reload
     await loadWalkIns();
   }
 

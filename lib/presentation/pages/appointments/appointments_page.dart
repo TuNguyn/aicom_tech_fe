@@ -28,15 +28,17 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   @override
   void initState() {
     super.initState();
-    // Load appointments for current month on init
+    // Load appointments for current week on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAppointmentsForMonth(DateTime.now());
+      _loadAppointmentsForWeek(DateTime.now());
     });
   }
 
-  void _loadAppointmentsForMonth(DateTime date) {
-    final startDate = DateTime(date.year, date.month, 1);
-    final endDate = DateTime(date.year, date.month + 1, 0);
+  void _loadAppointmentsForWeek(DateTime date) {
+    // Get week boundaries (Monday to Sunday)
+    final weekday = date.weekday;
+    final startDate = date.subtract(Duration(days: weekday - 1)); // Monday
+    final endDate = startDate.add(const Duration(days: 6)); // Sunday
 
     ref
         .read(appointmentsNotifierProvider.notifier)

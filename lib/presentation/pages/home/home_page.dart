@@ -38,10 +38,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _loadHomeData() {
-    // Load today's appointments
+    // Load current week's appointments (same as AppointmentsPage)
     final now = DateTime.now();
-    final startDate = DateTime(now.year, now.month, now.day);
-    final endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final weekday = now.weekday;
+    final startDate = now.subtract(Duration(days: weekday - 1)); // Monday
+    final endDate = startDate.add(const Duration(days: 6)); // Sunday
 
     ref
         .read(appointmentsNotifierProvider.notifier)
