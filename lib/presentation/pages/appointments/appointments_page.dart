@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
 import '../../widgets/appointment_card_api.dart';
+import '../../widgets/logout_dialog.dart';
 
 class AppointmentsPage extends ConsumerStatefulWidget {
   const AppointmentsPage({super.key});
@@ -184,7 +185,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white, size: 24),
               onPressed: () {
-                ref.read(authNotifierProvider.notifier).logout();
+                LogoutDialog.show(context);
               },
             ),
           ],

@@ -6,6 +6,7 @@ import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/logout_dialog.dart';
 import '../profile/profile_page.dart';
 
 class MorePage extends ConsumerWidget {
@@ -315,11 +316,8 @@ class MorePage extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () async {
-            await ref.read(authNotifierProvider.notifier).logout();
-            if (context.mounted) {
-              context.go(AppRoutes.login);
-            }
+          onTap: () {
+            LogoutDialog.show(context);
           },
           borderRadius: BorderRadius.circular(20),
           splashColor: AppColors.error.withValues(alpha: 0.1),

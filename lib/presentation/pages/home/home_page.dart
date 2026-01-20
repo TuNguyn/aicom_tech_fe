@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/logout_dialog.dart';
 import '../appointments/appointments_page.dart';
 import '../report/report_page.dart';
 import '../more/more_page.dart';
@@ -188,11 +189,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   actions: [
                     IconButton(
                       icon: const Icon(Icons.exit_to_app, color: Colors.white),
-                      onPressed: () async {
-                        await ref.read(authNotifierProvider.notifier).logout();
-                        if (context.mounted) {
-                          context.go(AppRoutes.login);
-                        }
+                      onPressed: () {
+                        LogoutDialog.show(context);
                       },
                     ),
                   ],

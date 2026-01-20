@@ -8,6 +8,7 @@ import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_strings.dart';
 import '../../widgets/walk_in_line_card.dart';
+import '../../widgets/logout_dialog.dart';
 import '../../providers/walk_ins_provider.dart';
 
 class WalkInPage extends ConsumerStatefulWidget {
@@ -162,13 +163,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                     color: Colors.white,
                     size: 24,
                   ),
-                  onPressed: () async {
-                    if (!mounted) return;
-                    await ref.read(authNotifierProvider.notifier).logout();
-                    if (!mounted) return;
-                    if (context.mounted) {
-                      context.go(AppRoutes.login);
-                    }
+                  onPressed: () {
+                    LogoutDialog.show(context);
                   },
                 ),
               ],
