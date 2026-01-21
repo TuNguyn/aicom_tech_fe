@@ -30,12 +30,25 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/appointments_provider.dart';
 import 'presentation/providers/walk_ins_provider.dart';
 import 'presentation/providers/reports_provider.dart';
+import 'presentation/providers/socket_provider.dart';
+import 'core/socket/socket_service.dart';
+import 'config/app_config.dart';
 
 // Core providers
 final dioProvider = Provider<Dio>((ref) => Dio());
 
 final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient(ref.read(dioProvider));
+});
+
+// Socket providers
+final socketServiceProvider = Provider<SocketService>((ref) {
+  return SocketService(socketUrl: AppConfig.socketUrl);
+});
+
+final socketNotifierProvider =
+    StateNotifierProvider<SocketNotifier, SocketState>((ref) {
+  return SocketNotifier(ref.read(socketServiceProvider));
 });
 
 // Hive box providers

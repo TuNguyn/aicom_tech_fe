@@ -7,6 +7,8 @@ import 'core/cache/cache_manager.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/app_colors.dart';
 import 'presentation/providers/theme_provider.dart';
+import 'presentation/providers/socket_provider.dart';
+import 'app_dependencies.dart';
 import 'routes/app_router.dart';
 
 void main() async {
@@ -31,6 +33,8 @@ void main() async {
 
   // ignore: avoid_print
   print('[App] Base URL: ${AppConfig.baseUrl}');
+  // ignore: avoid_print
+  print('[App] Socket URL: ${AppConfig.socketUrl}');
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -42,6 +46,17 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final currentTheme = ref.watch(themeNotifierProvider);
+
+    // Socket lifecycle management based on auth state
+    ref.listen(authNotifierProvider, (previous, next) {
+      final socketNotifier = ref.read(socketNotifierProvider.notifier);
+
+      if (next.isAuthenticated && next.user.token.isNotEmpty) {
+        socketNotifier.connect(next.user.token);
+      } else if (!next.isAuthenticated) {
+        socketNotifier.disconnect();
+      }
+    });
 
     // Update AppColors with current theme
     AppColors.updateScheme(currentTheme);
