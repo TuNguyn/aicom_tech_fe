@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/socket/socket_service.dart';
+import '../../app_dependencies.dart';
 
 class SocketState {
   final bool isConnected;
@@ -46,10 +47,11 @@ class SocketState {
 
 class SocketNotifier extends StateNotifier<SocketState> {
   final SocketService _socketService;
+  final Ref _ref;
   StreamSubscription<bool>? _connectionSubscription;
   final List<StreamSubscription> _eventSubscriptions = [];
 
-  SocketNotifier(this._socketService) : super(SocketState()) {
+  SocketNotifier(this._socketService, this._ref) : super(SocketState()) {
     _initializeConnectionListener();
   }
 
@@ -90,8 +92,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void _handleEmployeeSync(dynamic data) {
-    // Phase 1: Log only
-    print('[Socket] EMPLOYEE:SYNC: $data');
+    print('[Socket] EMPLOYEE:SYNC received: $data');
 
     state = state.copyWith(
       lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
@@ -99,8 +100,38 @@ class SocketNotifier extends StateNotifier<SocketState> {
       lastEventType: 'EMPLOYEE:SYNC',
     );
 
-    // Phase 2: Trigger refresh
-    // ref.read(employeeNotifierProvider.notifier).refreshEmployees();
+    // Validate event format
+    if (data is! Map<String, dynamic>) {
+      print('[Socket] Invalid EMPLOYEE:SYNC event format - not a map');
+      return;
+    }
+
+    // Extract employee ID from event data
+    final eventData = data['data'];
+    if (eventData == null || eventData is! Map<String, dynamic>) {
+      print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid data field');
+      return;
+    }
+
+    final employeeId = eventData['id'];
+    if (employeeId == null || employeeId is! String) {
+      print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid employee ID');
+      return;
+    }
+
+    // Get current logged-in user ID
+    final currentUser = _ref.read(authNotifierProvider).user;
+    final currentUserId = currentUser.id;
+
+    print('[Socket] Comparing IDs - Socket: $employeeId, Current: $currentUserId');
+
+    // Only refresh if the event is for the current logged-in user
+    if (employeeId == currentUserId) {
+      print('[Socket] Employee data changed for current user, refreshing profile...');
+      _ref.read(authNotifierProvider.notifier).refreshEmployeeProfile();
+    } else {
+      print('[Socket] Employee data change for different user, ignoring');
+    }
   }
 
   void _handleClockInSync(dynamic data) {

@@ -6,6 +6,7 @@ import '../../domain/usecases/auth/logout_tech.dart';
 import '../../domain/usecases/auth/get_cached_tech.dart';
 import '../../domain/usecases/auth/get_employee_with_phone.dart';
 import '../../domain/usecases/auth/update_profile.dart';
+import '../../domain/usecases/auth/get_employee_profile.dart';
 
 class AuthState {
   final TechUser user;
@@ -60,6 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final GetCachedTech _getCachedTech;
   final GetEmployeeWithPhone _getEmployeeWithPhone;
   final UpdateProfile _updateProfile;
+  final GetEmployeeProfile _getEmployeeProfile;
 
   AuthNotifier(
     this._loginWithStore,
@@ -67,6 +69,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._getCachedTech,
     this._getEmployeeWithPhone,
     this._updateProfile,
+    this._getEmployeeProfile,
   ) : super(AuthState(user: TechUser.empty)) {
     _checkAuth();
   }
@@ -98,6 +101,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
           user: user,
           updateProfileStatus: const AsyncValue.data(null),
         );
+      },
+    );
+  }
+
+  /// Silent background refresh of employee profile triggered by socket events
+  /// Does not show loading indicators to avoid disrupting UX
+  Future<void> refreshEmployeeProfile() async {
+    final result = await _getEmployeeProfile();
+
+    result.fold(
+      (failure) {
+        // Silent error handling - log to console only
+        // ignore: avoid_print
+        print('[Auth] Failed to refresh employee profile: ${failure.message}');
+      },
+      (user) {
+        // Update state silently without loading indicators
+        state = state.copyWith(user: user);
+        // ignore: avoid_print
+        print('[Auth] Employee profile refreshed successfully');
       },
     );
   }

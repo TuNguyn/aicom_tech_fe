@@ -8,6 +8,7 @@ abstract class AuthRemoteDataSource {
   Future<void> logout();
   Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode);
   Future<TechUserModel> updateProfile(Map<String, dynamic> data);
+  Future<TechUserModel> getEmployeeProfile();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -107,6 +108,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       throw ServerException(
         message: 'An unknown error occurred while updating profile: $e',
+      );
+    }
+  }
+
+  @override
+  Future<TechUserModel> getEmployeeProfile() async {
+    try {
+      final response = await dioClient.get('/employee-app/profile');
+
+      // Check if response has data
+      if (response.data == null) {
+        throw ServerException(message: 'Empty response from server');
+      }
+
+      // Try to get data from response
+      final responseData = response.data;
+      Map<String, dynamic> userJson;
+
+      // Check if response has 'data' field or is the data itself
+      if (responseData is Map<String, dynamic>) {
+        if (responseData.containsKey('data')) {
+          userJson = responseData['data'] as Map<String, dynamic>;
+        } else {
+          userJson = responseData;
+        }
+      } else {
+        throw ServerException(message: 'Invalid response format');
+      }
+
+      // Use fromLoginResponse as it handles store object properly
+      return TechUserModel.fromLoginResponse(userJson, '');
+    } on AuthException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'An unknown error occurred while fetching profile: $e',
       );
     }
   }

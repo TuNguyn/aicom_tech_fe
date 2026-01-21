@@ -12,6 +12,7 @@ import 'domain/usecases/auth/logout_tech.dart';
 import 'domain/usecases/auth/get_cached_tech.dart';
 import 'domain/usecases/auth/get_employee_with_phone.dart';
 import 'domain/usecases/auth/update_profile.dart';
+import 'domain/usecases/auth/get_employee_profile.dart';
 import 'domain/usecases/appointments/get_appointment_lines.dart';
 import 'domain/repositories/appointment_lines_repository.dart';
 import 'data/datasources/appointment_remote_data_source.dart';
@@ -48,7 +49,7 @@ final socketServiceProvider = Provider<SocketService>((ref) {
 
 final socketNotifierProvider =
     StateNotifierProvider<SocketNotifier, SocketState>((ref) {
-  return SocketNotifier(ref.read(socketServiceProvider));
+  return SocketNotifier(ref.read(socketServiceProvider), ref);
 });
 
 // Hive box providers
@@ -97,6 +98,10 @@ final updateProfileUseCaseProvider = Provider<UpdateProfile>((ref) {
   return UpdateProfile(ref.read(authRepositoryProvider));
 });
 
+final getEmployeeProfileUseCaseProvider = Provider<GetEmployeeProfile>((ref) {
+  return GetEmployeeProfile(ref.read(authRepositoryProvider));
+});
+
 // StateNotifier providers
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -106,6 +111,7 @@ final authNotifierProvider =
     ref.read(getCachedTechUseCaseProvider),
     ref.read(getEmployeeWithPhoneUseCaseProvider),
     ref.read(updateProfileUseCaseProvider),
+    ref.read(getEmployeeProfileUseCaseProvider),
   );
 });
 

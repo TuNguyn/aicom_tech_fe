@@ -90,13 +90,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, TechUser>> updateProfile(Map<String, dynamic> data) async {
     try {
       final updatedUserModel = await remoteDataSource.updateProfile(data);
-      
+
       // We need to preserve the token from the current session as the update response might not include it
       final currentUser = await localDataSource.getCachedUser();
       final token = currentUser?.token ?? '';
-      
+
       final userToCache = updatedUserModel.copyWith(token: token);
-      
+
       await localDataSource.cacheUser(userToCache);
       return Right(userToCache);
     } on AuthException catch (e) {
@@ -107,6 +107,33 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(
         ServerFailure(
           'An unexpected error occurred while updating profile: ${e.toString()}',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, TechUser>> getEmployeeProfile() async {
+    try {
+      final updatedUserModel = await remoteDataSource.getEmployeeProfile();
+
+      // Preserve the token from the current session
+      final currentUser = await localDataSource.getCachedUser();
+      final token = currentUser?.token ?? '';
+
+      final userToCache = updatedUserModel.copyWith(token: token);
+
+      // Update both in-memory state and local cache
+      await localDataSource.cacheUser(userToCache);
+      return Right(userToCache);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure(
+          'An unexpected error occurred while fetching profile: ${e.toString()}',
         ),
       );
     }
