@@ -220,6 +220,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
         itemBuilder: (context, index) {
           final line = lines[index];
           return WalkInLineCard(
+            key: ValueKey(line.serviceLine.id),
             customerName: line.customerName,
             serviceLine: line.serviceLine,
             createdAt: line.createdAt,

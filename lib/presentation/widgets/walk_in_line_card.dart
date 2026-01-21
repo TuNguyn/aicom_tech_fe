@@ -7,7 +7,7 @@ import '../theme/app_strings.dart';
 import '../../app_dependencies.dart';
 
 /// Card widget to display a single service line
-class WalkInLineCard extends ConsumerWidget {
+class WalkInLineCard extends ConsumerStatefulWidget {
   final String customerName;
   final WalkInServiceLine serviceLine;
   final DateTime createdAt;
@@ -18,6 +18,13 @@ class WalkInLineCard extends ConsumerWidget {
     required this.serviceLine,
     required this.createdAt,
   });
+
+  @override
+  ConsumerState<WalkInLineCard> createState() => _WalkInLineCardState();
+}
+
+class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
+  bool _isProcessing = false;
 
   Color _getStatusColor(WalkInLineStatus status) {
     switch (status) {
@@ -70,48 +77,79 @@ class WalkInLineCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final status = serviceLine.status;
+  Widget build(BuildContext context) {
+    final status = widget.serviceLine.status;
     final statusColor = _getStatusColor(status);
 
     // Enable swipe for WAITING and SERVING status only (not for DONE or CANCELED)
     final canSwipe = status == WalkInLineStatus.waiting ||
                      status == WalkInLineStatus.serving;
 
+    final cardContent = _buildCardContent(context, status, statusColor);
+
     if (!canSwipe) {
-      return _buildCardContent(context, status, statusColor);
+      return cardContent;
     }
 
     return Dismissible(
-      key: ValueKey(serviceLine.id),
+      key: ValueKey(widget.serviceLine.id),
       direction: DismissDirection.endToStart,
       background: _buildSwipeBackground(status),
-      confirmDismiss: (direction) async {
-        // Trigger the action but never actually dismiss
-        // Let the refresh API call update the UI instead
-        _handleSwipeAction(context, ref, status);
-        return false; // Never dismiss - let refresh handle UI update
+      // Use dismissThresholds to make swipe easier
+      dismissThresholds: const {
+        DismissDirection.endToStart: 0.3, // Only need to swipe 30% to trigger
       },
-      child: _buildCardContent(context, status, statusColor),
+      // Use movementDuration to control snap back speed
+      movementDuration: const Duration(milliseconds: 200),
+      confirmDismiss: (direction) async {
+        // Show processing state immediately
+        setState(() {
+          _isProcessing = true;
+        });
+
+        // Don't wait for API - return immediately for smooth animation
+        // Trigger API call in background without waiting
+        Future.microtask(() {
+          if (context.mounted) {
+            _handleSwipeAction(context, status);
+          }
+        });
+        return false; // Card snaps back immediately - smooth animation
+      },
+      child: cardContent,
     );
   }
 
   Widget _buildCardContent(BuildContext context, WalkInLineStatus status, Color statusColor) {
+    // Pre-calculate colors to avoid repeated calculations during swipe
+    final cardShadowColor = Colors.black.withValues(alpha: 0.08);
+    final cardBorderColor = Colors.grey.withValues(alpha: 0.3);
+    final decorativeDotColor = statusColor.withValues(alpha: 0.2);
+    final headerGradientStart = statusColor.withValues(alpha: 0.15);
+    final headerGradientEnd = statusColor.withValues(alpha: 0.08);
+    final avatarGradientStart = statusColor.withValues(alpha: 0.25);
+    final avatarGradientEnd = statusColor.withValues(alpha: 0.15);
+    final avatarBorderColor = statusColor.withValues(alpha: 0.4);
+    final statusBadgeShadow = Colors.black.withValues(alpha: 0.05);
+    final timeBadgeShadow = statusColor.withValues(alpha: 0.3);
+
     return RepaintBoundary(
-      child: Container(
+      child: Stack(
+        children: [
+          Container(
           margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
           decoration: BoxDecoration(
             color: const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: cardShadowColor,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
             border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.3),
+              color: cardBorderColor,
               width: 1.5,
             ),
           ),
@@ -129,7 +167,7 @@ class WalkInLineCard extends ConsumerWidget {
                             width: AppDimensions.decorativeDotSize,
                             height: AppDimensions.decorativeDotSize,
                             decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.2),
+                              color: decorativeDotColor,
                               shape: BoxShape.circle,
                             ),
                           )),
@@ -146,8 +184,8 @@ class WalkInLineCard extends ConsumerWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          statusColor.withValues(alpha: 0.15),
-                          statusColor.withValues(alpha: 0.08),
+                          headerGradientStart,
+                          headerGradientEnd,
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
@@ -169,7 +207,7 @@ class WalkInLineCard extends ConsumerWidget {
                             border: Border.all(color: statusColor, width: 1.5),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: statusBadgeShadow,
                                 blurRadius: 4,
                                 offset: const Offset(0, 1),
                               ),
@@ -208,7 +246,7 @@ class WalkInLineCard extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: statusColor.withValues(alpha: 0.3),
+                                  color: timeBadgeShadow,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -224,7 +262,7 @@ class WalkInLineCard extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _getRelativeTime(createdAt),
+                                  _getRelativeTime(widget.createdAt),
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -253,19 +291,19 @@ class WalkInLineCard extends ConsumerWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                statusColor.withValues(alpha: 0.25),
-                                statusColor.withValues(alpha: 0.15),
+                                avatarGradientStart,
+                                avatarGradientEnd,
                               ],
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: statusColor.withValues(alpha: 0.4),
+                              color: avatarBorderColor,
                               width: 2,
                             ),
                           ),
                           child: Center(
                             child: Text(
-                              customerName.isNotEmpty ? customerName[0].toUpperCase() : '?',
+                              widget.customerName.isNotEmpty ? widget.customerName[0].toUpperCase() : '?',
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: statusColor,
                                 fontWeight: FontWeight.bold,
@@ -282,7 +320,7 @@ class WalkInLineCard extends ConsumerWidget {
                             children: [
                               // Customer name
                               Text(
-                                customerName,
+                                widget.customerName,
                                 style: AppTextStyles.bodyLarge.copyWith(
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
@@ -306,7 +344,7 @@ class WalkInLineCard extends ConsumerWidget {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      serviceLine.lineDescription,
+                                      widget.serviceLine.lineDescription,
                                       style: AppTextStyles.bodySmall.copyWith(
                                         color: Colors.grey[800],
                                         fontSize: 12,
@@ -328,6 +366,44 @@ class WalkInLineCard extends ConsumerWidget {
               ),
             ],
           ),
+          ),
+          // Subtle loading overlay when processing
+          if (_isProcessing)
+            Positioned.fill(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: const AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Processing',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -342,19 +418,20 @@ class WalkInLineCard extends ConsumerWidget {
         ? Icons.play_arrow // Play icon for start
         : Icons.check_circle; // Check icon for complete
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
+    // Simplified background for better performance
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
+        decoration: BoxDecoration(
           color: backgroundColor,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 32,
-          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 32,
         ),
       ),
     );
@@ -362,7 +439,6 @@ class WalkInLineCard extends ConsumerWidget {
 
   void _handleSwipeAction(
     BuildContext context,
-    WidgetRef ref,
     WalkInLineStatus status,
   ) async {
     final notifier = ref.read(walkInsNotifierProvider.notifier);
@@ -374,19 +450,26 @@ class WalkInLineCard extends ConsumerWidget {
     if (status == WalkInLineStatus.waiting) {
       // Start the service
       // ignore: avoid_print
-      print('[WalkInLineCard] 🔵 Calling START for line: ${serviceLine.id}');
+      print('[WalkInLineCard] 🔵 Calling START for line: ${widget.serviceLine.id}');
       // ignore: avoid_print
       print('[WalkInLineCard] Current status: $status');
-      success = await notifier.startServiceLine(serviceLine.id);
+      success = await notifier.startServiceLine(widget.serviceLine.id);
       errorMessage = 'Failed to start service. Please try again.';
     } else {
       // Complete the service (SERVING status)
       // ignore: avoid_print
-      print('[WalkInLineCard] 🟢 Calling COMPLETE for line: ${serviceLine.id}');
+      print('[WalkInLineCard] 🟢 Calling COMPLETE for line: ${widget.serviceLine.id}');
       // ignore: avoid_print
       print('[WalkInLineCard] Current status: $status');
-      success = await notifier.completeServiceLine(serviceLine.id);
+      success = await notifier.completeServiceLine(widget.serviceLine.id);
       errorMessage = 'Failed to complete service. Please try again.';
+    }
+
+    // Clear processing state
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
     }
 
     if (!success && context.mounted) {
