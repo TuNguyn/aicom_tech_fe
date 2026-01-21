@@ -87,7 +87,10 @@ class WalkInLineCard extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       background: _buildSwipeBackground(status),
       confirmDismiss: (direction) async {
-        return await _handleSwipeDismiss(context, ref, status);
+        // Trigger the action but never actually dismiss
+        // Let the refresh API call update the UI instead
+        _handleSwipeAction(context, ref, status);
+        return false; // Never dismiss - let refresh handle UI update
       },
       child: _buildCardContent(context, status, statusColor),
     );
@@ -357,7 +360,7 @@ class WalkInLineCard extends ConsumerWidget {
     );
   }
 
-  Future<bool> _handleSwipeDismiss(
+  void _handleSwipeAction(
     BuildContext context,
     WidgetRef ref,
     WalkInLineStatus status,
@@ -370,16 +373,24 @@ class WalkInLineCard extends ConsumerWidget {
 
     if (status == WalkInLineStatus.waiting) {
       // Start the service
+      // ignore: avoid_print
+      print('[WalkInLineCard] 🔵 Calling START for line: ${serviceLine.id}');
+      // ignore: avoid_print
+      print('[WalkInLineCard] Current status: $status');
       success = await notifier.startServiceLine(serviceLine.id);
       errorMessage = 'Failed to start service. Please try again.';
     } else {
       // Complete the service (SERVING status)
+      // ignore: avoid_print
+      print('[WalkInLineCard] 🟢 Calling COMPLETE for line: ${serviceLine.id}');
+      // ignore: avoid_print
+      print('[WalkInLineCard] Current status: $status');
       success = await notifier.completeServiceLine(serviceLine.id);
       errorMessage = 'Failed to complete service. Please try again.';
     }
 
     if (!success && context.mounted) {
-      // Show error and keep card in place
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -387,10 +398,7 @@ class WalkInLineCard extends ConsumerWidget {
           duration: const Duration(seconds: 3),
         ),
       );
-      return false; // Don't dismiss card
     }
-
-    // Success - allow dismissal (card will refresh with new status)
-    return true;
+    // If success, the refresh API call will update the UI automatically
   }
 }

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
 import '../../domain/entities/walk_in_ticket.dart';
@@ -124,7 +126,7 @@ class TicketInfoModel {
   final double totalPaid;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final CustomerInfoModel customer;
+  final CustomerInfoModel? customer; // Nullable for walk-in tickets
   final List<dynamic> payments;
 
   TicketInfoModel({
@@ -138,14 +140,17 @@ class TicketInfoModel {
     required this.totalPaid,
     required this.createdAt,
     required this.updatedAt,
-    required this.customer,
+    this.customer, // Nullable
     required this.payments,
   });
 
   factory TicketInfoModel.fromJson(Map<String, dynamic> json) {
     final customerJson = json['customer'];
-    if (customerJson == null || customerJson is! Map<String, dynamic>) {
-      throw Exception('Invalid customer data for ticket ${json['ticketCode']}');
+
+    // Handle null customer (for walk-in tickets without customer assigned yet)
+    CustomerInfoModel? customer;
+    if (customerJson != null && customerJson is Map<String, dynamic>) {
+      customer = CustomerInfoModel.fromJson(customerJson);
     }
 
     return TicketInfoModel(
@@ -159,7 +164,7 @@ class TicketInfoModel {
       totalPaid: (json['totalPaid'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      customer: CustomerInfoModel.fromJson(customerJson),
+      customer: customer,
       payments: json['payments'] as List<dynamic>,
     );
   }
@@ -176,7 +181,7 @@ class TicketInfoModel {
       'totalPaid': totalPaid,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'customer': customer.toJson(),
+      'customer': customer?.toJson(),
       'payments': payments,
     };
   }
@@ -197,14 +202,22 @@ class TicketLinesResponse {
     final dataList = json['data'] as List<dynamic>;
     final parsedLines = <TicketLineModel>[];
 
-    for (var item in dataList) {
+    print('[TicketLinesResponse] Parsing ${dataList.length} ticket lines...');
+
+    for (var i = 0; i < dataList.length; i++) {
+      final item = dataList[i];
       try {
-        parsedLines.add(TicketLineModel.fromJson(item as Map<String, dynamic>));
+        final line = TicketLineModel.fromJson(item as Map<String, dynamic>);
+        parsedLines.add(line);
+        print('[TicketLinesResponse]   ✓ Line $i: ${line.id} - ${line.lineDescription}');
       } catch (e) {
-        // Skip invalid records (e.g., missing customer data)
+        print('[TicketLinesResponse]   ✗ Line $i: Parse error - $e');
+        // Skip invalid records
         continue;
       }
     }
+
+    print('[TicketLinesResponse] Successfully parsed ${parsedLines.length}/${dataList.length} lines');
 
     return TicketLinesResponse(
       statusCode: json['statusCode'] as int,

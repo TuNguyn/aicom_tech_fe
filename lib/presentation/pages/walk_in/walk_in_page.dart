@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -71,6 +73,28 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
             _showErrorSnackBar(error.toString());
           },
         );
+      },
+    );
+
+    // Listen to socket for new assigned tickets
+    ref.listen<bool>(
+      socketNotifierProvider.select((state) => state.hasNewAssignedTicket),
+      (previous, next) {
+        print('[WalkInPage] Socket listener triggered');
+        print('[WalkInPage]   Previous: $previous');
+        print('[WalkInPage]   Next: $next');
+
+        if (next == true) {
+          // Trigger refresh when new ticket is assigned
+          print('[WalkInPage] ✅ New assigned ticket detected, refreshing data...');
+          ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
+          print('[WalkInPage] ✅ refreshWalkIns() called');
+          // Clear the flag
+          ref.read(socketNotifierProvider.notifier).clearAssignedTicketFlag();
+          print('[WalkInPage] ✅ Flag cleared');
+        } else {
+          print('[WalkInPage] ⚠️ Flag is false, not refreshing');
+        }
       },
     );
 

@@ -7,7 +7,6 @@ import 'core/cache/cache_manager.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/app_colors.dart';
 import 'presentation/providers/theme_provider.dart';
-import 'presentation/providers/socket_provider.dart';
 import 'app_dependencies.dart';
 import 'routes/app_router.dart';
 
@@ -52,7 +51,7 @@ class MyApp extends ConsumerWidget {
       final socketNotifier = ref.read(socketNotifierProvider.notifier);
 
       if (next.isAuthenticated && next.user.token.isNotEmpty) {
-        socketNotifier.connect(next.user.token);
+        socketNotifier.connect(next.user.token, next.user.fullName);
       } else if (!next.isAuthenticated) {
         socketNotifier.disconnect();
       }

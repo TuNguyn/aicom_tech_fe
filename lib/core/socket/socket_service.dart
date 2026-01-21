@@ -1,9 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class SocketService {
   final String socketUrl;
-  IO.Socket? _socket;
+  io.Socket? _socket;
 
   final _connectionStateController = StreamController<bool>.broadcast();
   final _eventControllers = <String, StreamController<dynamic>>{};
@@ -23,9 +25,9 @@ class SocketService {
     print('[Socket] Connecting to $socketUrl');
     print('[Socket] Auth header: Bearer ${authToken.substring(0, 20)}...');
 
-    _socket = IO.io(
+    _socket = io.io(
       socketUrl,
-      IO.OptionBuilder()
+      io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .setExtraHeaders({
