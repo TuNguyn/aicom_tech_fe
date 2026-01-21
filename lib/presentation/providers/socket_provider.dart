@@ -89,6 +89,12 @@ class SocketNotifier extends StateNotifier<SocketState> {
       _handleTicketSync(data);
     });
     _eventSubscriptions.add(ticketSyncSub);
+
+    // Subscribe to APPOINTMENT:SYNC
+    final appointmentSyncSub = _socketService.on('APPOINTMENT:SYNC').listen((data) {
+      _handleAppointmentSync(data);
+    });
+    _eventSubscriptions.add(appointmentSyncSub);
   }
 
   void _handleEmployeeSync(dynamic data) {
@@ -189,6 +195,66 @@ class SocketNotifier extends StateNotifier<SocketState> {
           }
         }
       }
+    }
+  }
+
+  void _handleAppointmentSync(dynamic data) {
+    // 1. Log & Update State
+    print('[Socket] APPOINTMENT:SYNC received: $data');
+    state = state.copyWith(
+      lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
+      lastEventTime: DateTime.now(),
+      lastEventType: 'APPOINTMENT:SYNC',
+    );
+
+    // 2. Validate event format
+    if (data is! Map<String, dynamic>) {
+      print('[Socket] Invalid APPOINTMENT:SYNC event format - not a map');
+      return;
+    }
+
+    // 3. Extract data field
+    final eventData = data['data'];
+    if (eventData == null || eventData is! Map<String, dynamic>) {
+      print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid data field');
+      return;
+    }
+
+    // 4. Extract lines array
+    final lines = eventData['lines'];
+    if (lines == null || lines is! List) {
+      print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid lines field');
+      return;
+    }
+
+    // 5. Get current user ID
+    final currentUser = _ref.read(authNotifierProvider).user;
+    final currentUserId = currentUser.id;
+
+    // 6. Check each line for matching employee
+    bool foundMatch = false;
+    for (var line in lines) {
+      if (line is Map<String, dynamic>) {
+        final employee = line['employee'];
+        if (employee is Map<String, dynamic>) {
+          final employeeId = employee['id'];
+          if (employeeId is String) {
+            print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
+            if (employeeId == currentUserId) {
+              foundMatch = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // 7. Trigger refresh if match found
+    if (foundMatch) {
+      print('[Socket] Appointment assigned to current user, refreshing appointments...');
+      _ref.read(appointmentsNotifierProvider.notifier).refreshAppointments();
+    } else {
+      print('[Socket] Appointment for different employee, ignoring');
     }
   }
 
