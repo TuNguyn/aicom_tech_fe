@@ -202,22 +202,17 @@ class TicketLinesResponse {
     final dataList = json['data'] as List<dynamic>;
     final parsedLines = <TicketLineModel>[];
 
-    print('[TicketLinesResponse] Parsing ${dataList.length} ticket lines...');
-
     for (var i = 0; i < dataList.length; i++) {
       final item = dataList[i];
       try {
         final line = TicketLineModel.fromJson(item as Map<String, dynamic>);
         parsedLines.add(line);
-        print('[TicketLinesResponse]   ✓ Line $i: ${line.id} - ${line.lineDescription}');
       } catch (e) {
-        print('[TicketLinesResponse]   ✗ Line $i: Parse error - $e');
+        print('[Parse Error] Line $i failed: $e');
         // Skip invalid records
         continue;
       }
     }
-
-    print('[TicketLinesResponse] Successfully parsed ${parsedLines.length}/${dataList.length} lines');
 
     return TicketLinesResponse(
       statusCode: json['statusCode'] as int,

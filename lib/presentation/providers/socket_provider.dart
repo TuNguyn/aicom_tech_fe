@@ -118,43 +118,18 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void _handleTicketSync(dynamic data) {
-    print('[Socket] TICKET:SYNC received');
-    print('[Socket] Event data type: ${data.runtimeType}');
-    print('[Socket] Full data: $data');
-
-    // Get current user's full name from state
     final currentUserName = state.currentUserName;
-    print('[Socket] Current user: "$currentUserName"');
 
-    if (currentUserName.isEmpty) {
-      print('[Socket] ⚠️ Warning: currentUserName is empty!');
-      return;
-    }
+    if (currentUserName.isEmpty) return;
 
     // Parse the event data
     if (data is Map<String, dynamic>) {
-      print('[Socket] ✓ Data is Map');
       final eventData = data['data'];
-      print('[Socket] eventData: $eventData');
 
       if (eventData != null && eventData is Map<String, dynamic>) {
-        print('[Socket] ✓ eventData is Map');
         final ticketLines = eventData['ticketLines'];
-        print('[Socket] ticketLines count: ${ticketLines?.length ?? 0}');
 
         if (ticketLines != null && ticketLines is List) {
-          print('[Socket] ✓ ticketLines is List with ${ticketLines.length} items');
-
-          // Debug each line
-          for (var i = 0; i < ticketLines.length; i++) {
-            final line = ticketLines[i];
-            if (line is Map<String, dynamic>) {
-              final employeeName = line['employeeName'];
-              print('[Socket]   Line $i: employeeName = "$employeeName"');
-              print('[Socket]   Line $i: Match = ${employeeName == currentUserName}');
-            }
-          }
-
           // Check if any ticket line matches current employee's name
           final hasMatchingLine = ticketLines.any((line) {
             if (line is Map<String, dynamic>) {
@@ -164,11 +139,8 @@ class SocketNotifier extends StateNotifier<SocketState> {
             return false;
           });
 
-          print('[Socket] ========================================');
-          print('[Socket] Has ticket for "$currentUserName": $hasMatchingLine');
-          print('[Socket] ========================================');
-
           if (hasMatchingLine) {
+            print('[Socket] TICKET:SYNC - ticket assigned to $currentUserName');
             // Set flag to trigger API refresh
             state = state.copyWith(
               hasNewAssignedTicket: true,
@@ -176,8 +148,6 @@ class SocketNotifier extends StateNotifier<SocketState> {
               lastEventTime: DateTime.now(),
               lastEventType: 'TICKET:SYNC',
             );
-            print('[Socket] ✅ Flag set: hasNewAssignedTicket = true');
-            print('[Socket] Current state.hasNewAssignedTicket = ${state.hasNewAssignedTicket}');
           } else {
             // Update event data without triggering refresh
             state = state.copyWith(
@@ -185,16 +155,9 @@ class SocketNotifier extends StateNotifier<SocketState> {
               lastEventTime: DateTime.now(),
               lastEventType: 'TICKET:SYNC',
             );
-            print('[Socket] ⚠️ No matching line, flag NOT set');
           }
-        } else {
-          print('[Socket] ❌ ticketLines is null or not a List');
         }
-      } else {
-        print('[Socket] ❌ eventData is null or not a Map');
       }
-    } else {
-      print('[Socket] ❌ data is not a Map');
     }
   }
 

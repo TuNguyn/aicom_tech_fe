@@ -449,18 +449,10 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
 
     if (status == WalkInLineStatus.waiting) {
       // Start the service
-      // ignore: avoid_print
-      print('[WalkInLineCard] 🔵 Calling START for line: ${widget.serviceLine.id}');
-      // ignore: avoid_print
-      print('[WalkInLineCard] Current status: $status');
       success = await notifier.startServiceLine(widget.serviceLine.id);
       errorMessage = 'Failed to start service. Please try again.';
     } else {
       // Complete the service (SERVING status)
-      // ignore: avoid_print
-      print('[WalkInLineCard] 🟢 Calling COMPLETE for line: ${widget.serviceLine.id}');
-      // ignore: avoid_print
-      print('[WalkInLineCard] Current status: $status');
       success = await notifier.completeServiceLine(widget.serviceLine.id);
       errorMessage = 'Failed to complete service. Please try again.';
     }

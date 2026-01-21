@@ -30,14 +30,6 @@ class WalkInRemoteDataSourceImpl implements WalkInRemoteDataSource {
     String sortBy = 'displayOrder:ASC',
   }) async {
     try {
-      print('[WalkInDataSource] ========================================');
-      print('[WalkInDataSource] Calling API: /employee-app/tickets/lines');
-      print('[WalkInDataSource] Parameters:');
-      print('[WalkInDataSource]   page: $page');
-      print('[WalkInDataSource]   limit: $limit');
-      print('[WalkInDataSource]   sortBy: $sortBy');
-      print('[WalkInDataSource]   statuses: $statuses');
-
       final response = await dioClient.get(
         '/employee-app/tickets/lines',
         queryParameters: {
@@ -48,10 +40,6 @@ class WalkInRemoteDataSourceImpl implements WalkInRemoteDataSource {
             'statuses': statuses.join(','),
         },
       );
-
-      print('[WalkInDataSource] ✅ API response received');
-      print('[WalkInDataSource] Response data type: ${response.data?.runtimeType}');
-      print('[WalkInDataSource] ========================================');
 
       if (response.data == null) {
         throw ServerException(message: 'No data received from server');
@@ -75,29 +63,13 @@ class WalkInRemoteDataSourceImpl implements WalkInRemoteDataSource {
 
   @override
   Future<void> startWalkInLine(String lineId) async {
-    print('[WalkInDataSource] ========================================');
-    print('[WalkInDataSource] START Service Line');
-    print('[WalkInDataSource] Line ID: $lineId');
-    print('[WalkInDataSource] Calling API: PATCH /employee-app/tickets/lines/$lineId/start');
-
-    final response = await dioClient.patch('/employee-app/tickets/lines/$lineId/start');
-
-    print('[WalkInDataSource] ✅ START API response:');
-    print('[WalkInDataSource] Response: $response');
-    print('[WalkInDataSource] ========================================');
+    print('[API] START line: $lineId');
+    await dioClient.patch('/employee-app/tickets/lines/$lineId/start');
   }
 
   @override
   Future<void> completeWalkInLine(String lineId) async {
-    print('[WalkInDataSource] ========================================');
-    print('[WalkInDataSource] COMPLETE Service Line');
-    print('[WalkInDataSource] Line ID: $lineId');
-    print('[WalkInDataSource] Calling API: PATCH /employee-app/tickets/lines/$lineId/done');
-
-    final response = await dioClient.patch('/employee-app/tickets/lines/$lineId/done');
-
-    print('[WalkInDataSource] ✅ COMPLETE API response:');
-    print('[WalkInDataSource] Response: $response');
-    print('[WalkInDataSource] ========================================');
+    print('[API] COMPLETE line: $lineId');
+    await dioClient.patch('/employee-app/tickets/lines/$lineId/done');
   }
 }
