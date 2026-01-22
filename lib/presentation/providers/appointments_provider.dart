@@ -100,4 +100,10 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
 
     await loadAppointmentsForDateRange(startDate, endDate);
   }
+
+  /// Reset state and clear all data (called on logout)
+  void reset() {
+    _isDataLoaded = false;
+    state = AppointmentsState(selectedDate: DateTime.now());
+  }
 }

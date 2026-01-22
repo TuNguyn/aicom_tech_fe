@@ -23,12 +23,15 @@ class WalkInPage extends ConsumerStatefulWidget {
 class _WalkInPageState extends ConsumerState<WalkInPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isInitialLoad = true;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     // Load walk-ins on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authNotifierProvider).user;
+      _currentUserId = user.id;
       ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
     });
   }
@@ -50,6 +53,20 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
     final lines = walkInsState.sortedServiceLines;
     final pendingCount = walkInsState.pendingTicketsCount;
     final isLoading = walkInsState.loadingStatus.isLoading;
+
+    // Listen to auth state changes (user login/logout)
+    ref.listen<String>(
+      authNotifierProvider.select((state) => state.user.id),
+      (previous, next) {
+        // If user ID changed (new user logged in), reload data
+        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
+          print('[WalkInPage] User changed from $previous to $next, reloading data...');
+          _currentUserId = next;
+          _isInitialLoad = true;
+          ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
+        }
+      },
+    );
 
     // Listen to loading status changes
     ref.listen<AsyncValue<void>>(

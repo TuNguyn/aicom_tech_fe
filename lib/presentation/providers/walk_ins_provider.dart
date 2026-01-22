@@ -241,6 +241,12 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     await loadWalkIns();
   }
 
+  /// Reset state and clear all data (called on logout)
+  void reset() {
+    _isDataLoaded = false;
+    state = const WalkInsState();
+  }
+
   /// Start a walk-in service line. Returns true if successful.
   Future<bool> startServiceLine(String lineId) async {
     print('[Action] START line: ${lineId.substring(0, 8)}');

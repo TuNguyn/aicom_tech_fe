@@ -138,6 +138,15 @@ class LogoutDialog extends ConsumerWidget {
                                     await ref.read(authNotifierProvider.notifier).logout();
 
                                     if (context.mounted) {
+                                      // Disconnect socket
+                                      ref.read(socketNotifierProvider.notifier).disconnect();
+
+                                      // Clear appointments data
+                                      ref.read(appointmentsNotifierProvider.notifier).reset();
+
+                                      // Clear walk-ins data
+                                      ref.read(walkInsNotifierProvider.notifier).reset();
+
                                       Navigator.of(context).pop();
                                       // Navigate to login page using go_router
                                       context.go(AppRoutes.login);

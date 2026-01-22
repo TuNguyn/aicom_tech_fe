@@ -18,6 +18,23 @@ class StoreSelectionPage extends ConsumerWidget {
     final isLoading = authState.loginStatus.isLoading;
 
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      // Handle login success - connect socket with new user
+      if (previous?.loginStatus != next.loginStatus) {
+        next.loginStatus.whenOrNull(
+          data: (_) {
+            // Login successful, connect socket with new user's token
+            final user = next.user;
+            if (user.isAuthenticated) {
+              ref.read(socketNotifierProvider.notifier).connect(
+                    user.token,
+                    user.fullName,
+                  );
+            }
+          },
+        );
+      }
+
+      // Handle login error
       next.loginStatus.whenOrNull(
         error: (error, stack) {
           ScaffoldMessenger.of(context).showSnackBar(
