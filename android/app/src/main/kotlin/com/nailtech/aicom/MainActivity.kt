@@ -1,4 +1,4 @@
-package com.example.aicom_tech_fe
+package com.nailtech.aicom
 
 import io.flutter.embedding.android.FlutterActivity
 

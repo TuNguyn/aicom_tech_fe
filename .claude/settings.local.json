@@ -22,7 +22,8 @@
       "WebSearch",
       "Bash(flutter --version:*)",
       "Bash(magick:*)",
-      "Bash(convert:*)"
+      "Bash(convert:*)",
+      "WebFetch(domain:pub.dev)"
     ]
   }
 }
