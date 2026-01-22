@@ -18,7 +18,11 @@
       "Bash(find:*)",
       "Bash(done)",
       "Bash(ls:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "WebSearch",
+      "Bash(flutter --version:*)",
+      "Bash(magick:*)",
+      "Bash(convert:*)"
     ]
   }
 }

@@ -1,0 +1,17 @@
+flutter_launcher_icons:
+  # Platform targets
+  android: true
+  ios: true
+
+  # Main icon for iOS and Android fallback (package will auto-resize)
+  image_path: "assets/logo/aicom_logo.png"
+
+  # Android adaptive icon configuration (8.0+)
+  adaptive_icon_background: "#1E3A5F"
+  adaptive_icon_foreground: "assets/logo/aicom_logo_nobg.png"
+
+  # iOS specific settings
+  remove_alpha_ios: true
+
+  # Minimum Android SDK
+  min_sdk_android: 21
