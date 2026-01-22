@@ -290,9 +290,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         Expanded(
           child: _buildStatCard(
             icon: Icons.event_available,
-            title: 'Today',
+            title: 'Appointments',
             value: '$todayApptCount',
-            subtitle: 'Appointments',
+            subtitle: null,
             color: AppColors.primary,
           ),
         ),
@@ -302,7 +302,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: Icons.people_outline,
             title: 'Waiting',
             value: '$waitingCount',
-            subtitle: 'Customers',
+            subtitle: null,
             color: AppColors.accent,
           ),
         ),
@@ -314,7 +314,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     required IconData icon,
     required String title,
     required String value,
-    required String subtitle,
+    required String? subtitle,
     required Color color,
   }) {
     return Container(
@@ -348,15 +348,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(height: AppDimensions.spacingS),
           Text(
             value,
-            style: AppTextStyles.displayMedium.copyWith(
+            style: AppTextStyles.displayLarge.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            subtitle,
-            style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[500]),
-          ),
+          if (subtitle != null)
+            Text(
+              subtitle,
+              style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[500]),
+            ),
         ],
       ),
     );
@@ -584,7 +585,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.sync, color: AppColors.secondary, size: 20),
+                Icon(Icons.autorenew, color: AppColors.secondary, size: 20),
                 const SizedBox(width: AppDimensions.spacingS),
                 Text(
                   'Total Turns: ',

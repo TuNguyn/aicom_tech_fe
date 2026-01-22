@@ -44,6 +44,14 @@ class WalkInsState extends Equatable {
     return tickets;
   }
 
+  /// Returns count of tickets that are not fully done (pending/in-progress)
+  int get pendingTicketsCount {
+    return walkInTickets.where((ticket) {
+      return ticket.overallStatus != WalkInLineStatus.done &&
+          ticket.overallStatus != WalkInLineStatus.canceled;
+    }).length;
+  }
+
   /// Returns flattened and sorted service lines from all tickets
   List<ServiceLineDisplay> get sortedServiceLines {
     // Flatten service lines from tickets

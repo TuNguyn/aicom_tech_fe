@@ -48,7 +48,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
   Widget build(BuildContext context) {
     final walkInsState = ref.watch(walkInsNotifierProvider);
     final lines = walkInsState.sortedServiceLines;
-    final tickets = walkInsState.sortedTickets;
+    final pendingCount = walkInsState.pendingTicketsCount;
     final isLoading = walkInsState.loadingStatus.isLoading;
 
     // Listen to loading status changes
@@ -94,7 +94,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            _buildHeader(tickets.length, lines.length),
+            _buildHeader(pendingCount, lines.length),
             Expanded(
               child: (isLoading && _isInitialLoad && lines.isEmpty)
                   ? _buildLoadingState()
