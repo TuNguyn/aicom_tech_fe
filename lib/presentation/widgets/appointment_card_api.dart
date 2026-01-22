@@ -20,11 +20,41 @@ class AppointmentCardApi extends StatelessWidget {
       case 'COMPLETED':
         return 'Completed';
       case 'CANCELLED':
-        return 'Cancelled';
+        return 'CANCELLED';
       case 'NO_SHOW':
         return 'No Show';
       default:
         return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+      case 'NO_SHOW':
+        return const Color(0xFFEF9A9A); // Soft coral/pink for cancelled
+      default:
+        return const Color(0xFF6B8CD9); // Blue color for normal
+    }
+  }
+
+  List<Color> _getGradientColors(String status) {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+      case 'NO_SHOW':
+        return [const Color(0xFFFFC1C1), const Color(0xFFFFDAE0)]; // Soft pink gradient
+      default:
+        return [const Color(0xFF9DB4E8), const Color(0xFFB8C9F0)]; // Blue gradient
+    }
+  }
+
+  Color _getTimeBadgeColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+      case 'NO_SHOW':
+        return const Color(0xFFE88B8B); // Soft coral for cancelled
+      default:
+        return const Color(0xFF5578C7); // Darker blue for confirmed
     }
   }
 
@@ -50,7 +80,8 @@ class AppointmentCardApi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeFormat = DateFormat('h:mm a');
-    const blueColor = Color(0xFF6B8CD9);
+    final statusColor = _getStatusColor(appointment.appointment.status);
+    final timeBadgeColor = _getTimeBadgeColor(appointment.appointment.status);
 
     return Container(
       decoration: BoxDecoration(
@@ -63,7 +94,7 @@ class AppointmentCardApi extends StatelessWidget {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: blueColor.withValues(alpha: 0.4), width: 1.5),
+        border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1.5),
       ),
       child: Stack(
         children: [
@@ -79,7 +110,7 @@ class AppointmentCardApi extends StatelessWidget {
                   width: 4,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: blueColor.withValues(alpha: 0.3),
+                    color: statusColor.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -96,7 +127,7 @@ class AppointmentCardApi extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [const Color(0xFF9DB4E8), const Color(0xFFB8C9F0)],
+                    colors: _getGradientColors(appointment.appointment.status),
                   ),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(14),
@@ -113,13 +144,11 @@ class AppointmentCardApi extends StatelessWidget {
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6B8CD9),
+                          color: timeBadgeColor,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(
-                                0xFF6B8CD9,
-                              ).withValues(alpha: 0.3),
+                              color: timeBadgeColor.withValues(alpha: 0.3),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -159,7 +188,7 @@ class AppointmentCardApi extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: blueColor, width: 1.5),
+                        border: Border.all(color: statusColor, width: 1.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -174,13 +203,13 @@ class AppointmentCardApi extends StatelessWidget {
                           Icon(
                             _getStatusIcon(appointment.appointment.status),
                             size: 12,
-                            color: blueColor,
+                            color: statusColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _getStatusText(appointment.appointment.status),
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: blueColor,
+                              color: statusColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 10,
                             ),
@@ -209,13 +238,13 @@ class AppointmentCardApi extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                blueColor.withValues(alpha: 0.3),
-                                blueColor.withValues(alpha: 0.15),
+                                statusColor.withValues(alpha: 0.3),
+                                statusColor.withValues(alpha: 0.15),
                               ],
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: blueColor.withValues(alpha: 0.5),
+                              color: statusColor.withValues(alpha: 0.5),
                               width: 2,
                             ),
                           ),
@@ -224,7 +253,7 @@ class AppointmentCardApi extends StatelessWidget {
                               appointment.appointment.customer.firstName[0]
                                   .toUpperCase(),
                               style: AppTextStyles.bodyLarge.copyWith(
-                                color: blueColor,
+                                color: statusColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -286,10 +315,10 @@ class AppointmentCardApi extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(AppDimensions.spacingS),
                       decoration: BoxDecoration(
-                        color: blueColor.withValues(alpha: 0.06),
+                        color: statusColor.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: blueColor.withValues(alpha: 0.15),
+                          color: statusColor.withValues(alpha: 0.15),
                           width: 1,
                         ),
                       ),
@@ -300,10 +329,10 @@ class AppointmentCardApi extends StatelessWidget {
                             width: 18,
                             height: 18,
                             decoration: BoxDecoration(
-                              color: blueColor.withValues(alpha: 0.2),
+                              color: statusColor.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: blueColor.withValues(alpha: 0.5),
+                                color: statusColor.withValues(alpha: 0.5),
                                 width: 1.5,
                               ),
                             ),
@@ -312,7 +341,7 @@ class AppointmentCardApi extends StatelessWidget {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: blueColor,
+                                  color: statusColor,
                                   shape: BoxShape.circle,
                                 ),
                               ),
