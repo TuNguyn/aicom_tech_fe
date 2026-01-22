@@ -25,7 +25,6 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentNavIndex = 0;
   bool _isDataLoaded = false;
-  String? _currentUserId;
 
   @override
   void initState() {
@@ -33,8 +32,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Load data when home page is first displayed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDataLoaded) {
-        final user = ref.read(authNotifierProvider).user;
-        _currentUserId = user.id;
         _loadHomeData();
         _isDataLoaded = true;
       }
@@ -158,8 +155,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       (previous, next) {
         // If user ID changed (new user logged in), reload data
         if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          print('[HomePage] User changed from $previous to $next, reloading data...');
-          _currentUserId = next;
           _isDataLoaded = false;
           _loadHomeData();
           _isDataLoaded = true;

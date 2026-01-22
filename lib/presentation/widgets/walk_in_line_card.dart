@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/toast_utils.dart';
 import '../../domain/entities/walk_in_ticket.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -466,13 +467,7 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
 
     if (!success && context.mounted) {
       // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      ToastUtils.showError(errorMessage);
     }
     // If success, the refresh API call will update the UI automatically
   }

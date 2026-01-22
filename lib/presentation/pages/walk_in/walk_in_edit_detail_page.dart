@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/unfocus_wrapper.dart';
@@ -196,16 +197,12 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
   void _handleSave() {
     // Validate
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter customer name')),
-      );
+      ToastUtils.showWarning('Please enter customer name');
       return;
     }
 
     if (_selectedServices.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one service')),
-      );
+      ToastUtils.showWarning('Please select at least one service');
       return;
     }
 

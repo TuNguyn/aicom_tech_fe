@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:email_validator/email_validator.dart';
 import '../../../app_dependencies.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/unfocus_wrapper.dart';
@@ -73,25 +74,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (mounted) {
         final state = ref.read(authNotifierProvider);
         if (state.updateProfileStatus.hasError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.updateProfileStatus.error.toString(),
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          ToastUtils.showError(state.updateProfileStatus.error.toString());
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Profile updated successfully',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
+          ToastUtils.showSuccess('Profile updated successfully');
           Navigator.of(context).pop();
         }
       }

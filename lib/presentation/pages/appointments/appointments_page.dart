@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../app_dependencies.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../routes/app_routes.dart';
 import '../../../data/models/appointment_line_model.dart';
 import '../../theme/app_colors.dart';
@@ -21,7 +22,6 @@ class AppointmentsPage extends ConsumerStatefulWidget {
 class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   DateTime _selectedDate = DateTime.now();
   bool _isInitialLoad = true;
-  String? _currentUserId;
 
   // Cache DateFormat objects
   static final _dayFormat = DateFormat('E');
@@ -32,8 +32,6 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     super.initState();
     // Load appointments for current week on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authNotifierProvider).user;
-      _currentUserId = user.id;
       _loadAppointmentsForWeek(DateTime.now());
     });
   }
@@ -71,8 +69,6 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
       (previous, next) {
         // If user ID changed (new user logged in), reload data
         if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          print('[AppointmentsPage] User changed from $previous to $next, reloading data...');
-          _currentUserId = next;
           _isInitialLoad = true;
           _selectedDate = DateTime.now();
           _loadAppointmentsForWeek(DateTime.now());
@@ -99,12 +95,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                 _isInitialLoad = false;
               });
             }
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(error.toString()),
-                backgroundColor: AppColors.error,
-              ),
-            );
+            ToastUtils.showError(error.toString());
           },
         );
       },

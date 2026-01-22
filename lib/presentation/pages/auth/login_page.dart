@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../app_dependencies.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../routes/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
@@ -114,12 +115,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // Show error if verification failed
       next.verifyStatus.whenOrNull(
         error: (error, stack) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error.toString()),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          ToastUtils.showError(error.toString());
         },
       );
     });

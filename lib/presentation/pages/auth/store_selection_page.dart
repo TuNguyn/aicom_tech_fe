@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app_dependencies.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -37,12 +38,7 @@ class StoreSelectionPage extends ConsumerWidget {
       // Handle login error
       next.loginStatus.whenOrNull(
         error: (error, stack) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error.toString()),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          ToastUtils.showError(error.toString());
         },
       );
     });

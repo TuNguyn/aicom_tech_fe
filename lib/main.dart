@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'config/app_config.dart';
 import 'core/constants/app_constants.dart';
 import 'core/cache/cache_manager.dart';
@@ -60,11 +61,13 @@ class MyApp extends ConsumerWidget {
     // Update AppColors with current theme
     AppColors.updateScheme(currentTheme);
 
-    return MaterialApp.router(
-      title: AppConstants.appName,
-      theme: AppTheme.lightTheme,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return OverlaySupport.global(
+      child: MaterialApp.router(
+        title: AppConstants.appName,
+        theme: AppTheme.lightTheme,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }

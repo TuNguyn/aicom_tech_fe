@@ -1,9 +1,8 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app_dependencies.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../routes/app_routes.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -23,28 +22,14 @@ class WalkInPage extends ConsumerStatefulWidget {
 class _WalkInPageState extends ConsumerState<WalkInPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isInitialLoad = true;
-  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     // Load walk-ins on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authNotifierProvider).user;
-      _currentUserId = user.id;
       ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
     });
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   @override
@@ -60,8 +45,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
       (previous, next) {
         // If user ID changed (new user logged in), reload data
         if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          print('[WalkInPage] User changed from $previous to $next, reloading data...');
-          _currentUserId = next;
           _isInitialLoad = true;
           ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
         }
@@ -87,7 +70,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                 _isInitialLoad = false;
               });
             }
-            _showErrorSnackBar(error.toString());
+            ToastUtils.showError(error.toString());
           },
         );
       },
@@ -98,7 +81,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
       socketNotifierProvider.select((state) => state.hasNewAssignedTicket),
       (previous, next) {
         if (next == true) {
-          print('[Socket] New ticket assigned, refreshing...');
           ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
           ref.read(socketNotifierProvider.notifier).clearAssignedTicketFlag();
         }
