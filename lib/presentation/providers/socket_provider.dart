@@ -155,46 +155,62 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void _handleTicketSync(dynamic data) {
-    final currentUserName = state.currentUserName;
+    // 1. Log & Update State
+    print('[Socket] TICKET:SYNC received: $data');
+    state = state.copyWith(
+      lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
+      lastEventTime: DateTime.now(),
+      lastEventType: 'TICKET:SYNC',
+    );
 
-    if (currentUserName.isEmpty) return;
+    // 2. Validate event format
+    if (data is! Map<String, dynamic>) {
+      print('[Socket] Invalid TICKET:SYNC event format - not a map');
+      return;
+    }
 
-    // Parse the event data
-    if (data is Map<String, dynamic>) {
-      final eventData = data['data'];
+    // 3. Extract data field
+    final eventData = data['data'];
+    if (eventData == null || eventData is! Map<String, dynamic>) {
+      print('[Socket] Invalid TICKET:SYNC event - missing or invalid data field');
+      return;
+    }
 
-      if (eventData != null && eventData is Map<String, dynamic>) {
-        final ticketLines = eventData['ticketLines'];
+    // 4. Extract ticketLines array
+    final ticketLines = eventData['ticketLines'];
+    if (ticketLines == null || ticketLines is! List) {
+      print('[Socket] Invalid TICKET:SYNC event - missing or invalid ticketLines field');
+      return;
+    }
 
-        if (ticketLines != null && ticketLines is List) {
-          // Check if any ticket line matches current employee's name
-          final hasMatchingLine = ticketLines.any((line) {
-            if (line is Map<String, dynamic>) {
-              final employeeName = line['employeeName'];
-              return employeeName == currentUserName;
+    // 5. Get current user ID
+    final currentUser = _ref.read(authNotifierProvider).user;
+    final currentUserId = currentUser.id;
+
+    // 6. Check each ticket line for matching employee ID
+    bool foundMatch = false;
+    for (var line in ticketLines) {
+      if (line is Map<String, dynamic>) {
+        final employee = line['employee'];
+        if (employee is Map<String, dynamic>) {
+          final employeeId = employee['id'];
+          if (employeeId is String) {
+            print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
+            if (employeeId == currentUserId) {
+              foundMatch = true;
+              break;
             }
-            return false;
-          });
-
-          if (hasMatchingLine) {
-            print('[Socket] TICKET:SYNC - ticket assigned to $currentUserName');
-            // Set flag to trigger API refresh
-            state = state.copyWith(
-              hasNewAssignedTicket: true,
-              lastEventData: data,
-              lastEventTime: DateTime.now(),
-              lastEventType: 'TICKET:SYNC',
-            );
-          } else {
-            // Update event data without triggering refresh
-            state = state.copyWith(
-              lastEventData: data,
-              lastEventTime: DateTime.now(),
-              lastEventType: 'TICKET:SYNC',
-            );
           }
         }
       }
+    }
+
+    // 7. Trigger refresh if match found
+    if (foundMatch) {
+      print('[Socket] Ticket assigned to current user, setting refresh flag...');
+      state = state.copyWith(hasNewAssignedTicket: true);
+    } else {
+      print('[Socket] Ticket for different employee, ignoring');
     }
   }
 

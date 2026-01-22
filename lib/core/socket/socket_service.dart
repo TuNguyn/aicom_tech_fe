@@ -68,6 +68,13 @@ class SocketService {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+
+    // Clear event controllers so they can be re-registered on reconnect
+    print('[Socket] Clearing event listeners');
+    for (var controller in _eventControllers.values) {
+      controller.close();
+    }
+    _eventControllers.clear();
   }
 
   /// Listen to a specific event
