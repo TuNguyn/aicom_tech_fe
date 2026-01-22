@@ -215,7 +215,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           bottom: false,
           child: Column(
             children: [
-              // --- FIXED HEADER SECTION ---
+              // --- FIXED HEADER SECTION (Segmented & Calendar) ---
               Container(
                 color: Colors.transparent,
                 padding: const EdgeInsets.only(top: 8),
@@ -234,7 +234,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                 ),
               ),
 
-              // --- TABLE SECTION (Only this part changes on data load) ---
+              // --- TABLE SECTION ---
               Expanded(
                 child: reportsState.loadingStatus.when(
                   data: (_) => _buildTableSection(transactions, summary),

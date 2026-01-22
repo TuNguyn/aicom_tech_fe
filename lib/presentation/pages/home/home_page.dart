@@ -119,9 +119,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   );
 
   static final _overlayStyleReport = SystemUiOverlayStyle(
-    statusBarColor: AppColors.background,
-    statusBarIconBrightness: Brightness.dark,
-    statusBarBrightness: Brightness.light,
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
   );
 
   static final _overlayStyleMore = SystemUiOverlayStyle(
