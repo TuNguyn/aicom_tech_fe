@@ -265,7 +265,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
       children: [
         // Sticky table header
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: const BorderRadius.only(
@@ -285,7 +285,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         // Scrollable data rows
         Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: const BoxDecoration(color: Colors.white),
             child: ListView.builder(
               padding: EdgeInsets.zero,
@@ -299,7 +299,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         ),
         // Sticky total row
         Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+          margin: const EdgeInsets.fromLTRB(8, 0, 8, 90),
           child: _buildTotalRow(summary, transactions),
         ),
       ],
@@ -370,7 +370,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
 
     return RepaintBoundary(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
+        margin: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingS),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -382,129 +382,132 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _selectedPeriod == 'Custom'
-                  ? Center(child: _buildCustomDateSelector())
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            InkWell(
-                              onTap: _onHeaderPrev,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey[100],
-                                ),
-                                child: Icon(
-                                  Icons.chevron_left,
-                                  color: Colors.grey[700],
-                                  size: 18,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _selectedPeriod == 'Custom'
+                    ? Center(child: _buildCustomDateSelector())
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              InkWell(
+                                onTap: _onHeaderPrev,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.grey[100],
+                                  ),
+                                  child: Icon(
+                                    Icons.chevron_left,
+                                    color: Colors.grey[700],
+                                    size: 18,
+                                  ),
                                 ),
                               ),
-                            ),
-                            Padding(
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: Text(
+                                  _getHeaderTitle(),
+                                  style: AppTextStyles.titleLarge.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: _onHeaderNext,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.grey[100],
+                                  ),
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey[700],
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Dynamic Today/This Week/etc Button
+                          GestureDetector(
+                            onTap: () => _jumpToDate(DateTime.now()),
+                            child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                ),
                               ),
                               child: Text(
-                                _getHeaderTitle(),
-                                style: AppTextStyles.titleLarge.copyWith(
+                                _selectedPeriod == 'Day'
+                                    ? 'Today'
+                                    : _selectedPeriod == 'Week'
+                                    ? 'This Week'
+                                    : _selectedPeriod == 'Month'
+                                    ? 'This Month'
+                                    : _selectedPeriod == 'Year'
+                                    ? 'This Year'
+                                    : 'Today',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  fontSize: 16,
                                 ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: _onHeaderNext,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey[100],
-                                ),
-                                child: Icon(
-                                  Icons.chevron_right,
-                                  color: Colors.grey[700],
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Dynamic Today/This Week/etc Button
-                        GestureDetector(
-                          onTap: () => _jumpToDate(DateTime.now()),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                              ),
-                            ),
-                            child: Text(
-                              _selectedPeriod == 'Day'
-                                  ? 'Today'
-                                  : _selectedPeriod == 'Week'
-                                  ? 'This Week'
-                                  : _selectedPeriod == 'Month'
-                                  ? 'This Month'
-                                  : _selectedPeriod == 'Year'
-                                  ? 'This Year'
-                                  : 'Today',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildExpandedPeriodChip('Day'),
-                  const SizedBox(width: 4),
-                  _buildExpandedPeriodChip('Week'),
-                  const SizedBox(width: 4),
-                  _buildExpandedPeriodChip('Month'),
-                  const SizedBox(width: 4),
-                  _buildExpandedPeriodChip('Year'),
-                  const SizedBox(width: 4),
-                  _buildExpandedPeriodChip('Custom'),
-                ],
+                        ],
+                      ),
               ),
-            ),
 
-            if (showBottomCalendar) ...[
               const SizedBox(height: 12),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-              const SizedBox(height: 8),
-              _buildDynamicCalendarBody(),
-              const SizedBox(height: 8),
-            ] else
-              const SizedBox(height: 16),
-          ],
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildExpandedPeriodChip('Day'),
+                    const SizedBox(width: 4),
+                    _buildExpandedPeriodChip('Week'),
+                    const SizedBox(width: 4),
+                    _buildExpandedPeriodChip('Month'),
+                    const SizedBox(width: 4),
+                    _buildExpandedPeriodChip('Year'),
+                    const SizedBox(width: 4),
+                    _buildExpandedPeriodChip('Custom'),
+                  ],
+                ),
+              ),
+
+              if (showBottomCalendar) ...[
+                const SizedBox(height: 12),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                const SizedBox(height: 8),
+                _buildDynamicCalendarBody(),
+                const SizedBox(height: 8),
+              ] else
+                const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -1019,7 +1022,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: Colors.grey[100],
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(16),
           bottomRight: Radius.circular(16),

@@ -149,9 +149,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
-    final user = authState.user;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: _currentOverlayStyle,
       child: Container(
@@ -159,42 +156,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           extendBody: true,
-          // Hide AppBar when on Walk-In, Appointments, Report, or More tab (index 1, 2, 3, 4) to save space
-          appBar:
-              (_currentNavIndex == 1 ||
-                  _currentNavIndex == 2 ||
-                  _currentNavIndex == 3 ||
-                  _currentNavIndex == 4)
-              ? null
-              : AppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      context.push(AppRoutes.notifications);
-                    },
-                  ),
-                  title: Text(
-                    user.fullName,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  centerTitle: true,
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.exit_to_app, color: Colors.white),
-                      onPressed: () {
-                        LogoutDialog.show(context);
-                      },
-                    ),
-                  ],
-                ),
           body: IndexedStack(
             index: _currentNavIndex,
             children: [
@@ -223,27 +184,87 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildHomePage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.spacingM,
-        AppDimensions.spacingM,
-        AppDimensions.spacingM,
-        100, // Extra bottom padding to account for bottom nav bar
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppDimensions.spacingM,
+              AppDimensions.spacingM,
+              AppDimensions.spacingM,
+              100, // Extra bottom padding to account for bottom nav bar
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Notifications Section (1/3 of screen)
+                _buildNotificationsSection(),
+                const SizedBox(height: AppDimensions.spacingL),
+
+                // Quick Stats Section
+                _buildQuickStatsSection(),
+                const SizedBox(height: AppDimensions.spacingL),
+
+                // Combined Today's Summary & Performance
+                _buildCombinedSummaryPerformance(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
+
+    return Container(
+      color: Colors.transparent,
+      padding: EdgeInsets.fromLTRB(
+        AppDimensions.spacingXs,
+        MediaQuery.of(context).padding.top,
+        AppDimensions.spacingXs,
+        4,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Notifications Section (1/3 of screen)
-          _buildNotificationsSection(),
-          const SizedBox(height: AppDimensions.spacingL),
-
-          // Quick Stats Section
-          _buildQuickStatsSection(),
-          const SizedBox(height: AppDimensions.spacingL),
-
-          // Combined Today's Summary & Performance
-          _buildCombinedSummaryPerformance(),
-        ],
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () {
+                context.push(AppRoutes.notifications);
+              },
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  user.fullName,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white, size: 24),
+              onPressed: () {
+                LogoutDialog.show(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

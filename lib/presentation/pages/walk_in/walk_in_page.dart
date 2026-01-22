@@ -115,7 +115,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
         AppDimensions.spacingXs,
         MediaQuery.of(context).padding.top,
         AppDimensions.spacingXs,
-        0,
+        4,
       ),
       child: Column(
         children: [
@@ -173,11 +173,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
-                    Icons.exit_to_app,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  icon: const Icon(Icons.logout, color: Colors.white, size: 24),
                   onPressed: () {
                     LogoutDialog.show(context);
                   },

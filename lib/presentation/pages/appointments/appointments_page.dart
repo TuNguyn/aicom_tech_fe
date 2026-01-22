@@ -246,11 +246,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
           color: isSelected
               ? Colors.white
               : isToday
-              ? AppColors.primary.withValues(alpha: 0.1)
+              ? Colors.white.withValues(alpha: 0.1)
               : null,
           borderRadius: BorderRadius.circular(12),
           border: isToday && !isSelected
-              ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
+              ? Border.all(color: Colors.white, width: 1)
               : null,
         ),
         child: Column(

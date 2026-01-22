@@ -136,9 +136,9 @@ class _DateRangePickerBottomSheetState
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(
+        AppDimensions.spacingXs,
         AppDimensions.spacingM,
-        AppDimensions.spacingM,
-        AppDimensions.spacingS,
+        AppDimensions.spacingXs,
         AppDimensions.spacingM,
       ),
       decoration: BoxDecoration(
@@ -170,7 +170,7 @@ class _DateRangePickerBottomSheetState
   Widget _buildMonthNavigation() {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingM,
+        horizontal: AppDimensions.spacingXs,
         vertical: AppDimensions.spacingS,
       ),
       child: Row(
@@ -216,7 +216,7 @@ class _DateRangePickerBottomSheetState
     final days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingM,
+        horizontal: AppDimensions.spacingXs,
         vertical: AppDimensions.spacingS,
       ),
       child: Row(
@@ -243,7 +243,7 @@ class _DateRangePickerBottomSheetState
     final days = _getDaysInMonth();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingXs),
       child: SizedBox(
         height: 280,
         child: GridView.builder(
@@ -355,7 +355,10 @@ class _DateRangePickerBottomSheetState
 
   Widget _buildSelectedRangeDisplay() {
     return Container(
-      margin: const EdgeInsets.all(AppDimensions.spacingM),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingXs,
+        vertical: AppDimensions.spacingM,
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.spacingM,
         vertical: 12,
@@ -427,7 +430,10 @@ class _DateRangePickerBottomSheetState
 
   Widget _buildActionButtons() {
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.spacingM),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingXs,
+        vertical: AppDimensions.spacingM,
+      ),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: Colors.grey[200]!),
@@ -513,17 +519,22 @@ class _DateRangePickerBottomSheetState
           top: Radius.circular(20),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-          _buildMonthNavigation(),
-          _buildDaysOfWeekRow(),
-          _buildCalendarGrid(),
-          const SizedBox(height: AppDimensions.spacingS),
-          _buildSelectedRangeDisplay(),
-          _buildActionButtons(),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(),
+            _buildMonthNavigation(),
+            _buildDaysOfWeekRow(),
+            _buildCalendarGrid(),
+            const SizedBox(height: AppDimensions.spacingS),
+            _buildSelectedRangeDisplay(),
+            _buildActionButtons(),
+          ],
+        ),
       ),
     );
   }
