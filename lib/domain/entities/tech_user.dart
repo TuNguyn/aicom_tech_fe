@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../config/app_config.dart';
 
 class TechUser extends Equatable {
   final String id;
@@ -39,6 +40,27 @@ class TechUser extends Equatable {
 
   String get fullName => '$firstName $lastName';
 
+  /// Returns the full avatar URL by combining base URL with relative path
+  /// If image is null or already a full URL, returns it as-is
+  String? get avatarUrl {
+    if (image == null || image!.isEmpty) {
+      return null;
+    }
+
+    // If already a full URL (starts with http:// or https://), return as-is
+    if (image!.startsWith('http://') || image!.startsWith('https://')) {
+      return image;
+    }
+
+    // If relative path (starts with /), prepend base URL
+    if (image!.startsWith('/')) {
+      return '${AppConfig.baseUrl}$image';
+    }
+
+    // Otherwise return as-is
+    return image;
+  }
+
   static const empty = TechUser(
     id: '',
     firstName: '',
@@ -51,21 +73,21 @@ class TechUser extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        firstName,
-        lastName,
-        phone,
-        avatarColorHex,
-        avatarForeColorHex,
-        avatarMode,
-        image,
-        jobTitle,
-        storeId,
-        storeName,
-        email,
-        ssn,
-        address,
-        token,
-        isActive,
-      ];
+    id,
+    firstName,
+    lastName,
+    phone,
+    avatarColorHex,
+    avatarForeColorHex,
+    avatarMode,
+    image,
+    jobTitle,
+    storeId,
+    storeName,
+    email,
+    ssn,
+    address,
+    token,
+    isActive,
+  ];
 }

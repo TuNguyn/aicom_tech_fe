@@ -23,7 +23,8 @@
       "Bash(flutter --version:*)",
       "Bash(magick:*)",
       "Bash(convert:*)",
-      "WebFetch(domain:pub.dev)"
+      "WebFetch(domain:pub.dev)",
+      "Bash(dart format:*)"
     ]
   }
 }

@@ -8,6 +8,9 @@ class EmployeeModel extends Employee {
     required super.storeId,
     required super.storeName,
     super.avatar,
+    super.avatarMode,
+    super.avatarColorHex,
+    super.avatarForeColorHex,
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +21,9 @@ class EmployeeModel extends Employee {
       storeId: json['storeId'] as String,
       storeName: json['storeName'] as String,
       avatar: json['avatar'] as String?,
+      avatarMode: json['avatarMode'] as String?,
+      avatarColorHex: json['avatarColorHex'] as String?,
+      avatarForeColorHex: json['avatarForeColorHex'] as String?,
     );
   }
 
@@ -29,6 +35,9 @@ class EmployeeModel extends Employee {
       'storeId': storeId,
       'storeName': storeName,
       'avatar': avatar,
+      'avatarMode': avatarMode,
+      'avatarColorHex': avatarColorHex,
+      'avatarForeColorHex': avatarForeColorHex,
     };
   }
 
@@ -40,6 +49,9 @@ class EmployeeModel extends Employee {
       storeId: storeId,
       storeName: storeName,
       avatar: avatar,
+      avatarMode: avatarMode,
+      avatarColorHex: avatarColorHex,
+      avatarForeColorHex: avatarForeColorHex,
     );
   }
 }

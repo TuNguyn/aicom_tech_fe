@@ -7,6 +7,131 @@ import '../theme/app_dimensions.dart';
 import '../theme/app_strings.dart';
 import '../../app_dependencies.dart';
 
+// Cache for status-based styling to avoid repeated calculations
+class _WalkInLineCardStyle {
+  final Color statusColor;
+  final String statusText;
+  final IconData statusIcon;
+  final Color backgroundColor;
+  final IconData swipeIcon;
+
+  // Pre-calculated color variations with alpha
+  final Color cardShadowColor;
+  final Color cardBorderColor;
+  final Color decorativeDotColor;
+  final Color headerGradientStart;
+  final Color headerGradientEnd;
+  final Color avatarGradientStart;
+  final Color avatarGradientEnd;
+  final Color avatarBorderColor;
+  final Color statusBadgeShadow;
+  final Color timeBadgeShadow;
+
+  const _WalkInLineCardStyle._({
+    required this.statusColor,
+    required this.statusText,
+    required this.statusIcon,
+    required this.backgroundColor,
+    required this.swipeIcon,
+    required this.cardShadowColor,
+    required this.cardBorderColor,
+    required this.decorativeDotColor,
+    required this.headerGradientStart,
+    required this.headerGradientEnd,
+    required this.avatarGradientStart,
+    required this.avatarGradientEnd,
+    required this.avatarBorderColor,
+    required this.statusBadgeShadow,
+    required this.timeBadgeShadow,
+  });
+
+  // Pre-defined styles for each status (const for better performance)
+  static const _waitingStyle = _WalkInLineCardStyle._(
+    statusColor: Color(0xFFFF6B00), // Vibrant orange
+    statusText: AppStrings.statusWaiting,
+    statusIcon: Icons.schedule,
+    backgroundColor: Color(0xFF00A86B), // Green for start
+    swipeIcon: Icons.play_arrow,
+    cardShadowColor: Color(0x14000000),        // 0.08 alpha
+    cardBorderColor: Color(0x4D999999),        // 0.3 alpha
+    decorativeDotColor: Color(0x33FF6B00),     // 0.2 alpha
+    headerGradientStart: Color(0x26FF6B00),    // 0.15 alpha
+    headerGradientEnd: Color(0x14FF6B00),      // 0.08 alpha
+    avatarGradientStart: Color(0x40FF6B00),    // 0.25 alpha
+    avatarGradientEnd: Color(0x26FF6B00),      // 0.15 alpha
+    avatarBorderColor: Color(0x66FF6B00),      // 0.4 alpha
+    statusBadgeShadow: Color(0x0D000000),      // 0.05 alpha
+    timeBadgeShadow: Color(0x4DFF6B00),        // 0.3 alpha
+  );
+
+  static const _servingStyle = _WalkInLineCardStyle._(
+    statusColor: Color(0xFF00A86B), // Vibrant jade green
+    statusText: AppStrings.statusInService,
+    statusIcon: Icons.spa_outlined,
+    backgroundColor: Color(0xFF2196F3), // Blue for complete
+    swipeIcon: Icons.check_circle,
+    cardShadowColor: Color(0x14000000),
+    cardBorderColor: Color(0x4D999999),
+    decorativeDotColor: Color(0x3300A86B),
+    headerGradientStart: Color(0x2600A86B),
+    headerGradientEnd: Color(0x1400A86B),
+    avatarGradientStart: Color(0x4000A86B),
+    avatarGradientEnd: Color(0x2600A86B),
+    avatarBorderColor: Color(0x6600A86B),
+    statusBadgeShadow: Color(0x0D000000),
+    timeBadgeShadow: Color(0x4D00A86B),
+  );
+
+  static const _doneStyle = _WalkInLineCardStyle._(
+    statusColor: Colors.grey,
+    statusText: AppStrings.statusDone,
+    statusIcon: Icons.check_circle_outline,
+    backgroundColor: Colors.grey,
+    swipeIcon: Icons.check_circle,
+    cardShadowColor: Color(0x14000000),
+    cardBorderColor: Color(0x4D999999),
+    decorativeDotColor: Color(0x33999999),
+    headerGradientStart: Color(0x26999999),
+    headerGradientEnd: Color(0x14999999),
+    avatarGradientStart: Color(0x40999999),
+    avatarGradientEnd: Color(0x26999999),
+    avatarBorderColor: Color(0x66999999),
+    statusBadgeShadow: Color(0x0D000000),
+    timeBadgeShadow: Color(0x4D999999),
+  );
+
+  static const _canceledStyle = _WalkInLineCardStyle._(
+    statusColor: Color(0xFFE53935), // Red for canceled
+    statusText: 'Cancelled',
+    statusIcon: Icons.cancel,
+    backgroundColor: Color(0xFFE53935),
+    swipeIcon: Icons.cancel,
+    cardShadowColor: Color(0x14000000),
+    cardBorderColor: Color(0x4D999999),
+    decorativeDotColor: Color(0x33E53935),
+    headerGradientStart: Color(0x26E53935),
+    headerGradientEnd: Color(0x14E53935),
+    avatarGradientStart: Color(0x40E53935),
+    avatarGradientEnd: Color(0x26E53935),
+    avatarBorderColor: Color(0x66E53935),
+    statusBadgeShadow: Color(0x0D000000),
+    timeBadgeShadow: Color(0x4DE53935),
+  );
+
+  static _WalkInLineCardStyle fromStatus(WalkInLineStatus status) {
+    switch (status) {
+      case WalkInLineStatus.waiting:
+        return _waitingStyle;
+      case WalkInLineStatus.serving:
+        return _servingStyle;
+      case WalkInLineStatus.done:
+        return _doneStyle;
+      case WalkInLineStatus.canceled:
+        return _canceledStyle;
+    }
+  }
+}
+
 /// Card widget to display a single service line
 class WalkInLineCard extends ConsumerStatefulWidget {
   final String customerName;
@@ -26,67 +151,41 @@ class WalkInLineCard extends ConsumerStatefulWidget {
 
 class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
   bool _isProcessing = false;
+  String? _cachedRelativeTime;
+  DateTime? _lastTimeUpdate;
 
-  Color _getStatusColor(WalkInLineStatus status) {
-    switch (status) {
-      case WalkInLineStatus.waiting:
-        return const Color(0xFFFF6B00); // Vibrant orange
-      case WalkInLineStatus.serving:
-        return const Color(0xFF00A86B); // Vibrant jade green
-      case WalkInLineStatus.done:
-        return Colors.grey;
-      case WalkInLineStatus.canceled:
-        return const Color(0xFFE53935); // Red for canceled
-    }
-  }
-
-  String _getStatusText(WalkInLineStatus status) {
-    switch (status) {
-      case WalkInLineStatus.waiting:
-        return AppStrings.statusWaiting;
-      case WalkInLineStatus.serving:
-        return AppStrings.statusInService;
-      case WalkInLineStatus.done:
-        return AppStrings.statusDone;
-      case WalkInLineStatus.canceled:
-        return 'Cancelled';
-    }
-  }
-
-  IconData _getStatusIcon(WalkInLineStatus status) {
-    switch (status) {
-      case WalkInLineStatus.waiting:
-        return Icons.schedule;
-      case WalkInLineStatus.serving:
-        return Icons.spa_outlined;
-      case WalkInLineStatus.done:
-        return Icons.check_circle_outline;
-      case WalkInLineStatus.canceled:
-        return Icons.cancel;
-    }
-  }
-
+  // Cache relative time calculation with 1-minute granularity
   String _getRelativeTime(DateTime createdAt) {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}m ago';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours}h ago';
-    } else {
-      return '${diff.inDays}d ago';
+    final now = DateTime.now();
+
+    // Only recalculate if minute has changed
+    if (_cachedRelativeTime == null ||
+        _lastTimeUpdate == null ||
+        now.difference(_lastTimeUpdate!).inMinutes >= 1) {
+      final diff = now.difference(createdAt);
+      if (diff.inMinutes < 60) {
+        _cachedRelativeTime = '${diff.inMinutes}m ago';
+      } else if (diff.inHours < 24) {
+        _cachedRelativeTime = '${diff.inHours}h ago';
+      } else {
+        _cachedRelativeTime = '${diff.inDays}d ago';
+      }
+      _lastTimeUpdate = now;
     }
+
+    return _cachedRelativeTime!;
   }
 
   @override
   Widget build(BuildContext context) {
     final status = widget.serviceLine.status;
-    final statusColor = _getStatusColor(status);
+    final style = _WalkInLineCardStyle.fromStatus(status);
 
     // Enable swipe for WAITING and SERVING status only (not for DONE or CANCELED)
     final canSwipe = status == WalkInLineStatus.waiting ||
                      status == WalkInLineStatus.serving;
 
-    final cardContent = _buildCardContent(context, status, statusColor);
+    final cardContent = _buildCardContent(context, status, style);
 
     if (!canSwipe) {
       return cardContent;
@@ -95,7 +194,7 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
     return Dismissible(
       key: ValueKey(widget.serviceLine.id),
       direction: DismissDirection.endToStart,
-      background: _buildSwipeBackground(status),
+      background: _buildSwipeBackground(style),
       // Use dismissThresholds to make swipe easier
       dismissThresholds: const {
         DismissDirection.endToStart: 0.3, // Only need to swipe 30% to trigger
@@ -121,18 +220,7 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
     );
   }
 
-  Widget _buildCardContent(BuildContext context, WalkInLineStatus status, Color statusColor) {
-    // Pre-calculate colors to avoid repeated calculations during swipe
-    final cardShadowColor = Colors.black.withValues(alpha: 0.08);
-    final cardBorderColor = Colors.grey.withValues(alpha: 0.3);
-    final decorativeDotColor = statusColor.withValues(alpha: 0.2);
-    final headerGradientStart = statusColor.withValues(alpha: 0.15);
-    final headerGradientEnd = statusColor.withValues(alpha: 0.08);
-    final avatarGradientStart = statusColor.withValues(alpha: 0.25);
-    final avatarGradientEnd = statusColor.withValues(alpha: 0.15);
-    final avatarBorderColor = statusColor.withValues(alpha: 0.4);
-    final statusBadgeShadow = Colors.black.withValues(alpha: 0.05);
-    final timeBadgeShadow = statusColor.withValues(alpha: 0.3);
+  Widget _buildCardContent(BuildContext context, WalkInLineStatus status, _WalkInLineCardStyle style) {
 
     return RepaintBoundary(
       child: Stack(
@@ -144,13 +232,13 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: cardShadowColor,
+                color: style.cardShadowColor,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
             border: Border.all(
-              color: cardBorderColor,
+              color: style.cardBorderColor,
               width: 1.5,
             ),
           ),
@@ -159,20 +247,8 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
               // Decorative dots pattern (top right)
               Positioned(
                 top: 10,
-                right: 10,
-                child: Row(
-                  children: List.generate(
-                      3,
-                      (index) => Container(
-                            margin: const EdgeInsets.only(left: 3),
-                            width: AppDimensions.decorativeDotSize,
-                            height: AppDimensions.decorativeDotSize,
-                            decoration: BoxDecoration(
-                              color: decorativeDotColor,
-                              shape: BoxShape.circle,
-                            ),
-                          )),
-                ),
+                right: 7,
+                child: _DecorativeDotsRow(color: style.decorativeDotColor),
               ),
 
               Column(
@@ -185,8 +261,8 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          headerGradientStart,
-                          headerGradientEnd,
+                          style.headerGradientStart,
+                          style.headerGradientEnd,
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
@@ -205,10 +281,10 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: statusColor, width: 1.5),
+                            border: Border.all(color: style.statusColor, width: 1.5),
                             boxShadow: [
                               BoxShadow(
-                                color: statusBadgeShadow,
+                                color: style.statusBadgeShadow,
                                 blurRadius: 4,
                                 offset: const Offset(0, 1),
                               ),
@@ -218,15 +294,15 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                _getStatusIcon(status),
+                                style.statusIcon,
                                 size: AppDimensions.statusIconSize,
-                                color: statusColor,
+                                color: style.statusColor,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _getStatusText(status),
+                                style.statusText,
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: statusColor,
+                                  color: style.statusColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
                                 ),
@@ -243,11 +319,11 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: statusColor,
+                              color: style.statusColor,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: timeBadgeShadow,
+                                  color: style.timeBadgeShadow,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -292,13 +368,13 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                avatarGradientStart,
-                                avatarGradientEnd,
+                                style.avatarGradientStart,
+                                style.avatarGradientEnd,
                               ],
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: avatarBorderColor,
+                              color: style.avatarBorderColor,
                               width: 2,
                             ),
                           ),
@@ -306,7 +382,7 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                             child: Text(
                               widget.customerName.isNotEmpty ? widget.customerName[0].toUpperCase() : '?',
                               style: AppTextStyles.bodyLarge.copyWith(
-                                color: statusColor,
+                                color: style.statusColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: AppDimensions.avatarFontSize,
                               ),
@@ -338,7 +414,7 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
                                     width: AppDimensions.decorativeDotSize,
                                     height: AppDimensions.decorativeDotSize,
                                     decoration: BoxDecoration(
-                                      color: statusColor,
+                                      color: style.statusColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -409,28 +485,19 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
     );
   }
 
-  Widget _buildSwipeBackground(WalkInLineStatus status) {
-    // Different color and icon based on status
-    final backgroundColor = status == WalkInLineStatus.waiting
-        ? const Color(0xFF00A86B) // Green for start
-        : const Color(0xFF2196F3); // Blue for complete
-
-    final icon = status == WalkInLineStatus.waiting
-        ? Icons.play_arrow // Play icon for start
-        : Icons.check_circle; // Check icon for complete
-
+  Widget _buildSwipeBackground(_WalkInLineCardStyle style) {
     // Simplified background for better performance
     return RepaintBoundary(
       child: Container(
         margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: style.backgroundColor,
           borderRadius: BorderRadius.circular(16),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         child: Icon(
-          icon,
+          style.swipeIcon,
           color: Colors.white,
           size: 32,
         ),
@@ -470,5 +537,36 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
       ToastUtils.showError(errorMessage);
     }
     // If success, the refresh API call will update the UI automatically
+  }
+}
+
+// Widget for decorative dots row with dynamic color
+class _DecorativeDotsRow extends StatelessWidget {
+  final Color color;
+
+  const _DecorativeDotsRow({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _dot(color),
+        const SizedBox(width: 3),
+        _dot(color),
+        const SizedBox(width: 3),
+        _dot(color),
+      ],
+    );
+  }
+
+  Widget _dot(Color color) {
+    return Container(
+      width: AppDimensions.decorativeDotSize,
+      height: AppDimensions.decorativeDotSize,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
   }
 }

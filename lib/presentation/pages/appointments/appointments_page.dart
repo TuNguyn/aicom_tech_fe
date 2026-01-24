@@ -64,17 +64,20 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     final appointmentCount = appointments.length;
 
     // Listen to auth state changes (user login/logout)
-    ref.listen<String>(
-      authNotifierProvider.select((state) => state.user.id),
-      (previous, next) {
-        // If user ID changed (new user logged in), reload data
-        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          _isInitialLoad = true;
-          _selectedDate = DateTime.now();
-          _loadAppointmentsForWeek(DateTime.now());
-        }
-      },
-    );
+    ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
+      previous,
+      next,
+    ) {
+      // If user ID changed (new user logged in), reload data
+      if (previous != null &&
+          previous.isNotEmpty &&
+          previous != next &&
+          next.isNotEmpty) {
+        _isInitialLoad = true;
+        _selectedDate = DateTime.now();
+        _loadAppointmentsForWeek(DateTime.now());
+      }
+    });
 
     // Listen to loading status changes
     ref.listen<AsyncValue<void>>(
@@ -295,45 +298,48 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   }
 
   Widget _buildEmptyState() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          children: [
-            SizedBox(
-              height: constraints.maxHeight,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 64,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No appointments',
-                      style: AppTextStyles.titleLarge.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'You have no appointments for this date',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      children: [
+        // Use MediaQuery to get available height and center the content
+        SizedBox(
+          height:
+              MediaQuery.of(context).size.height -
+              MediaQuery.of(context).padding.top -
+              56 - // Header height
+              88 - // Week calendar height
+              kBottomNavigationBarHeight -
+              40, // Bottom padding
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 64,
+                  color: AppColors.primary,
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  'No appointments',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You have no appointments for this date',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 

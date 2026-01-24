@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/cached_avatar.dart';
 
 class StoreSelectionPage extends ConsumerWidget {
   const StoreSelectionPage({super.key});
@@ -26,10 +27,9 @@ class StoreSelectionPage extends ConsumerWidget {
             // Login successful, connect socket with new user's token
             final user = next.user;
             if (user.isAuthenticated) {
-              ref.read(socketNotifierProvider.notifier).connect(
-                    user.token,
-                    user.fullName,
-                  );
+              ref
+                  .read(socketNotifierProvider.notifier)
+                  .connect(user.token, user.fullName);
             }
           },
         );
@@ -45,9 +45,7 @@ class StoreSelectionPage extends ConsumerWidget {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.mainBackgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppColors.mainBackgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -65,10 +63,14 @@ class StoreSelectionPage extends ConsumerWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          ref.read(authNotifierProvider.notifier).clearVerifiedEmployees();
+                          ref
+                              .read(authNotifierProvider.notifier)
+                              .clearVerifiedEmployees();
                           context.pop();
                         },
-                        borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.borderRadius,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppDimensions.spacingM,
@@ -76,7 +78,9 @@ class StoreSelectionPage extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(AppDimensions.borderRadius),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.borderRadius,
+                            ),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
@@ -109,7 +113,9 @@ class StoreSelectionPage extends ConsumerWidget {
 
               // Title Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingL),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.spacingL,
+                ),
                 child: Column(
                   children: [
                     Icon(
@@ -151,12 +157,16 @@ class StoreSelectionPage extends ConsumerWidget {
                         horizontal: AppDimensions.spacingL,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.borderRadiusLarge,
+                        ),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                           child: Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.borderRadiusLarge,
+                              ),
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -187,7 +197,11 @@ class StoreSelectionPage extends ConsumerWidget {
                                 return _EmployeeStoreItem(
                                   name: employee.fullName,
                                   storeName: employee.storeName,
-                                  avatar: employee.avatar,
+                                  avatar: employee.avatarUrl,
+                                  avatarMode: employee.avatarMode,
+                                  avatarColorHex: employee.avatarColorHex,
+                                  avatarForeColorHex:
+                                      employee.avatarForeColorHex,
                                   isLoading: isLoading,
                                   onTap: () {
                                     ref
@@ -218,6 +232,9 @@ class _EmployeeStoreItem extends StatelessWidget {
   final String name;
   final String storeName;
   final String? avatar;
+  final String? avatarMode;
+  final String? avatarColorHex;
+  final String? avatarForeColorHex;
   final bool isLoading;
   final VoidCallback onTap;
 
@@ -225,6 +242,9 @@ class _EmployeeStoreItem extends StatelessWidget {
     required this.name,
     required this.storeName,
     this.avatar,
+    this.avatarMode,
+    this.avatarColorHex,
+    this.avatarForeColorHex,
     required this.isLoading,
     required this.onTap,
   });
@@ -243,36 +263,7 @@ class _EmployeeStoreItem extends StatelessWidget {
           child: Row(
             children: [
               // Avatar
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.3),
-                      AppColors.primary.withValues(alpha: 0.1),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                ),
-                child: avatar != null && avatar!.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          avatar!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildAvatarText();
-                          },
-                        ),
-                      )
-                    : _buildAvatarText(),
-              ),
+              _buildAvatar(),
 
               const SizedBox(width: AppDimensions.spacingM),
 
@@ -325,7 +316,9 @@ class _EmployeeStoreItem extends StatelessWidget {
                   height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 )
               else
@@ -348,16 +341,83 @@ class _EmployeeStoreItem extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatarText() {
-    return Center(
-      child: Text(
-        name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: TextStyle(
-          color: AppColors.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 22,
+  Widget _buildAvatar() {
+    // avatarMode can be "IMAGE" or "COLOR"
+    // - IMAGE: Show network image if avatar URL exists
+    // - COLOR: Show text avatar with custom background/foreground colors
+
+    // Strategy: Prioritize avatar URL over avatarMode
+    // If avatar URL exists, always show image regardless of mode
+    // This ensures uploaded images are always displayed
+    final hasAvatarUrl = avatar != null && avatar!.isNotEmpty;
+
+    // Show image if has valid avatar URL (ignore avatarMode)
+    if (hasAvatarUrl) {
+      // Show cached network image
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        child: CachedAvatar(
+          imageUrl: avatar,
+          radius: 28,
+          fallbackText: name,
+          showLoadingIndicator: true,
+        ),
+      );
+    } else {
+      return _buildTextAvatar();
+    }
+  }
+
+  Widget _buildTextAvatar() {
+    // Show text avatar with custom color
+    final backgroundColor = avatarColorHex != null
+        ? _parseColor(avatarColorHex!)
+        : AppColors.primary;
+    final foregroundColor = avatarForeColorHex != null
+        ? _parseColor(avatarForeColorHex!)
+        : Colors.white;
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: backgroundColor,
+        border: Border.all(
+          color: backgroundColor.withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: TextStyle(
+            color: foregroundColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
         ),
       ),
     );
+  }
+
+  /// Parse hex color string to Color object
+  Color _parseColor(String hexString) {
+    try {
+      final buffer = StringBuffer();
+      if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+      buffer.write(hexString.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return AppColors.primary;
+    }
   }
 }

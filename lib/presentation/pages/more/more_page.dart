@@ -6,14 +6,29 @@ import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/cached_avatar.dart';
 import '../../widgets/logout_dialog.dart';
 import '../profile/profile_page.dart';
 
-class MorePage extends ConsumerWidget {
+class MorePage extends ConsumerStatefulWidget {
   const MorePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MorePage> createState() => _MorePageState();
+}
+
+class _MorePageState extends ConsumerState<MorePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh employee profile when entering the page to get latest avatar and data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authNotifierProvider.notifier).refreshEmployeeProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
@@ -54,7 +69,12 @@ class MorePage extends ConsumerWidget {
           body: SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 24),
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 8,
+                bottom: 24,
+              ),
               child: Column(
                 children: [
                   // Profile Section
@@ -108,9 +128,6 @@ class MorePage extends ConsumerWidget {
   }
 
   Widget _buildProfileSection(BuildContext context, dynamic user) {
-    // Placeholder avatar if none provided
-    final String avatarUrl = user.image ?? 'https://i.pravatar.cc/300?img=47';
-
     return GestureDetector(
       onTap: () {
         Navigator.of(
@@ -142,11 +159,12 @@ class MorePage extends ConsumerWidget {
                     width: 2,
                   ),
                 ),
-                child: CircleAvatar(
+                child: CachedAvatar(
+                  imageUrl: user.avatarUrl,
                   radius: 36,
-                  backgroundImage: NetworkImage(avatarUrl),
+                  fallbackText: user.firstName,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.05),
-                  onBackgroundImageError: (_, __) {},
+                  showShimmer: true,
                 ),
               ),
             ),

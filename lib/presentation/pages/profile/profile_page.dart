@@ -4,13 +4,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app_dependencies.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/cached_avatar.dart';
 import 'edit_profile_page.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh employee profile when entering the page to get latest avatar and data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authNotifierProvider.notifier).refreshEmployeeProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
@@ -35,7 +50,11 @@ class ProfilePage extends ConsumerWidget {
               elevation: 0,
               centerTitle: true,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               title: Text(
@@ -102,7 +121,10 @@ class ProfilePage extends ConsumerWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Column(
                   children: [
                     // Avatar Section
@@ -175,16 +197,14 @@ class ProfilePage extends ConsumerWidget {
                     offset: const Offset(0, 10),
                   ),
                 ],
-                border: Border.all(
-                  color: Colors.white,
-                  width: 4,
-                ),
+                border: Border.all(color: Colors.white, width: 4),
               ),
-              child: CircleAvatar(
+              child: CachedAvatar(
+                imageUrl: user.avatarUrl,
                 radius: 58,
+                fallbackText: user.firstName,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.05),
-                backgroundImage: NetworkImage(avatarUrl),
-                onBackgroundImageError: (_, __) {},
+                showLoadingIndicator: true,
               ),
             ),
             Positioned(
@@ -324,9 +344,5 @@ class _InfoItem {
   final String label;
   final String value;
 
-  _InfoItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  _InfoItem({required this.icon, required this.label, required this.value});
 }
