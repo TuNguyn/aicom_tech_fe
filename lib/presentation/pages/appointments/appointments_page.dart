@@ -19,9 +19,13 @@ class AppointmentsPage extends ConsumerStatefulWidget {
   ConsumerState<AppointmentsPage> createState() => _AppointmentsPageState();
 }
 
-class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
+class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
+    with AutomaticKeepAliveClientMixin {
   DateTime _selectedDate = DateTime.now();
   bool _isInitialLoad = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Cache DateFormat objects
   static final _dayFormat = DateFormat('E');
@@ -56,6 +60,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
     final appointments = appointmentsState.getAppointmentsForDate(
       _selectedDate,

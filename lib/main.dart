@@ -17,13 +17,15 @@ void main() async {
   // Initialize Hive
   await Hive.initFlutter();
 
-  // Open Hive boxes
-  await Hive.openBox<dynamic>(AppConstants.authBoxName);
-  await Hive.openBox<dynamic>(AppConstants.appointmentsBoxName);
-  await Hive.openBox<dynamic>(AppConstants.servicesBoxName);
-  await Hive.openBox<dynamic>(AppConstants.customersBoxName);
-  await Hive.openBox<dynamic>(AppConstants.cacheBoxName);
-  await Hive.openBox<dynamic>(AppConstants.settingsBoxName);
+  // Open Hive boxes in parallel for faster startup
+  await Future.wait([
+    Hive.openBox<dynamic>(AppConstants.authBoxName),
+    Hive.openBox<dynamic>(AppConstants.appointmentsBoxName),
+    Hive.openBox<dynamic>(AppConstants.servicesBoxName),
+    Hive.openBox<dynamic>(AppConstants.customersBoxName),
+    Hive.openBox<dynamic>(AppConstants.cacheBoxName),
+    Hive.openBox<dynamic>(AppConstants.settingsBoxName),
+  ]);
 
   // Initialize Cache Manager
   await CacheManager.instance.init();

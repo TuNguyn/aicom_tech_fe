@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/socket/socket_service.dart';
 import '../../app_dependencies.dart';
@@ -98,7 +99,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void _handleEmployeeSync(dynamic data) {
-    print('[Socket] EMPLOYEE:SYNC received: $data');
+    if (kDebugMode) print('[Socket] EMPLOYEE:SYNC received: $data');
 
     state = state.copyWith(
       lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
@@ -108,20 +109,20 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Validate event format
     if (data is! Map<String, dynamic>) {
-      print('[Socket] Invalid EMPLOYEE:SYNC event format - not a map');
+      if (kDebugMode) print('[Socket] Invalid EMPLOYEE:SYNC event format - not a map');
       return;
     }
 
     // Extract employee ID from event data
     final eventData = data['data'];
     if (eventData == null || eventData is! Map<String, dynamic>) {
-      print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid data field');
+      if (kDebugMode) print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid data field');
       return;
     }
 
     final employeeId = eventData['id'];
     if (employeeId == null || employeeId is! String) {
-      print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid employee ID');
+      if (kDebugMode) print('[Socket] Invalid EMPLOYEE:SYNC event - missing or invalid employee ID');
       return;
     }
 
@@ -129,20 +130,20 @@ class SocketNotifier extends StateNotifier<SocketState> {
     final currentUser = _ref.read(authNotifierProvider).user;
     final currentUserId = currentUser.id;
 
-    print('[Socket] Comparing IDs - Socket: $employeeId, Current: $currentUserId');
+    if (kDebugMode) print('[Socket] Comparing IDs - Socket: $employeeId, Current: $currentUserId');
 
     // Only refresh if the event is for the current logged-in user
     if (employeeId == currentUserId) {
-      print('[Socket] Employee data changed for current user, refreshing profile...');
+      if (kDebugMode) print('[Socket] Employee data changed for current user, refreshing profile...');
       _ref.read(authNotifierProvider.notifier).refreshEmployeeProfile();
     } else {
-      print('[Socket] Employee data change for different user, ignoring');
+      if (kDebugMode) print('[Socket] Employee data change for different user, ignoring');
     }
   }
 
   void _handleClockInSync(dynamic data) {
     // Phase 1: Log only
-    print('[Socket] CLOCK_IN:SYNC: $data');
+    if (kDebugMode) print('[Socket] CLOCK_IN:SYNC: $data');
 
     state = state.copyWith(
       lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
@@ -156,7 +157,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
   void _handleTicketSync(dynamic data) {
     // 1. Log & Update State
-    print('[Socket] TICKET:SYNC received: $data');
+    if (kDebugMode) print('[Socket] TICKET:SYNC received: $data');
     state = state.copyWith(
       lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
       lastEventTime: DateTime.now(),
@@ -165,21 +166,21 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // 2. Validate event format
     if (data is! Map<String, dynamic>) {
-      print('[Socket] Invalid TICKET:SYNC event format - not a map');
+      if (kDebugMode) print('[Socket] Invalid TICKET:SYNC event format - not a map');
       return;
     }
 
     // 3. Extract data field
     final eventData = data['data'];
     if (eventData == null || eventData is! Map<String, dynamic>) {
-      print('[Socket] Invalid TICKET:SYNC event - missing or invalid data field');
+      if (kDebugMode) print('[Socket] Invalid TICKET:SYNC event - missing or invalid data field');
       return;
     }
 
     // 4. Extract ticketLines array
     final ticketLines = eventData['ticketLines'];
     if (ticketLines == null || ticketLines is! List) {
-      print('[Socket] Invalid TICKET:SYNC event - missing or invalid ticketLines field');
+      if (kDebugMode) print('[Socket] Invalid TICKET:SYNC event - missing or invalid ticketLines field');
       return;
     }
 
@@ -195,7 +196,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
         if (employee is Map<String, dynamic>) {
           final employeeId = employee['id'];
           if (employeeId is String) {
-            print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
+            if (kDebugMode) print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
             if (employeeId == currentUserId) {
               foundMatch = true;
               break;
@@ -207,16 +208,16 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // 7. Trigger refresh if match found
     if (foundMatch) {
-      print('[Socket] Ticket assigned to current user, setting refresh flag...');
+      if (kDebugMode) print('[Socket] Ticket assigned to current user, setting refresh flag...');
       state = state.copyWith(hasNewAssignedTicket: true);
     } else {
-      print('[Socket] Ticket for different employee, ignoring');
+      if (kDebugMode) print('[Socket] Ticket for different employee, ignoring');
     }
   }
 
   void _handleAppointmentSync(dynamic data) {
     // 1. Log & Update State
-    print('[Socket] APPOINTMENT:SYNC received: $data');
+    if (kDebugMode) print('[Socket] APPOINTMENT:SYNC received: $data');
     state = state.copyWith(
       lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
       lastEventTime: DateTime.now(),
@@ -225,21 +226,21 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // 2. Validate event format
     if (data is! Map<String, dynamic>) {
-      print('[Socket] Invalid APPOINTMENT:SYNC event format - not a map');
+      if (kDebugMode) print('[Socket] Invalid APPOINTMENT:SYNC event format - not a map');
       return;
     }
 
     // 3. Extract data field
     final eventData = data['data'];
     if (eventData == null || eventData is! Map<String, dynamic>) {
-      print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid data field');
+      if (kDebugMode) print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid data field');
       return;
     }
 
     // 4. Extract lines array
     final lines = eventData['lines'];
     if (lines == null || lines is! List) {
-      print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid lines field');
+      if (kDebugMode) print('[Socket] Invalid APPOINTMENT:SYNC event - missing or invalid lines field');
       return;
     }
 
@@ -255,7 +256,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
         if (employee is Map<String, dynamic>) {
           final employeeId = employee['id'];
           if (employeeId is String) {
-            print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
+            if (kDebugMode) print('[Socket] Comparing IDs - Line employee: $employeeId, Current: $currentUserId');
             if (employeeId == currentUserId) {
               foundMatch = true;
               break;
@@ -267,10 +268,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // 7. Trigger refresh if match found
     if (foundMatch) {
-      print('[Socket] Appointment assigned to current user, refreshing appointments...');
+      if (kDebugMode) print('[Socket] Appointment assigned to current user, refreshing appointments...');
       _ref.read(appointmentsNotifierProvider.notifier).refreshAppointments();
     } else {
-      print('[Socket] Appointment for different employee, ignoring');
+      if (kDebugMode) print('[Socket] Appointment for different employee, ignoring');
     }
   }
 
@@ -288,12 +289,12 @@ class SocketNotifier extends StateNotifier<SocketState> {
     try {
       _socketService.connect(authToken);
       state = state.copyWith(connectionStatus: const AsyncValue.data(null));
-      print('[Socket] Connected with user: $userFullName');
+      if (kDebugMode) print('[Socket] Connected with user: $userFullName');
     } catch (e, stack) {
       state = state.copyWith(
         connectionStatus: AsyncValue.error(e, stack),
       );
-      print('[Socket] Connection error: $e');
+      if (kDebugMode) print('[Socket] Connection error: $e');
     }
   }
 

@@ -39,14 +39,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      await remoteDataSource.logout();
       await localDataSource.clearAuthCache();
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(
-        ServerFailure(
+        CacheFailure(
             'An unexpected error occurred during logout: ${e.toString()}'),
       );
     }

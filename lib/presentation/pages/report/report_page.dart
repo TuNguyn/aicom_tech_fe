@@ -15,11 +15,15 @@ class ReportPage extends ConsumerStatefulWidget {
   ConsumerState<ReportPage> createState() => _ReportPageState();
 }
 
-class _ReportPageState extends ConsumerState<ReportPage> {
+class _ReportPageState extends ConsumerState<ReportPage>
+    with AutomaticKeepAliveClientMixin {
   // State variables
   String _selectedTab = 'Payment';
   String _selectedPeriod = 'Day';
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Tracks the visible month/year in the calendar view
   DateTime _displayedDate = DateTime.now();
@@ -202,6 +206,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
     final reportsState = ref.watch(reportsNotifierProvider);
     final (startDate, endDate) = _calculateDateRange();
     final transactions = reportsState.getTransactionsForDateRange(startDate, endDate);

@@ -17,7 +17,11 @@ class MorePage extends ConsumerStatefulWidget {
   ConsumerState<MorePage> createState() => _MorePageState();
 }
 
-class _MorePageState extends ConsumerState<MorePage> {
+class _MorePageState extends ConsumerState<MorePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +33,7 @@ class _MorePageState extends ConsumerState<MorePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 

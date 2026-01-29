@@ -100,6 +100,7 @@ class TicketLineModel {
   WalkInServiceLine toEntity() {
     return WalkInServiceLine(
       id: id,
+      itemType: itemType,
       lineDescription: lineDescription,
       unitPrice: unitPrice,
       qty: qty,

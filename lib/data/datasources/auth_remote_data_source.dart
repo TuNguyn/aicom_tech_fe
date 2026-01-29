@@ -5,7 +5,6 @@ import '../models/employee_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<TechUserModel> loginWithStore(String phone, String passCode, String storeId);
-  Future<void> logout();
   Future<List<EmployeeModel>> getEmployeeWithPhone(String phone, String passCode);
   Future<TechUserModel> updateProfile(Map<String, dynamic> data);
   Future<TechUserModel> getEmployeeProfile();
@@ -36,15 +35,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ServerException(
         message: 'An unknown error occurred during login: $e',
       );
-    }
-  }
-
-  @override
-  Future<void> logout() async {
-    try {
-      await dioClient.post('/auth/logout');
-    } catch (e) {
-      // Silent fail for logout
     }
   }
 

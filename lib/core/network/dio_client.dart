@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import '../../config/app_config.dart';
 import '../constants/app_constants.dart';
@@ -17,18 +18,20 @@ class DioClient {
       };
 
     // Add logging interceptor (only in debug mode)
-    _dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-        // ignore: avoid_print
-        logPrint: (log) => print('[DIO] $log'),
-      ),
-    );
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: false,
+          responseBody: true,
+          error: true,
+          // ignore: avoid_print
+          logPrint: (log) => print('[DIO] $log'),
+        ),
+      );
+    }
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -41,13 +44,17 @@ class DioClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          // ignore: avoid_print
-          print('[DioClient] ${options.method} ${options.baseUrl}${options.path}');
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('[DioClient] ${options.method} ${options.baseUrl}${options.path}');
+          }
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
-          // ignore: avoid_print
-          print('[DioClient] Error: ${error.type} - ${error.message}');
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('[DioClient] Error: ${error.type} - ${error.message}');
+          }
           if (error.response?.statusCode == 401) {
             // Handle 401 - clear auth and redirect to login
             final authBox = Hive.box(AppConstants.authBoxName);

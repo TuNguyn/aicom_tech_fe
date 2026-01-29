@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class SocketService {
@@ -18,12 +19,14 @@ class SocketService {
   /// Connect to the socket with JWT authentication
   void connect(String authToken) {
     if (_socket?.connected ?? false) {
-      print('[Socket] Already connected');
+      if (kDebugMode) print('[Socket] Already connected');
       return;
     }
 
-    print('[Socket] Connecting to $socketUrl');
-    print('[Socket] Auth header: Bearer ${authToken.substring(0, 20)}...');
+    if (kDebugMode) {
+      print('[Socket] Connecting to $socketUrl');
+      print('[Socket] Auth header: Bearer ${authToken.substring(0, 20)}...');
+    }
 
     _socket = io.io(
       socketUrl,
@@ -37,21 +40,21 @@ class SocketService {
     );
 
     _socket!.onConnect((_) {
-      print('[Socket] Connected successfully');
+      if (kDebugMode) print('[Socket] Connected successfully');
       _connectionStateController.add(true);
     });
 
     _socket!.onDisconnect((_) {
-      print('[Socket] Disconnected');
+      if (kDebugMode) print('[Socket] Disconnected');
       _connectionStateController.add(false);
     });
 
     _socket!.onError((error) {
-      print('[Socket] Error: $error');
+      if (kDebugMode) print('[Socket] Error: $error');
     });
 
     _socket!.onConnectError((error) {
-      print('[Socket] Connection error: $error');
+      if (kDebugMode) print('[Socket] Connection error: $error');
     });
 
     _socket!.connect();
@@ -60,17 +63,17 @@ class SocketService {
   /// Disconnect from the socket
   void disconnect() {
     if (_socket == null) {
-      print('[Socket] No active connection to disconnect');
+      if (kDebugMode) print('[Socket] No active connection to disconnect');
       return;
     }
 
-    print('[Socket] Disconnecting');
+    if (kDebugMode) print('[Socket] Disconnecting');
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
 
     // Clear event controllers so they can be re-registered on reconnect
-    print('[Socket] Clearing event listeners');
+    if (kDebugMode) print('[Socket] Clearing event listeners');
     for (var controller in _eventControllers.values) {
       controller.close();
     }
@@ -83,11 +86,11 @@ class SocketService {
       _eventControllers[eventName] = StreamController<dynamic>.broadcast();
 
       _socket?.on(eventName, (data) {
-        print('[Socket] Event received - $eventName: $data');
+        if (kDebugMode) print('[Socket] Event received - $eventName: $data');
         _eventControllers[eventName]?.add(data);
       });
 
-      print('[Socket] Listening to: $eventName');
+      if (kDebugMode) print('[Socket] Listening to: $eventName');
     }
 
     return _eventControllers[eventName]!.stream;
@@ -95,7 +98,7 @@ class SocketService {
 
   /// Cleanup resources
   void dispose() {
-    print('[Socket] Disposing socket service');
+    if (kDebugMode) print('[Socket] Disposing socket service');
     disconnect();
     _connectionStateController.close();
 

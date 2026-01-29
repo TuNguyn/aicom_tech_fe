@@ -59,50 +59,36 @@ class StoreSelectionPage extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          ref
-                              .read(authNotifierProvider.notifier)
-                              .clearVerifiedEmployees();
-                          context.pop();
-                        },
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.borderRadius,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.spacingM,
-                            vertical: AppDimensions.spacingS,
+                    // Modern circular back button
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(
-                              AppDimensions.borderRadius,
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            ref
+                                .read(authNotifierProvider.notifier)
+                                .clearVerifiedEmployees();
+                            context.pop();
+                          },
+                          borderRadius: BorderRadius.circular(50),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                              color: AppColors.textPrimary,
                             ),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 18,
-                                color: AppColors.textPrimary,
-                              ),
-                              const SizedBox(width: AppDimensions.spacingS),
-                              Text(
-                                'Back',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
@@ -121,7 +107,7 @@ class StoreSelectionPage extends ConsumerWidget {
                     Icon(
                       Icons.store_rounded,
                       size: 56,
-                      color: AppColors.primary,
+                      color: AppColors.primary.withValues(alpha: 0.7),
                     ),
                     const SizedBox(height: AppDimensions.spacingM),
                     Text(

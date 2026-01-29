@@ -93,6 +93,7 @@ class WalkInTicket extends Equatable {
 
 class WalkInServiceLine extends Equatable {
   final String id;
+  final String itemType;
   final String lineDescription;
   final double unitPrice;
   final int qty;
@@ -107,6 +108,7 @@ class WalkInServiceLine extends Equatable {
 
   const WalkInServiceLine({
     required this.id,
+    required this.itemType,
     required this.lineDescription,
     required this.unitPrice,
     required this.qty,
@@ -123,6 +125,7 @@ class WalkInServiceLine extends Equatable {
   @override
   List<Object?> get props => [
         id,
+        itemType,
         lineDescription,
         unitPrice,
         qty,

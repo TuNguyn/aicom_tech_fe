@@ -45,12 +45,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final startDate = now.subtract(Duration(days: weekday - 1)); // Monday
     final endDate = startDate.add(const Duration(days: 6)); // Sunday
 
-    ref
-        .read(appointmentsNotifierProvider.notifier)
-        .loadAppointmentsForDateRange(startDate, endDate);
-
-    // Load walk-in tickets
-    ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
+    // Load appointments and walk-ins in parallel for faster startup
+    Future.wait([
+      ref
+          .read(appointmentsNotifierProvider.notifier)
+          .loadAppointmentsForDateRange(startDate, endDate),
+      ref.read(walkInsNotifierProvider.notifier).loadWalkIns(),
+    ]);
   }
 
   // Cache mock notifications data as static const
@@ -149,19 +150,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to auth state changes (user login/logout)
-    ref.listen<String>(
-      authNotifierProvider.select((state) => state.user.id),
-      (previous, next) {
-        // If user ID changed (new user logged in), reload data
-        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          _isDataLoaded = false;
-          _loadHomeData();
-          _isDataLoaded = true;
-        }
-      },
-    );
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: _currentOverlayStyle,
       child: Container(
@@ -172,7 +160,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           body: IndexedStack(
             index: _currentNavIndex,
             children: [
-              _buildHomePage(),
+              _HomeContent(
+                loadHomeData: _loadHomeData,
+                isDataLoaded: _isDataLoaded,
+                onDataLoaded: (loaded) {
+                  _isDataLoaded = loaded;
+                },
+              ),
               const WalkInPage(),
               const AppointmentsPage(),
               const ReportPage(),
@@ -195,11 +189,61 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildHomePage() {
+/// Separate widget for home content to support AutomaticKeepAliveClientMixin
+class _HomeContent extends ConsumerStatefulWidget {
+  final VoidCallback loadHomeData;
+  final bool isDataLoaded;
+  final ValueChanged<bool> onDataLoaded;
+
+  const _HomeContent({
+    required this.loadHomeData,
+    required this.isDataLoaded,
+    required this.onDataLoaded,
+  });
+
+  @override
+  ConsumerState<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends ConsumerState<_HomeContent>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load data when home content is first displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!widget.isDataLoaded) {
+        widget.loadHomeData();
+        widget.onDataLoaded(true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
+
+    // Listen to auth state changes (user login/logout)
+    ref.listen<String>(
+      authNotifierProvider.select((state) => state.user.id),
+      (previous, next) {
+        // If user ID changed (new user logged in), reload data
+        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
+          widget.onDataLoaded(false);
+          widget.loadHomeData();
+          widget.onDataLoaded(true);
+        }
+      },
+    );
+
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(context, ref),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -211,16 +255,16 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Notifications Section (1/3 of screen)
-                _buildNotificationsSection(),
+                // Notifications Section
+                _buildNotificationsSection(context),
                 const SizedBox(height: AppDimensions.spacingL),
 
                 // Quick Stats Section
-                _buildQuickStatsSection(),
+                _buildQuickStatsSection(ref),
                 const SizedBox(height: AppDimensions.spacingL),
 
                 // Combined Today's Summary & Performance
-                _buildCombinedSummaryPerformance(),
+                _buildCombinedSummaryPerformance(ref),
               ],
             ),
           ),
@@ -229,7 +273,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
 
@@ -282,10 +326,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildQuickStatsSection() {
+  Widget _buildQuickStatsSection(WidgetRef ref) {
     // Watch providers for real-time data
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
-    final walkInsState = ref.watch(walkInsNotifierProvider);
+    ref.watch(walkInsNotifierProvider);
 
     // Calculate today's counts - get appointments for today
     final now = DateTime.now();
@@ -294,8 +338,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         .getAppointmentsForDate(today)
         .length;
 
-    final waitingCount = walkInsState.walkInTickets
-        .where((ticket) => ticket.overallStatus == WalkInLineStatus.waiting)
+    // Count waiting service lines (SERVICE items only, not CATEGORY)
+    final serviceLines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
+    final waitingCount = serviceLines
+        .where((line) => line.serviceLine.status == WalkInLineStatus.waiting)
         .length;
 
     return Row(
@@ -376,37 +422,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildSummaryItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 32),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNotificationsSection() {
+  Widget _buildNotificationsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingM),
       decoration: BoxDecoration(
@@ -452,9 +468,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             height: 3 * 60.0, // Each notification ~60px height, show exactly 3
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: _mockNotifications.length,
+              itemCount: _HomePageState._mockNotifications.length,
               itemBuilder: (context, index) {
-                final notification = _mockNotifications[index];
+                final notification = _HomePageState._mockNotifications[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
@@ -523,12 +539,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildCombinedSummaryPerformance() {
-    // Watch walk-in provider for real-time data
-    final walkInsState = ref.watch(walkInsNotifierProvider);
+  Widget _buildCombinedSummaryPerformance(WidgetRef ref) {
+    // Watch walk-in provider for real-time data (to trigger rebuilds on data changes)
+    ref.watch(walkInsNotifierProvider);
 
     // Calculate today's counts by service line status (not ticket status)
-    final serviceLines = walkInsState.sortedServiceLines;
+    // Use cached sorted lines for better performance
+    final serviceLines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
     final completedCount = serviceLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.done)
         .length;
@@ -618,6 +635,36 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSummaryItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 32),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600]),
+        ),
+      ],
     );
   }
 }

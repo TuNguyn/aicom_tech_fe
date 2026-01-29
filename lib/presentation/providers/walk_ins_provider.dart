@@ -52,19 +52,22 @@ class WalkInsState extends Equatable {
     }).length;
   }
 
-  /// Returns flattened and sorted service lines from all tickets
+  /// Returns flattened and sorted service lines from all tickets (SERVICE items only)
   List<ServiceLineDisplay> get sortedServiceLines {
     // Flatten service lines from tickets
     final lines = <ServiceLineDisplay>[];
     for (final ticket in walkInTickets) {
       for (final serviceLine in ticket.serviceLines) {
-        lines.add(
-          ServiceLineDisplay(
-            customerName: ticket.customerName,
-            serviceLine: serviceLine,
-            createdAt: ticket.createdAt,
-          ),
-        );
+        // FILTER: Only include SERVICE items, exclude CATEGORY
+        if (serviceLine.itemType == 'SERVICE') {
+          lines.add(
+            ServiceLineDisplay(
+              customerName: ticket.customerName,
+              serviceLine: serviceLine,
+              createdAt: ticket.createdAt,
+            ),
+          );
+        }
       }
     }
 
@@ -143,11 +146,35 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
 
   bool _isDataLoaded = false;
 
+  // Cache for sorted service lines to avoid recomputing on every access
+  List<ServiceLineDisplay>? _cachedSortedLines;
+  bool _sortedLinesCacheDirty = true;
+
   WalkInsNotifier(
     this._getWalkInLines,
     this._startWalkInLine,
     this._completeWalkInLine,
   ) : super(const WalkInsState());
+
+  /// Get cached sorted service lines (avoids O(n log n) sorting on every access)
+  List<ServiceLineDisplay> get cachedSortedServiceLines {
+    // Return cached result if available and not dirty
+    if (_cachedSortedLines != null && !_sortedLinesCacheDirty) {
+      return _cachedSortedLines!;
+    }
+
+    // Compute and cache the sorted lines
+    final lines = state.sortedServiceLines;
+    _cachedSortedLines = lines;
+    _sortedLinesCacheDirty = false;
+
+    return lines;
+  }
+
+  /// Invalidate the sorted lines cache when data changes
+  void _invalidateSortedLinesCache() {
+    _sortedLinesCacheDirty = true;
+  }
 
   Future<void> loadWalkIns({List<String>? statuses}) async {
     // Skip if already loaded or currently loading
@@ -175,18 +202,13 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
           loadingStatus: const AsyncValue.data(null),
         );
 
+        _invalidateSortedLinesCache();
         _isDataLoaded = true;
       },
     );
   }
 
   List<WalkInTicket> _groupTicketLines(List<TicketLineModel> lines) {
-    // Debug: Show line statuses (important for debugging start -> done issue)
-    print('[Lines] Received ${lines.length} lines:');
-    for (var line in lines) {
-      print('  ${line.id.substring(0, 8)}: ${line.status} - ${line.lineDescription}');
-    }
-
     // Group by ticket ID
     final ticketsMap = <String, List<TicketLineModel>>{};
     for (final line in lines) {
@@ -238,28 +260,24 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
 
   Future<void> refreshWalkIns() async {
     _isDataLoaded = false;
+    _invalidateSortedLinesCache();
     await loadWalkIns();
   }
 
   /// Reset state and clear all data (called on logout)
   void reset() {
     _isDataLoaded = false;
+    _invalidateSortedLinesCache();
     state = const WalkInsState();
   }
 
   /// Start a walk-in service line. Returns true if successful.
   Future<bool> startServiceLine(String lineId) async {
-    print('[Action] START line: ${lineId.substring(0, 8)}');
-
     final result = await _startWalkInLine(lineId);
 
     return result.fold(
-      (failure) {
-        print('[Action] START failed: ${failure.message}');
-        return false;
-      },
+      (failure) => false,
       (_) {
-        print('[Action] START success, refreshing...');
         refreshWalkIns();
         return true;
       },
@@ -268,17 +286,11 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
 
   /// Complete a walk-in service line. Returns true if successful.
   Future<bool> completeServiceLine(String lineId) async {
-    print('[Action] COMPLETE line: ${lineId.substring(0, 8)}');
-
     final result = await _completeWalkInLine(lineId);
 
     return result.fold(
-      (failure) {
-        print('[Action] COMPLETE failed: ${failure.message}');
-        return false;
-      },
+      (failure) => false,
       (_) {
-        print('[Action] COMPLETE success, refreshing...');
         refreshWalkIns();
         return true;
       },

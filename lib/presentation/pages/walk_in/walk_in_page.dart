@@ -19,9 +19,13 @@ class WalkInPage extends ConsumerStatefulWidget {
   ConsumerState<WalkInPage> createState() => _WalkInPageState();
 }
 
-class _WalkInPageState extends ConsumerState<WalkInPage> {
+class _WalkInPageState extends ConsumerState<WalkInPage>
+    with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
   bool _isInitialLoad = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -34,8 +38,11 @@ class _WalkInPageState extends ConsumerState<WalkInPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
+
     final walkInsState = ref.watch(walkInsNotifierProvider);
-    final lines = walkInsState.sortedServiceLines;
+    // Use cached sorted lines for better performance
+    final lines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
     final pendingCount = walkInsState.pendingTicketsCount;
     final isLoading = walkInsState.loadingStatus.isLoading;
 
