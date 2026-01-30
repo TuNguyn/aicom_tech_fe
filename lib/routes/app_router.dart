@@ -2,6 +2,7 @@ import 'package:aicom_tech_fe/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../main.dart';
 import '../presentation/pages/auth/splash_page.dart';
 import '../presentation/pages/auth/login_page.dart';
 import '../presentation/pages/auth/store_selection_page.dart';
@@ -34,6 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authChangeNotifier = ref.watch(authChangeNotifierProvider);
 
   return GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     refreshListenable: authChangeNotifier,

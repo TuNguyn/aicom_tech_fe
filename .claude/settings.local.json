@@ -24,7 +24,8 @@
       "Bash(magick:*)",
       "Bash(convert:*)",
       "WebFetch(domain:pub.dev)",
-      "Bash(dart format:*)"
+      "Bash(dart format:*)",
+      "Bash(dart analyze:*)"
     ]
   }
 }

@@ -142,7 +142,6 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void _handleClockInSync(dynamic data) {
-    // Phase 1: Log only
     if (kDebugMode) print('[Socket] CLOCK_IN:SYNC: $data');
 
     state = state.copyWith(
@@ -150,9 +149,6 @@ class SocketNotifier extends StateNotifier<SocketState> {
       lastEventTime: DateTime.now(),
       lastEventType: 'CLOCK_IN:SYNC',
     );
-
-    // Phase 2: Trigger refresh
-    // ref.read(clockInNotifierProvider.notifier).refreshClockInStatus();
   }
 
   void _handleTicketSync(dynamic data) {

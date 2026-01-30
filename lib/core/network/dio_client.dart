@@ -91,7 +91,11 @@ class DioClient {
             message: e.response?.data?['message'] ?? 'Server error occurred',
           );
         }
-        break;
+        // Handle 4xx client errors
+        throw ServerException(
+          message: e.response?.data?['message'] ?? 'Request failed',
+          statusCode: e.response?.statusCode,
+        );
 
       default:
         throw ServerException(

@@ -7,11 +7,6 @@ class ColorSchemeRegistry {
   static final Map<String, BaseColorScheme> _schemes = {
     'default': NatureHarmonyColorScheme(),
     'nature_harmony': NatureHarmonyColorScheme(),
-    // Add more color schemes here as needed
-    // 'ocean_blue': OceanBlueColorScheme(),
-    // 'coral_pink': CoralPinkColorScheme(),
-    // 'lavender_spa': LavenderSpaColorScheme(),
-    // 'rose_gold': RoseGoldColorScheme(),
   };
 
   static BaseColorScheme getScheme(String key) {
