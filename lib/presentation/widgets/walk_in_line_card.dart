@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../core/utils/toast_utils.dart';
 import '../../domain/entities/walk_in_ticket.dart';
 import '../theme/app_text_styles.dart';
@@ -191,31 +192,40 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
       return cardContent;
     }
 
-    return Dismissible(
+    return Slidable(
       key: ValueKey(widget.serviceLine.id),
-      direction: DismissDirection.endToStart,
-      background: _buildSwipeBackground(style),
-      // Use dismissThresholds to make swipe easier
-      dismissThresholds: const {
-        DismissDirection.endToStart: 0.3, // Only need to swipe 30% to trigger
-      },
-      // Use movementDuration to control snap back speed
-      movementDuration: const Duration(milliseconds: 200),
-      confirmDismiss: (direction) async {
-        // Show processing state immediately
-        setState(() {
-          _isProcessing = true;
-        });
-
-        // Don't wait for API - return immediately for smooth animation
-        // Trigger API call in background without waiting
-        Future.microtask(() {
-          if (context.mounted) {
-            _handleSwipeAction(context, status);
-          }
-        });
-        return false; // Card snaps back immediately - smooth animation
-      },
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          CustomSlidableAction(
+            onPressed: (context) => _handleSwipeAction(context, status),
+            backgroundColor: style.backgroundColor,
+            foregroundColor: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.only(bottom: AppDimensions.spacingS),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  style.swipeIcon,
+                  size: 32,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  status == WalkInLineStatus.waiting ? 'Start' : 'Done',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       child: cardContent,
     );
   }
@@ -485,44 +495,29 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
     );
   }
 
-  Widget _buildSwipeBackground(_WalkInLineCardStyle style) {
-    // Simplified background for better performance
-    return RepaintBoundary(
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppDimensions.spacingS),
-        decoration: BoxDecoration(
-          color: style.backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        child: Icon(
-          style.swipeIcon,
-          color: Colors.white,
-          size: 32,
-        ),
-      ),
-    );
-  }
-
   void _handleSwipeAction(
     BuildContext context,
     WalkInLineStatus status,
   ) async {
+    // Show processing state
+    setState(() {
+      _isProcessing = true;
+    });
+
+    // Close the slidable
+    Slidable.of(context)?.close();
+
     final notifier = ref.read(walkInsNotifierProvider.notifier);
 
     // Call appropriate API based on status
-    final bool success;
-    final String errorMessage;
+    final String? errorMessage;
 
     if (status == WalkInLineStatus.waiting) {
       // Start the service
-      success = await notifier.startServiceLine(widget.serviceLine.id);
-      errorMessage = 'Failed to start service. Please try again.';
+      errorMessage = await notifier.startServiceLine(widget.serviceLine.id);
     } else {
       // Complete the service (SERVING status)
-      success = await notifier.completeServiceLine(widget.serviceLine.id);
-      errorMessage = 'Failed to complete service. Please try again.';
+      errorMessage = await notifier.completeServiceLine(widget.serviceLine.id);
     }
 
     // Clear processing state
@@ -532,11 +527,11 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
       });
     }
 
-    if (!success && context.mounted) {
-      // Show error message
+    if (errorMessage != null && context.mounted) {
+      // Show error message from the API
       ToastUtils.showError(errorMessage);
     }
-    // If success, the refresh API call will update the UI automatically
+    // Data is automatically refreshed (on both success and error) by the provider
   }
 }
 

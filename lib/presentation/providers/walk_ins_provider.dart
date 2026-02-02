@@ -27,10 +27,12 @@ class ServiceLineDisplay extends Equatable {
 class WalkInsState extends Equatable {
   final List<WalkInTicket> walkInTickets;
   final AsyncValue<void> loadingStatus;
+  final int totalTurn;
 
   const WalkInsState({
     this.walkInTickets = const [],
     this.loadingStatus = const AsyncValue.data(null),
+    this.totalTurn = 0,
   });
 
   List<WalkInTicket> get sortedTickets {
@@ -52,14 +54,15 @@ class WalkInsState extends Equatable {
     }).length;
   }
 
-  /// Returns flattened and sorted service lines from all tickets (SERVICE items only)
+  /// Returns flattened and sorted service lines from all tickets (SERVICE items only, excluding CANCELLED)
   List<ServiceLineDisplay> get sortedServiceLines {
     // Flatten service lines from tickets
     final lines = <ServiceLineDisplay>[];
     for (final ticket in walkInTickets) {
       for (final serviceLine in ticket.serviceLines) {
-        // FILTER: Only include SERVICE items, exclude CATEGORY
-        if (serviceLine.itemType == 'SERVICE') {
+        // FILTER: Only include SERVICE items, exclude CATEGORY and CANCELLED status
+        if (serviceLine.itemType == 'SERVICE' &&
+            serviceLine.status != WalkInLineStatus.canceled) {
           lines.add(
             ServiceLineDisplay(
               customerName: ticket.customerName,
@@ -128,15 +131,17 @@ class WalkInsState extends Equatable {
   WalkInsState copyWith({
     List<WalkInTicket>? walkInTickets,
     AsyncValue<void>? loadingStatus,
+    int? totalTurn,
   }) {
     return WalkInsState(
       walkInTickets: walkInTickets ?? this.walkInTickets,
       loadingStatus: loadingStatus ?? this.loadingStatus,
+      totalTurn: totalTurn ?? this.totalTurn,
     );
   }
 
   @override
-  List<Object?> get props => [walkInTickets, loadingStatus];
+  List<Object?> get props => [walkInTickets, loadingStatus, totalTurn];
 }
 
 class WalkInsNotifier extends StateNotifier<WalkInsState> {
@@ -185,7 +190,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
 
     final result = await _getWalkInLines(
-      statuses: statuses ?? ['WAITING', 'SERVING', 'DONE', 'CANCELED'],
+      statuses: statuses ?? ['WAITING', 'SERVING', 'DONE', 'CANCELLED'],
     );
 
     result.fold(
@@ -200,6 +205,7 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         state = state.copyWith(
           walkInTickets: tickets,
           loadingStatus: const AsyncValue.data(null),
+          totalTurn: response.totalTurn,
         );
 
         _invalidateSortedLinesCache();
@@ -271,28 +277,36 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     state = const WalkInsState();
   }
 
-  /// Start a walk-in service line. Returns true if successful.
-  Future<bool> startServiceLine(String lineId) async {
+  /// Start a walk-in service line. Returns error message if failed, null if successful.
+  Future<String?> startServiceLine(String lineId) async {
     final result = await _startWalkInLine(lineId);
 
     return result.fold(
-      (failure) => false,
+      (failure) {
+        // Always refresh to sync UI with server state
+        refreshWalkIns();
+        return failure.message;
+      },
       (_) {
         refreshWalkIns();
-        return true;
+        return null;
       },
     );
   }
 
-  /// Complete a walk-in service line. Returns true if successful.
-  Future<bool> completeServiceLine(String lineId) async {
+  /// Complete a walk-in service line. Returns error message if failed, null if successful.
+  Future<String?> completeServiceLine(String lineId) async {
     final result = await _completeWalkInLine(lineId);
 
     return result.fold(
-      (failure) => false,
+      (failure) {
+        // Always refresh to sync UI with server state
+        refreshWalkIns();
+        return failure.message;
+      },
       (_) {
         refreshWalkIns();
-        return true;
+        return null;
       },
     );
   }

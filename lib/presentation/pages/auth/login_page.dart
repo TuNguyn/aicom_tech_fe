@@ -333,9 +333,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       },
                                       activeColor: AppColors.primary,
                                     ),
-                                    Text(
-                                      'Remember Me',
-                                      style: AppTextStyles.bodyMedium,
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _rememberMe = !_rememberMe;
+                                        });
+                                      },
+                                      child: Text(
+                                        'Remember Me',
+                                        style: AppTextStyles.bodyMedium,
+                                      ),
                                     ),
                                   ],
                                 ),

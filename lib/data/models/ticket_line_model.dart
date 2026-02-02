@@ -61,15 +61,15 @@ class TicketLineModel {
       itemId: json['itemId'] as String,
       lineDescription: json['lineDescription'] as String,
       unitPrice: (json['unitPrice'] as num).toDouble(),
-      qty: json['qty'] as int,
+      qty: (json['qty'] as num).toInt(),
       tips: (json['tips'] as num).toDouble(),
       tax: (json['tax'] as num).toDouble(),
       discount: (json['discount'] as num).toDouble(),
       turnValue: (json['turnValue'] as num).toDouble(),
-      durationInMinutes: json['durationInMinutes'] as int,
+      durationInMinutes: (json['durationInMinutes'] as num).toInt(),
       status: json['status'] as String,
       employeeName: json['employeeName'] as String,
-      displayOrder: json['displayOrder'] as int,
+      displayOrder: (json['displayOrder'] as num).toInt(),
       employee: EmployeeInfoModel.fromJson(employeeJson),
       ticket: TicketInfoModel.fromJson(ticketJson),
     );
@@ -192,19 +192,22 @@ class TicketLinesResponse {
   final int statusCode;
   final String message;
   final List<TicketLineModel> data;
+  final int totalTurn;
 
   TicketLinesResponse({
     required this.statusCode,
     required this.message,
     required this.data,
+    required this.totalTurn,
   });
 
   factory TicketLinesResponse.fromJson(Map<String, dynamic> json) {
-    final dataList = json['data'] as List<dynamic>;
+    final dataMap = json['data'] as Map<String, dynamic>;
+    final linesList = dataMap['lines'] as List<dynamic>;
     final parsedLines = <TicketLineModel>[];
 
-    for (var i = 0; i < dataList.length; i++) {
-      final item = dataList[i];
+    for (var i = 0; i < linesList.length; i++) {
+      final item = linesList[i];
       try {
         final line = TicketLineModel.fromJson(item as Map<String, dynamic>);
         parsedLines.add(line);
@@ -216,9 +219,10 @@ class TicketLinesResponse {
     }
 
     return TicketLinesResponse(
-      statusCode: json['statusCode'] as int,
+      statusCode: (json['statusCode'] as num).toInt(),
       message: json['message'] as String,
       data: parsedLines,
+      totalTurn: (dataMap['totalTurn'] as num).toInt(),
     );
   }
 
@@ -226,7 +230,10 @@ class TicketLinesResponse {
     return {
       'statusCode': statusCode,
       'message': message,
-      'data': data.map((item) => item.toJson()).toList(),
+      'data': {
+        'lines': data.map((item) => item.toJson()).toList(),
+        'totalTurn': totalTurn,
+      },
     };
   }
 }

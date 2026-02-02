@@ -63,13 +63,35 @@ class WalkInRemoteDataSourceImpl implements WalkInRemoteDataSource {
 
   @override
   Future<void> startWalkInLine(String lineId) async {
-    print('[API] START line: $lineId');
-    await dioClient.patch('/employee-app/tickets/lines/$lineId/start');
+    try {
+      print('[API] START line: $lineId');
+      await dioClient.patch('/employee-app/tickets/lines/$lineId/start');
+    } on ServerException catch (e) {
+      // Handle 409 conflict - line already started or in different state
+      if (e.statusCode == 409) {
+        throw ServerException(
+          message: 'This service has already been started or completed',
+          statusCode: 409,
+        );
+      }
+      rethrow;
+    }
   }
 
   @override
   Future<void> completeWalkInLine(String lineId) async {
-    print('[API] COMPLETE line: $lineId');
-    await dioClient.patch('/employee-app/tickets/lines/$lineId/done');
+    try {
+      print('[API] COMPLETE line: $lineId');
+      await dioClient.patch('/employee-app/tickets/lines/$lineId/done');
+    } on ServerException catch (e) {
+      // Handle 409 conflict - line already completed or moved
+      if (e.statusCode == 409) {
+        throw ServerException(
+          message: 'This service has already been completed',
+          statusCode: 409,
+        );
+      }
+      rethrow;
+    }
   }
 }

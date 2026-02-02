@@ -15,6 +15,7 @@ enum WalkInLineStatus {
       case 'DONE':
         return done;
       case 'CANCELED':
+      case 'CANCELLED':  // Support both American and British spelling
         return canceled;
       default:
         return waiting;

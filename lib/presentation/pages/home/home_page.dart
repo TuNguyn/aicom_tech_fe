@@ -624,7 +624,7 @@ class _HomeContentState extends ConsumerState<_HomeContent>
                   ),
                 ),
                 Text(
-                  '${serviceLines.length}',
+                  '${ref.watch(walkInsNotifierProvider).totalTurn}',
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.secondary,
