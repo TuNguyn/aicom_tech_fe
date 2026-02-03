@@ -543,10 +543,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
     if (ticketData == null || ticketData is! Map<String, dynamic>) return;
 
     final String ticketId = ticketData['id'];
-    final action = mapData['action']; // UPDATE, DELETE...
+    final action = mapData['action'];
     final walkInsNotifier = _ref.read(walkInsNotifierProvider.notifier);
 
-    // Nếu là DELETE -> Xóa ngay
+    // 1. Nếu là DELETE -> Xóa ngay
     if (action == 'DELETE') {
       walkInsNotifier.removeTicket(ticketId);
       return;
@@ -556,9 +556,11 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     if (ticketLines is List && ticketLines.isNotEmpty) {
       final currentUserId = _ref.read(authNotifierProvider).user.id;
-      bool foundAnyLineForMe = false;
 
-      // Chuẩn bị thông tin Ticket để inject vào line
+      // [QUAN TRỌNG] List này chỉ chứa các line thuộc về User hiện tại
+      List<WalkInServiceLine> myServiceLines = [];
+
+      // Chuẩn bị thông tin Ticket để inject vào line (cho Model parse)
       final ticketInfoMap = {
         'id': ticketData['id'],
         'ticketCode': ticketData['ticketCode'],
@@ -575,29 +577,19 @@ class SocketNotifier extends StateNotifier<SocketState> {
         'payments': ticketData['payments'],
       };
 
+      // 2. Duyệt qua từng line từ Socket
       for (var line in ticketLines) {
         if (line is Map<String, dynamic>) {
           final employeeId = line['employee']?['id'];
 
-          // Chỉ xử lý nếu line này thuộc về User đang đăng nhập
+          // [LOGIC LỌC] Chỉ xử lý nếu line này thuộc về User đang đăng nhập
           if (employeeId == currentUserId) {
-            foundAnyLineForMe = true;
             try {
               // Inject ticket info vào line JSON
-              final constructedJson = {...line, 'ticket': ticketInfoMap};
+              final lineJson = {...line, 'ticket': ticketInfoMap};
 
-              // Parse sang Entity
-              final model = TicketLineModel.fromJson(constructedJson);
-              final entity = model.toEntity();
-
-              // Update Local
-              if (kDebugMode) {
-                print('[Socket] Upsert Ticket: ${entity.lineDescription}');
-              }
-              // Lưu ý: Logic _handleTicketSync hiện tại ta đang giả định walkInsNotifier
-              // có hàm xử lý từng line hoặc update cả vé.
-              // Tuy nhiên, WalkInsNotifier của bạn xử lý theo Ticket.
-              // Nên ở đây tốt nhất là ta xây dựng lại cả object WalkInTicket và update 1 lần.
+              // Parse Model -> Entity và thêm vào danh sách CỦA MÌNH
+              myServiceLines.add(TicketLineModel.fromJson(lineJson).toEntity());
             } catch (e) {
               if (kDebugMode) print('[Socket] Parse Error: $e');
             }
@@ -605,30 +597,18 @@ class SocketNotifier extends StateNotifier<SocketState> {
         }
       }
 
-      // LOGIC TỐI ƯU HƠN CHO WALK-IN:
-      // Vì cấu trúc TicketData từ socket đã đầy đủ thông tin của cả vé
-      // Ta nên parse thẳng ticketData sang WalkInTicket và update luôn nếu có dính dáng đến mình.
-
-      if (foundAnyLineForMe) {
+      // 3. Kiểm tra kết quả sau khi lọc
+      if (myServiceLines.isNotEmpty) {
         try {
-          // Gom service lines từ JSON
-          List<WalkInServiceLine> serviceLines = [];
-          for (var line in ticketLines) {
-            if (line is Map<String, dynamic>) {
-              // Inject ticket info để TicketLineModel parse được
-              final lineJson = {...line, 'ticket': ticketInfoMap};
-              serviceLines.add(TicketLineModel.fromJson(lineJson).toEntity());
-            }
-          }
-
-          double totalTurn = serviceLines.fold(0.0, (sum, l) {
+          // Tính toán turnValue tổng (Chỉ cộng khi DONE) dựa trên danh sách ĐÃ LỌC
+          double totalTurn = myServiceLines.fold(0.0, (sum, l) {
             if (l.status == WalkInLineStatus.done) {
               return sum + l.turnValue;
             }
             return sum;
           });
 
-          // Tạo Entity Ticket
+          // Tạo Entity Ticket (Chỉ chứa lines của mình)
           final ticketEntity = WalkInTicket(
             ticketId: ticketData['id'],
             ticketCode: ticketData['ticketCode'] ?? '',
@@ -636,7 +616,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
                 ? '${ticketData['customer']['firstName']} ${ticketData['customer']['lastName']}'
                 : 'Visitor',
             customerId: ticketData['customer']?['id'] ?? '',
-            serviceLines: serviceLines,
+
+            // [QUAN TRỌNG] Truyền danh sách đã lọc vào đây
+            serviceLines: myServiceLines,
+
             createdAt: DateTime.parse(ticketData['createdAt']),
             updatedAt:
                 DateTime.tryParse(ticketData['updatedAt'] ?? '') ??
@@ -651,17 +634,26 @@ class SocketNotifier extends StateNotifier<SocketState> {
             turnValue: totalTurn,
           );
 
+          if (kDebugMode) {
+            print(
+              '[Socket] Upsert Ticket (Filtered): ${ticketEntity.ticketCode} with ${myServiceLines.length} lines',
+            );
+          }
           walkInsNotifier.onTicketReceived(ticketEntity);
         } catch (e) {
           if (kDebugMode) print('[Socket] Construct Ticket Error: $e');
         }
       } else {
-        // Không thấy mình trong vé -> Xóa vé
-        if (kDebugMode) print('[Socket] Removed from ticket -> Delete local');
+        // Trường hợp: Ticket có nhiều line nhưng KHÔNG CÓ line nào của mình
+        // Hoặc mình vừa bị xóa khỏi ticket đó (socket trả về ticket mà không có line của mình)
+        // -> Cần xóa ticket khỏi UI local
+        if (kDebugMode) {
+          print('[Socket] No lines for me in ticket $ticketId -> Remove local');
+        }
         walkInsNotifier.removeTicket(ticketId);
       }
     } else {
-      // Vé không có line -> Xóa
+      // Vé không có line nào (Rỗng) -> Xóa
       walkInsNotifier.removeTicket(ticketId);
     }
   }
