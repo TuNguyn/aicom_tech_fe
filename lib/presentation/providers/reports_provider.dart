@@ -81,20 +81,9 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
         );
       },
       (response) {
-        // Update cache with transactions and summary
-        final updatedTransactions = Map<String, List<ReportTransactionModel>>.from(
-          state.transactionsByDateRange,
-        );
-        updatedTransactions[key] = response.data;
-
-        final updatedSummary = Map<String, ReportSummaryModel>.from(
-          state.summaryByDateRange,
-        );
-        updatedSummary[key] = response.summary;
-
         state = state.copyWith(
-          transactionsByDateRange: updatedTransactions,
-          summaryByDateRange: updatedSummary,
+          transactionsByDateRange: {...state.transactionsByDateRange, key: response.data},
+          summaryByDateRange: {...state.summaryByDateRange, key: response.summary},
           loadingStatus: const AsyncValue.data(null),
         );
       },

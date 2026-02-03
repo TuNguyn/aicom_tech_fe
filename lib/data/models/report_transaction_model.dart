@@ -29,7 +29,7 @@ class ReportTransactionModel {
       id: json['id'] as String,
       ticketCode: json['ticketCode'] as String,
       itemName: json['itemName'] as String,
-      qty: json['qty'] as int,
+      qty: (json['qty'] as num).toInt(),
       price: (json['price'] as num).toDouble(),
       total: (json['total'] as num).toDouble(),
       tips: (json['tips'] as num).toDouble(),

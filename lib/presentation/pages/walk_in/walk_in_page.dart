@@ -30,7 +30,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
   @override
   void initState() {
     super.initState();
-    // Load walk-ins on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
     });
@@ -38,33 +37,33 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
+    super.build(context);
 
     final walkInsState = ref.watch(walkInsNotifierProvider);
-    // Use cached sorted lines for better performance
-    final lines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
-    final pendingCount = walkInsState.pendingTicketsCount;
+    final lines = walkInsState.sortedServiceLines;
+
+    // Logic: Ticket được coi là Pending nếu có bất kỳ line nào đang WAITING hoặc SERVING
+    final pendingCount = walkInsState.activeTicketsCount;
     final isLoading = walkInsState.loadingStatus.isLoading;
 
-    // Listen to auth state changes (user login/logout)
-    ref.listen<String>(
-      authNotifierProvider.select((state) => state.user.id),
-      (previous, next) {
-        // If user ID changed (new user logged in), reload data
-        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          _isInitialLoad = true;
-          ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
-        }
-      },
-    );
+    ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
+      previous,
+      next,
+    ) {
+      if (previous != null &&
+          previous.isNotEmpty &&
+          previous != next &&
+          next.isNotEmpty) {
+        _isInitialLoad = true;
+        ref.read(walkInsNotifierProvider.notifier).loadWalkIns();
+      }
+    });
 
-    // Listen to loading status changes
     ref.listen<AsyncValue<void>>(
       walkInsNotifierProvider.select((state) => state.loadingStatus),
       (previous, next) {
         next.whenOrNull(
           data: (_) {
-            // When data loads successfully, mark initial load as complete
             if (_isInitialLoad) {
               setState(() {
                 _isInitialLoad = false;
@@ -83,7 +82,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
       },
     );
 
-    // Listen to socket for new assigned tickets
     ref.listen<bool>(
       socketNotifierProvider.select((state) => state.hasNewAssignedTicket),
       (previous, next) {
@@ -125,7 +123,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
       ),
       child: Column(
         children: [
-          // Top row with icons and user name
           SizedBox(
             height: 56,
             child: Row(
@@ -204,7 +201,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
           AppDimensions.spacingM,
           AppDimensions.spacingS,
           AppDimensions.spacingM,
-          100, // Extra bottom padding to account for bottom nav bar
+          100,
         ),
         itemCount: lines.length,
         separatorBuilder: (context, index) =>
@@ -245,7 +242,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Decorative illustration
                   Icon(
                     Icons.people_outline,
                     size: 64,
@@ -268,7 +264,6 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppDimensions.spacingL),
-                  // Pro tip card
                   Container(
                     padding: const EdgeInsets.all(AppDimensions.spacingM),
                     decoration: BoxDecoration(

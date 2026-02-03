@@ -100,7 +100,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     },
   ];
 
-  // Cache SystemUiOverlayStyle objects to avoid recreating on every build
   static final _overlayStyleHome = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -226,20 +225,25 @@ class _HomeContentState extends ConsumerState<_HomeContent>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
+    super.build(
+      context,
+    ); // Must call super.build when using AutomaticKeepAliveClientMixin
 
     // Listen to auth state changes (user login/logout)
-    ref.listen<String>(
-      authNotifierProvider.select((state) => state.user.id),
-      (previous, next) {
-        // If user ID changed (new user logged in), reload data
-        if (previous != null && previous.isNotEmpty && previous != next && next.isNotEmpty) {
-          widget.onDataLoaded(false);
-          widget.loadHomeData();
-          widget.onDataLoaded(true);
-        }
-      },
-    );
+    ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
+      previous,
+      next,
+    ) {
+      // If user ID changed (new user logged in), reload data
+      if (previous != null &&
+          previous.isNotEmpty &&
+          previous != next &&
+          next.isNotEmpty) {
+        widget.onDataLoaded(false);
+        widget.loadHomeData();
+        widget.onDataLoaded(true);
+      }
+    });
 
     return Column(
       children: [
@@ -329,7 +333,11 @@ class _HomeContentState extends ConsumerState<_HomeContent>
   Widget _buildQuickStatsSection(WidgetRef ref) {
     // Watch providers for real-time data
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
-    ref.watch(walkInsNotifierProvider);
+
+    // --- SỬA LỖI TẠI ĐÂY ---
+    // Trước đây: ref.watch(walkInsNotifierProvider); // Chỉ watch mà không lấy giá trị
+    // Sửa lại: Lấy state để dùng dữ liệu
+    final walkInsState = ref.watch(walkInsNotifierProvider);
 
     // Calculate today's counts - get appointments for today
     final now = DateTime.now();
@@ -338,8 +346,11 @@ class _HomeContentState extends ConsumerState<_HomeContent>
         .getAppointmentsForDate(today)
         .length;
 
-    // Count waiting service lines (SERVICE items only, not CATEGORY)
-    final serviceLines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
+    // --- SỬA LỖI TẠI ĐÂY ---
+    // Trước đây: ref.read(...).notifier.cachedSortedServiceLines
+    // Sửa lại: Dùng state.sortedServiceLines từ provider đã watch ở trên
+    final serviceLines = walkInsState.sortedServiceLines;
+
     final waitingCount = serviceLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.waiting)
         .length;
@@ -463,9 +474,8 @@ class _HomeContentState extends ConsumerState<_HomeContent>
             ],
           ),
           const SizedBox(height: AppDimensions.spacingS),
-          // Scrollable list with max 3 visible items
           SizedBox(
-            height: 3 * 60.0, // Each notification ~60px height, show exactly 3
+            height: 3 * 60.0,
             child: ListView.builder(
               padding: EdgeInsets.zero,
               itemCount: _HomePageState._mockNotifications.length,
@@ -540,19 +550,20 @@ class _HomeContentState extends ConsumerState<_HomeContent>
   }
 
   Widget _buildCombinedSummaryPerformance(WidgetRef ref) {
-    // Watch walk-in provider for real-time data (to trigger rebuilds on data changes)
-    ref.watch(walkInsNotifierProvider);
+    // --- SỬA LỖI TẠI ĐÂY ---
+    // Trước đây: ref.watch(walkInsNotifierProvider); // Chỉ watch mà ko dùng biến
+    // Sửa lại: Lấy state ra dùng trực tiếp
+    final walkInsState = ref.watch(walkInsNotifierProvider);
 
-    // Calculate today's counts by service line status (not ticket status)
-    // Use cached sorted lines for better performance
-    final serviceLines = ref.read(walkInsNotifierProvider.notifier).cachedSortedServiceLines;
-    final completedCount = serviceLines
+    final allLines = walkInsState.allServiceLines;
+
+    final completedCount = allLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.done)
         .length;
-    final inProgressCount = serviceLines
+    final inProgressCount = allLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.serving)
         .length;
-    final canceledCount = serviceLines
+    final canceledCount = allLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.canceled)
         .length;
 
@@ -624,7 +635,7 @@ class _HomeContentState extends ConsumerState<_HomeContent>
                   ),
                 ),
                 Text(
-                  '${ref.watch(walkInsNotifierProvider).totalTurn}',
+                  '${walkInsState.totalTurn}', // Sửa: Dùng biến walkInsState đã watch ở trên
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.secondary,

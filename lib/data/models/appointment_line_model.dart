@@ -25,11 +25,17 @@ class AppointmentLineModel {
     return AppointmentLineModel(
       id: json['id'] as String,
       beginTime: DateTime.parse(json['beginTime'] as String),
-      durationMinute: json['durationMinute'] as int,
+      durationMinute: (json['durationMinute'] as num).toInt(),
       type: json['type'] as String,
-      service: ServiceInfoModel.fromJson(json['service'] as Map<String, dynamic>),
-      appointment: AppointmentInfoModel.fromJson(json['appointment'] as Map<String, dynamic>),
-      employee: EmployeeInfoModel.fromJson(json['employee'] as Map<String, dynamic>),
+      service: ServiceInfoModel.fromJson(
+        json['service'] as Map<String, dynamic>,
+      ),
+      appointment: AppointmentInfoModel.fromJson(
+        json['appointment'] as Map<String, dynamic>,
+      ),
+      employee: EmployeeInfoModel.fromJson(
+        json['employee'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -52,10 +58,7 @@ class ServiceInfoModel {
   final String id;
   final String name;
 
-  ServiceInfoModel({
-    required this.id,
-    required this.name,
-  });
+  ServiceInfoModel({required this.id, required this.name});
 
   factory ServiceInfoModel.fromJson(Map<String, dynamic> json) {
     return ServiceInfoModel(
@@ -65,10 +68,7 @@ class ServiceInfoModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-    };
+    return {'id': id, 'name': name};
   }
 }
 
@@ -93,7 +93,9 @@ class AppointmentInfoModel {
       appointmentTime: DateTime.parse(json['appointmentTime'] as String),
       status: json['status'] as String,
       note: json['note'] as String?,
-      customer: CustomerInfoModel.fromJson(json['customer'] as Map<String, dynamic>),
+      customer: CustomerInfoModel.fromJson(
+        json['customer'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -124,7 +126,10 @@ class AppointmentLinesResponse {
 
     return AppointmentLinesResponse(
       data: (dataMap['data'] as List<dynamic>)
-          .map((item) => AppointmentLineModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                AppointmentLineModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       meta: PaginationMeta.fromJson(dataMap['meta'] as Map<String, dynamic>),
       links: PaginationLinks.fromJson(dataMap['links'] as Map<String, dynamic>),

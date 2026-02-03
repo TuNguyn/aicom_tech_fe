@@ -1,5 +1,4 @@
-// ignore_for_file: avoid_print
-
+import 'package:flutter/foundation.dart';
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
 import '../../domain/entities/walk_in_ticket.dart';
@@ -44,16 +43,6 @@ class TicketLineModel {
   });
 
   factory TicketLineModel.fromJson(Map<String, dynamic> json) {
-    final employeeJson = json['employee'];
-    final ticketJson = json['ticket'];
-
-    if (employeeJson == null || employeeJson is! Map<String, dynamic>) {
-      throw Exception('Invalid employee data');
-    }
-    if (ticketJson == null || ticketJson is! Map<String, dynamic>) {
-      throw Exception('Invalid ticket data');
-    }
-
     return TicketLineModel(
       id: json['id'] as String,
       itemType: json['itemType'] as String,
@@ -70,8 +59,10 @@ class TicketLineModel {
       status: json['status'] as String,
       employeeName: json['employeeName'] as String,
       displayOrder: (json['displayOrder'] as num).toInt(),
-      employee: EmployeeInfoModel.fromJson(employeeJson),
-      ticket: TicketInfoModel.fromJson(ticketJson),
+      employee: EmployeeInfoModel.fromJson(
+        json['employee'] as Map<String, dynamic>,
+      ),
+      ticket: TicketInfoModel.fromJson(json['ticket'] as Map<String, dynamic>),
     );
   }
 
@@ -211,9 +202,13 @@ class TicketLinesResponse {
       try {
         final line = TicketLineModel.fromJson(item as Map<String, dynamic>);
         parsedLines.add(line);
-      } catch (e) {
-        print('[Parse Error] Line $i failed: $e');
-        // Skip invalid records
+      } catch (e, stackTrace) {
+        if (kDebugMode) {
+          print('[TicketLineModel] Failed to parse line $i: $e');
+          print('Data: $item');
+          print('Stack trace: $stackTrace');
+        }
+        // Continue parsing remaining lines instead of failing completely
         continue;
       }
     }

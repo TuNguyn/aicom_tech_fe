@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/ticket_line_model.dart';
@@ -8,7 +6,7 @@ import '../../domain/usecases/walk_ins/get_walk_in_lines.dart';
 import '../../domain/usecases/walk_ins/start_walk_in_line.dart';
 import '../../domain/usecases/walk_ins/complete_walk_in_line.dart';
 
-/// Display model for individual service lines with customer info
+// Display model
 class ServiceLineDisplay extends Equatable {
   final String customerName;
   final WalkInServiceLine serviceLine;
@@ -35,64 +33,70 @@ class WalkInsState extends Equatable {
     this.totalTurn = 0,
   });
 
-  List<WalkInTicket> get sortedTickets {
-    final tickets = List<WalkInTicket>.from(walkInTickets);
-    tickets.sort((a, b) => _compareByStatus(
-          a.overallStatus,
-          b.overallStatus,
-          a.createdAt,
-          b.createdAt,
-        ));
-    return tickets;
-  }
-
-  /// Returns count of tickets that are not fully done (pending/in-progress)
-  int get pendingTicketsCount {
-    return walkInTickets.where((ticket) {
-      return ticket.overallStatus != WalkInLineStatus.done &&
-          ticket.overallStatus != WalkInLineStatus.canceled;
-    }).length;
-  }
-
-  /// Returns flattened and sorted service lines from all tickets (SERVICE items only, excluding CANCELLED)
-  List<ServiceLineDisplay> get sortedServiceLines {
-    // Flatten service lines from tickets
+  // Helper để lấy tất cả line từ các ticket
+  List<ServiceLineDisplay> _flatMapServiceLines({
+    bool includeCancelled = false,
+  }) {
     final lines = <ServiceLineDisplay>[];
     for (final ticket in walkInTickets) {
       for (final serviceLine in ticket.serviceLines) {
-        // FILTER: Only include SERVICE items, exclude CATEGORY and CANCELLED status
-        if (serviceLine.itemType == 'SERVICE' &&
-            serviceLine.status != WalkInLineStatus.canceled) {
-          lines.add(
-            ServiceLineDisplay(
-              customerName: ticket.customerName,
-              serviceLine: serviceLine,
-              createdAt: ticket.createdAt,
-            ),
-          );
+        if (serviceLine.itemType != 'SERVICE') continue;
+
+        if (!includeCancelled &&
+            serviceLine.status == WalkInLineStatus.canceled) {
+          continue;
         }
+
+        lines.add(
+          ServiceLineDisplay(
+            customerName: ticket.customerName,
+            serviceLine: serviceLine,
+            createdAt: ticket.createdAt,
+          ),
+        );
       }
     }
-
-    // Sort lines: waiting first, then serving, then done, then by creation time
-    lines.sort((a, b) => _compareByStatus(
-          a.serviceLine.status,
-          b.serviceLine.status,
-          a.createdAt,
-          b.createdAt,
-        ));
-
     return lines;
   }
 
-  /// Compare two items by status priority and creation time
+  // Getter chính dùng cho UI
+  List<ServiceLineDisplay> get sortedServiceLines {
+    final lines = _flatMapServiceLines(includeCancelled: false);
+
+    // Sort logic
+    lines.sort(
+      (a, b) => _compareByStatus(
+        a.serviceLine.status,
+        b.serviceLine.status,
+        a.createdAt,
+        b.createdAt,
+      ),
+    );
+    return lines;
+  }
+
+  int get activeTicketsCount {
+    return walkInTickets.where((ticket) {
+      return ticket.serviceLines.any(
+        (line) =>
+            line.status == WalkInLineStatus.waiting ||
+            line.status == WalkInLineStatus.serving,
+      );
+    }).length;
+  }
+
+  // Getter dùng cho Summary (nếu cần lấy cả canceled)
+  List<ServiceLineDisplay> get allServiceLines {
+    return _flatMapServiceLines(includeCancelled: true);
+  }
+
   static int _compareByStatus(
     WalkInLineStatus statusA,
     WalkInLineStatus statusB,
     DateTime createdAtA,
     DateTime createdAtB,
   ) {
-    // Waiting status first
+    // 1. Waiting lên đầu
     if (statusA == WalkInLineStatus.waiting &&
         statusB != WalkInLineStatus.waiting) {
       return -1;
@@ -101,30 +105,17 @@ class WalkInsState extends Equatable {
         statusB == WalkInLineStatus.waiting) {
       return 1;
     }
-
-    // Serving status second
+    // 2. Serving thứ hai
     if (statusA == WalkInLineStatus.serving &&
-        statusB != WalkInLineStatus.serving &&
-        statusB != WalkInLineStatus.waiting) {
+        statusB != WalkInLineStatus.serving) {
       return -1;
     }
     if (statusA != WalkInLineStatus.serving &&
-        statusA != WalkInLineStatus.waiting &&
         statusB == WalkInLineStatus.serving) {
       return 1;
     }
 
-    // Done status third
-    if (statusA == WalkInLineStatus.done &&
-        statusB == WalkInLineStatus.canceled) {
-      return -1;
-    }
-    if (statusA == WalkInLineStatus.canceled &&
-        statusB == WalkInLineStatus.done) {
-      return 1;
-    }
-
-    // Then by creation time (newest first)
+    // 3. Cuối cùng sort theo thời gian (Mới nhất lên trên)
     return createdAtB.compareTo(createdAtA);
   }
 
@@ -149,43 +140,15 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
   final StartWalkInLine _startWalkInLine;
   final CompleteWalkInLine _completeWalkInLine;
 
-  bool _isDataLoaded = false;
-
-  // Cache for sorted service lines to avoid recomputing on every access
-  List<ServiceLineDisplay>? _cachedSortedLines;
-  bool _sortedLinesCacheDirty = true;
-
   WalkInsNotifier(
     this._getWalkInLines,
     this._startWalkInLine,
     this._completeWalkInLine,
   ) : super(const WalkInsState());
 
-  /// Get cached sorted service lines (avoids O(n log n) sorting on every access)
-  List<ServiceLineDisplay> get cachedSortedServiceLines {
-    // Return cached result if available and not dirty
-    if (_cachedSortedLines != null && !_sortedLinesCacheDirty) {
-      return _cachedSortedLines!;
-    }
-
-    // Compute and cache the sorted lines
-    final lines = state.sortedServiceLines;
-    _cachedSortedLines = lines;
-    _sortedLinesCacheDirty = false;
-
-    return lines;
-  }
-
-  /// Invalidate the sorted lines cache when data changes
-  void _invalidateSortedLinesCache() {
-    _sortedLinesCacheDirty = true;
-  }
-
   Future<void> loadWalkIns({List<String>? statuses}) async {
-    // Skip if already loaded or currently loading
-    if (_isDataLoaded || state.loadingStatus.isLoading) {
-      return;
-    }
+    // Chỉ chặn load nếu đang loading thật sự, bỏ qua check _isDataLoaded thủ công
+    if (state.loadingStatus.isLoading) return;
 
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
 
@@ -194,22 +157,16 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     );
 
     result.fold(
-      (failure) {
-        state = state.copyWith(
-          loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
-        );
-      },
+      (failure) => state = state.copyWith(
+        loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
+      ),
       (response) {
         final tickets = _groupTicketLines(response.data);
-
         state = state.copyWith(
           walkInTickets: tickets,
           loadingStatus: const AsyncValue.data(null),
           totalTurn: response.totalTurn,
         );
-
-        _invalidateSortedLinesCache();
-        _isDataLoaded = true;
       },
     );
   }
@@ -221,93 +178,67 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
       ticketsMap.putIfAbsent(line.ticket.id, () => []).add(line);
     }
 
-    // Get today's date range
+    // Thời gian để filter
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
 
-    // Transform to WalkInTicket entities
-    final allTickets = ticketsMap.entries.map((entry) {
-      final lines = entry.value;
-      final firstLine = lines.first;
+    return ticketsMap.entries
+        .map((entry) {
+          final lines = entry.value;
+          final firstLine = lines.first;
 
-      final customer = firstLine.ticket.customer;
-      final customerName = customer?.fullName ?? 'Visitor';
-      final customerId = customer?.id ?? '';
+          // Sort lines trong ticket luôn tại đây
+          lines.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
-      return WalkInTicket(
-        ticketId: firstLine.ticket.id,
-        ticketCode: firstLine.ticket.ticketCode,
-        customerName: customerName,
-        customerId: customerId,
-        serviceLines: lines
-            .map((line) => line.toEntity())
-            .toList()
-          ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder)),
-        createdAt: firstLine.ticket.createdAt,
-        updatedAt: firstLine.ticket.updatedAt,
-        notes: firstLine.ticket.note,
-        totalPrice: firstLine.ticket.totalPrice,
-        totalTips: firstLine.ticket.totalTips,
-        totalDiscount: firstLine.ticket.totalDiscount,
-        totalTax: firstLine.ticket.totalTax,
-        totalPaid: firstLine.ticket.totalPaid,
-      );
-    }).toList();
-
-    // Filter: only include tickets created today
-    final todayTickets = allTickets.where((ticket) {
-      return ticket.createdAt.isAfter(today.subtract(const Duration(seconds: 1))) &&
-          ticket.createdAt.isBefore(tomorrow);
-    }).toList();
-
-    return todayTickets;
+          return WalkInTicket(
+            ticketId: firstLine.ticket.id,
+            ticketCode: firstLine.ticket.ticketCode,
+            customerName: firstLine.ticket.customer?.fullName ?? 'Visitor',
+            customerId: firstLine.ticket.customer?.id ?? '',
+            serviceLines: lines.map((line) => line.toEntity()).toList(),
+            createdAt: firstLine.ticket.createdAt,
+            updatedAt: firstLine.ticket.updatedAt,
+            notes: firstLine.ticket.note,
+            totalPrice: firstLine.ticket.totalPrice,
+            totalTips: firstLine.ticket.totalTips,
+            totalDiscount: firstLine.ticket.totalDiscount,
+            totalTax: firstLine.ticket.totalTax,
+            totalPaid: firstLine.ticket.totalPaid,
+          );
+        })
+        .where((ticket) {
+          // Filter logic: giữ lại nếu tạo trong hôm nay
+          return ticket.createdAt.isAfter(startOfDay) &&
+              ticket.createdAt.isBefore(endOfDay);
+        })
+        .toList();
   }
 
   Future<void> refreshWalkIns() async {
-    _isDataLoaded = false;
-    _invalidateSortedLinesCache();
     await loadWalkIns();
   }
 
-  /// Reset state and clear all data (called on logout)
   void reset() {
-    _isDataLoaded = false;
-    _invalidateSortedLinesCache();
     state = const WalkInsState();
   }
 
-  /// Start a walk-in service line. Returns error message if failed, null if successful.
   Future<String?> startServiceLine(String lineId) async {
     final result = await _startWalkInLine(lineId);
-
-    return result.fold(
-      (failure) {
-        // Always refresh to sync UI with server state
-        refreshWalkIns();
-        return failure.message;
-      },
-      (_) {
-        refreshWalkIns();
-        return null;
-      },
-    );
+    if (result.isRight()) {
+      // Chỉ refresh khi thành công để tránh spam API lỗi
+      await refreshWalkIns();
+      return null;
+    }
+    return result.fold((failure) => failure.message, (_) => null);
   }
 
-  /// Complete a walk-in service line. Returns error message if failed, null if successful.
   Future<String?> completeServiceLine(String lineId) async {
     final result = await _completeWalkInLine(lineId);
-
-    return result.fold(
-      (failure) {
-        // Always refresh to sync UI with server state
-        refreshWalkIns();
-        return failure.message;
-      },
-      (_) {
-        refreshWalkIns();
-        return null;
-      },
-    );
+    if (result.isRight()) {
+      await refreshWalkIns();
+      return null;
+    }
+    return result.fold((failure) => failure.message, (_) => null);
   }
 }

@@ -57,7 +57,7 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
         state = state.copyWith(
           loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
         );
-        // Don't set _isDataLoaded on error
+        _isDataLoaded = true; // Mark as loaded even on error to allow retry
       },
       (response) {
         // Group appointments by date
@@ -80,7 +80,7 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
           appointmentsByDate: groupedAppointments,
           loadingStatus: const AsyncValue.data(null),
         );
-        _isDataLoaded = true; // Mark as loaded on success
+        _isDataLoaded = true;
       },
     );
   }
