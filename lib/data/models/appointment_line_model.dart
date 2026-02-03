@@ -1,3 +1,4 @@
+import '../../domain/entities/appointment_line.dart';
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
 import 'common/pagination_models.dart';
@@ -52,6 +53,19 @@ class AppointmentLineModel {
   }
 
   DateTime get endTime => beginTime.add(Duration(minutes: durationMinute));
+
+  AppointmentLine toEntity() {
+    return AppointmentLine(
+      id: id,
+      customerName: appointment.customer.fullName,
+      customerPhone: appointment.customer.phone,
+      serviceName: service.name,
+      durationMinute: durationMinute,
+      beginTime: beginTime,
+      endTime: endTime,
+      status: appointment.status,
+    );
+  }
 }
 
 class ServiceInfoModel {

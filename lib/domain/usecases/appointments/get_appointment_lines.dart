@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../core/errors/failures.dart';
-import '../../../data/models/appointment_line_model.dart';
+import '../../entities/appointment_line.dart';
 import '../../repositories/appointment_lines_repository.dart';
 
 class GetAppointmentLines {
@@ -8,7 +8,7 @@ class GetAppointmentLines {
 
   GetAppointmentLines(this.repository);
 
-  Future<Either<Failure, AppointmentLinesResponse>> call({
+  Future<Either<Failure, List<AppointmentLine>>> call({
     required DateTime startDate,
     required DateTime endDate,
     int page = 1,

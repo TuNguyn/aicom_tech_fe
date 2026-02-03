@@ -2,8 +2,8 @@ import 'package:dartz/dartz.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
 import '../../domain/repositories/appointment_lines_repository.dart';
+import '../../domain/entities/appointment_line.dart';
 import '../datasources/appointment_remote_data_source.dart';
-import '../models/appointment_line_model.dart';
 
 class AppointmentLinesRepositoryImpl implements AppointmentLinesRepository {
   final AppointmentRemoteDataSource remoteDataSource;
@@ -11,7 +11,7 @@ class AppointmentLinesRepositoryImpl implements AppointmentLinesRepository {
   AppointmentLinesRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<Either<Failure, AppointmentLinesResponse>> getAppointmentLines({
+  Future<Either<Failure, List<AppointmentLine>>> getAppointmentLines({
     required DateTime startDate,
     required DateTime endDate,
     int page = 1,
@@ -26,7 +26,10 @@ class AppointmentLinesRepositoryImpl implements AppointmentLinesRepository {
         limit: limit,
         sortBy: sortBy,
       );
-      return Right(response);
+
+      final entities = response.data.map((model) => model.toEntity()).toList();
+
+      return Right(entities);
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } on ServerException catch (e) {

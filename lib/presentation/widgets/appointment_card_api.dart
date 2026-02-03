@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../data/models/appointment_line_model.dart';
+import '../../domain/entities/appointment_line.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 
-// Cache for status-based styling to avoid repeated calculations
 class _AppointmentCardStyle {
   final Color statusColor;
   final Color timeBadgeColor;
@@ -12,7 +11,7 @@ class _AppointmentCardStyle {
   final String statusText;
   final IconData statusIcon;
 
-  // Pre-calculated color variations with alpha
+  // Pre-calculated color variations for performance
   final Color borderColor;
   final Color shadowColor;
   final Color dotColor;
@@ -46,118 +45,116 @@ class _AppointmentCardStyle {
     required this.timeBadgeShadow,
   });
 
-  // Static cache for styles based on status
   static final Map<String, _AppointmentCardStyle> _cache = {};
 
   factory _AppointmentCardStyle.fromStatus(String status) {
     final normalizedStatus = status.toUpperCase();
-
-    // Return cached style if available
     if (_cache.containsKey(normalizedStatus)) {
       return _cache[normalizedStatus]!;
     }
 
-    // Determine colors based on status
-    final bool isCancelled = normalizedStatus == 'CANCELLED' || normalizedStatus == 'NO_SHOW';
+    Color baseColor;
+    Color darkerColor;
+    List<Color> gradient;
+    IconData icon;
+    String text;
 
-    final Color statusColor = isCancelled
-        ? const Color(0xFFEF9A9A)  // Soft coral/pink for cancelled
-        : const Color(0xFF6B8CD9); // Blue color for normal
-
-    final Color timeBadgeColor = isCancelled
-        ? const Color(0xFFE88B8B)  // Soft coral for cancelled
-        : const Color(0xFF5578C7); // Darker blue for confirmed
-
-    final List<Color> gradientColors = isCancelled
-        ? const [Color(0xFFFFC1C1), Color(0xFFFFDAE0)] // Soft pink gradient
-        : const [Color(0xFF9DB4E8), Color(0xFFB8C9F0)]; // Blue gradient
-
-    String statusText;
     switch (normalizedStatus) {
       case 'SCHEDULED':
-        statusText = 'Scheduled';
-        break;
-      case 'IN_PROGRESS':
-        statusText = 'In Progress';
-        break;
-      case 'CHECKED_IN':
-        statusText = 'Checked In';
-        break;
-      case 'COMPLETED':
-        statusText = 'Completed';
-        break;
-      case 'CANCELLED':
-        statusText = 'CANCELLED';
-        break;
-      case 'NO_SHOW':
-        statusText = 'No Show';
-        break;
-      default:
-        statusText = status;
-    }
-
-    IconData statusIcon;
-    switch (normalizedStatus) {
-      case 'SCHEDULED':
-        statusIcon = Icons.schedule;
+        baseColor = const Color(0xFF4A90E2); // Classic Blue
+        darkerColor = const Color(0xFF357ABD);
+        gradient = [const Color(0xFFE3F2FD), const Color(0xFFBBDEFB)];
+        icon = Icons.schedule;
+        text = 'SCHEDULED';
         break;
       case 'CONFIRMED':
-        statusIcon = Icons.check_circle;
+        baseColor = const Color(0xFF5C7BD9); // Xanh dương dịu (Cornflower Blue)
+        darkerColor = const Color(0xFF4A68C2);
+        gradient = [
+          const Color(0xFFE8EAF6),
+          const Color(0xFFC5CAE9),
+        ]; // Xanh nhạt gradient
+        icon = Icons.check_circle;
+        text = 'CONFIRMED';
+        break;
+      case 'CHECKED_IN':
+        baseColor = const Color(0xFF9C27B0); // Purple indicating presence
+        darkerColor = const Color(0xFF7B1FA2);
+        gradient = [const Color(0xFFF3E5F5), const Color(0xFFE1BEE7)];
+        icon = Icons.how_to_reg;
+        text = 'CHECKED_IN';
         break;
       case 'IN_PROGRESS':
-      case 'CHECKED_IN':
-        statusIcon = Icons.play_circle_outline;
+        baseColor = const Color(0xFFEF6C00); // Orange/Amber for active state
+        darkerColor = const Color(0xFFE65100);
+        gradient = [const Color(0xFFFFF3E0), const Color(0xFFFFE0B2)];
+        icon = Icons.play_circle_filled;
+        text = 'IN_PROGRESS';
         break;
       case 'COMPLETED':
-        statusIcon = Icons.check_circle_outline;
+        baseColor = const Color(0xFF009688); // Teal for successful completion
+        darkerColor = const Color(0xFF00796B);
+        gradient = [const Color(0xFFE0F2F1), const Color(0xFFB2DFDB)];
+        icon = Icons.task_alt;
+        text = 'COMPLETED';
         break;
       case 'CANCELLED':
       case 'NO_SHOW':
-        statusIcon = Icons.cancel_outlined;
+        baseColor = const Color(0xFFE53935); // Red for negative states
+        darkerColor = const Color(0xFFC62828);
+        gradient = [const Color(0xFFFFEBEE), const Color(0xFFFFCDD2)];
+        icon = Icons.cancel;
+        text = normalizedStatus == 'NO_SHOW' ? 'NO_SHOW' : 'CANCELLED ';
         break;
       default:
-        statusIcon = Icons.event_available;
+        // Fallback for unknown states
+        baseColor = const Color(0xFF607D8B); // Blue Grey
+        darkerColor = const Color(0xFF455A64);
+        gradient = [const Color(0xFFECEFF1), const Color(0xFFCFD8DC)];
+        icon = Icons.help_outline;
+        text = status;
     }
 
-    // Pre-calculate all color variations
     final style = _AppointmentCardStyle._(
-      statusColor: statusColor,
-      timeBadgeColor: timeBadgeColor,
-      gradientColors: gradientColors,
-      statusText: statusText,
-      statusIcon: statusIcon,
-      borderColor: statusColor.withValues(alpha: 0.4),
+      statusColor: baseColor,
+      timeBadgeColor: darkerColor,
+      gradientColors: gradient,
+      statusText: text,
+      statusIcon: icon,
+      borderColor: baseColor.withValues(alpha: 0.4),
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      dotColor: statusColor.withValues(alpha: 0.3),
-      avatarGradientStart: statusColor.withValues(alpha: 0.3),
-      avatarGradientEnd: statusColor.withValues(alpha: 0.15),
-      avatarBorder: statusColor.withValues(alpha: 0.5),
-      serviceBackground: statusColor.withValues(alpha: 0.06),
-      serviceBorder: statusColor.withValues(alpha: 0.15),
-      serviceDotBackground: statusColor.withValues(alpha: 0.2),
-      serviceDotBorder: statusColor.withValues(alpha: 0.5),
-      serviceDotCenter: statusColor,
-      timeBadgeShadow: timeBadgeColor.withValues(alpha: 0.3),
+      dotColor: baseColor.withValues(alpha: 0.3),
+      avatarGradientStart: baseColor.withValues(alpha: 0.3),
+      avatarGradientEnd: baseColor.withValues(alpha: 0.15),
+      avatarBorder: baseColor.withValues(alpha: 0.5),
+      serviceBackground: baseColor.withValues(alpha: 0.06),
+      serviceBorder: baseColor.withValues(alpha: 0.15),
+      serviceDotBackground: baseColor.withValues(alpha: 0.2),
+      serviceDotBorder: baseColor.withValues(alpha: 0.5),
+      serviceDotCenter: baseColor,
+      timeBadgeShadow: darkerColor.withValues(alpha: 0.3),
     );
 
-    // Cache the style
     _cache[normalizedStatus] = style;
     return style;
   }
 }
 
 class AppointmentCardApi extends StatelessWidget {
-  final AppointmentLineModel appointment;
+  final AppointmentLine appointment;
 
   const AppointmentCardApi({super.key, required this.appointment});
 
-  // Static time formatter to avoid repeated instantiation
   static final _timeFormat = DateFormat('h:mm a');
 
   @override
   Widget build(BuildContext context) {
-    // Get cached style for this status
-    final style = _AppointmentCardStyle.fromStatus(appointment.appointment.status);
+    final style = _AppointmentCardStyle.fromStatus(appointment.status);
+
+    // Lấy ký tự đầu của tên khách hàng một cách an toàn
+    final customerInitial = appointment.customerName.isNotEmpty
+        ? appointment.customerName[0].toUpperCase()
+        : '?';
 
     return RepaintBoundary(
       child: Container(
@@ -175,16 +172,14 @@ class AppointmentCardApi extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Decorative dots pattern (top right) - using pre-built const widgets
             Positioned(
               top: 10,
               right: 7,
               child: _DecorativeDotsRow(color: style.dotColor),
             ),
-
             Column(
               children: [
-                // Header with time and status
+                // Header with Time and Status
                 Container(
                   padding: const EdgeInsets.all(AppDimensions.spacingS),
                   decoration: BoxDecoration(
@@ -200,7 +195,6 @@ class AppointmentCardApi extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Time range with icon
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -243,7 +237,6 @@ class AppointmentCardApi extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Status badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -252,10 +245,13 @@ class AppointmentCardApi extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: style.statusColor, width: 1.5),
+                          border: Border.all(
+                            color: style.statusColor,
+                            width: 1.5,
+                          ),
                           boxShadow: const [
                             BoxShadow(
-                              color: Color(0x0D000000), // 0.05 alpha
+                              color: Color(0x0D000000),
                               blurRadius: 4,
                               offset: Offset(0, 1),
                             ),
@@ -285,13 +281,12 @@ class AppointmentCardApi extends StatelessWidget {
                   ),
                 ),
 
-                // Content
+                // Body with Customer, Service, and Notes
                 Padding(
                   padding: const EdgeInsets.all(AppDimensions.spacingS + 2),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Customer info
                       Row(
                         children: [
                           Container(
@@ -314,8 +309,7 @@ class AppointmentCardApi extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                appointment.appointment.customer.firstName[0]
-                                    .toUpperCase(),
+                                customerInitial,
                                 style: AppTextStyles.bodyLarge.copyWith(
                                   color: style.statusColor,
                                   fontWeight: FontWeight.bold,
@@ -324,58 +318,59 @@ class AppointmentCardApi extends StatelessWidget {
                               ),
                             ),
                           ),
-                        const SizedBox(width: AppDimensions.spacingS),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                appointment.appointment.customer.fullName,
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                          const SizedBox(width: AppDimensions.spacingS),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  appointment.customerName,
+                                  style: AppTextStyles.bodyLarge.copyWith(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              const SizedBox(height: 3),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.phone_rounded,
-                                      size: 11,
-                                      color: Colors.grey[700],
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      appointment.appointment.customer.phone,
-                                      style: AppTextStyles.bodySmall.copyWith(
+                                const SizedBox(height: 3),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.phone_rounded,
+                                        size: 11,
                                         color: Colors.grey[700],
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        appointment.customerPhone,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: Colors.grey[700],
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-
+                        ],
+                      ),
                       const SizedBox(height: AppDimensions.spacingS),
-
-                      // Service
                       Container(
                         padding: const EdgeInsets.all(AppDimensions.spacingS),
                         decoration: BoxDecoration(
@@ -388,7 +383,6 @@ class AppointmentCardApi extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            // Service dot
                             Container(
                               width: 18,
                               height: 18,
@@ -414,14 +408,17 @@ class AppointmentCardApi extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                appointment.service.name,
+                                appointment.serviceName,
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: Colors.black87,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -443,12 +440,10 @@ class AppointmentCardApi extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                      // Notes (if any)
-                      if (appointment.appointment.note != null &&
-                          appointment.appointment.note!.isNotEmpty) ...[
+                      if (appointment.note != null &&
+                          appointment.note!.isNotEmpty) ...[
                         const SizedBox(height: AppDimensions.spacingS),
-                        _NoteSection(note: appointment.appointment.note!),
+                        _NoteSection(note: appointment.note!),
                       ],
                     ],
                   ),
@@ -462,10 +457,8 @@ class AppointmentCardApi extends StatelessWidget {
   }
 }
 
-// Widget for decorative dots row with dynamic color
 class _DecorativeDotsRow extends StatelessWidget {
   final Color color;
-
   const _DecorativeDotsRow({required this.color});
 
   @override
@@ -485,26 +478,20 @@ class _DecorativeDotsRow extends StatelessWidget {
     return Container(
       width: 4,
       height: 4,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
 
-// Separate widget for note section with static gradient colors
 class _NoteSection extends StatelessWidget {
   final String note;
-
   const _NoteSection({required this.note});
 
-  // Static gradient and colors to avoid recalculation
-  static const _noteGradientStart = Color(0xFFE3F2FD); // blue[50]
-  static const _noteGradientEnd = Color(0x80E3F2FD);   // blue[50] with 0.5 alpha
-  static const _noteBorderColor = Color(0xFF90CAF9);   // blue[200]
-  static const _noteIconColor = Color(0xFF1976D2);     // blue[700]
-  static const _noteTextColor = Color(0xFF0D47A1);     // blue[900]
+  static const _noteGradientStart = Color(0xFFE3F2FD);
+  static const _noteGradientEnd = Color(0x80E3F2FD);
+  static const _noteBorderColor = Color(0xFF90CAF9);
+  static const _noteIconColor = Color(0xFF1976D2);
+  static const _noteTextColor = Color(0xFF0D47A1);
 
   @override
   Widget build(BuildContext context) {
@@ -539,6 +526,8 @@ class _NoteSection extends StatelessWidget {
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

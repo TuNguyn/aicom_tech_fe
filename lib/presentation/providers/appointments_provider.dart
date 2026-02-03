@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/appointment_line_model.dart';
+import '../../domain/entities/appointment_line.dart';
 import '../../domain/usecases/appointments/get_appointment_lines.dart';
 
 class AppointmentsState {
-  final Map<DateTime, List<AppointmentLineModel>> appointmentsByDate;
+  final Map<DateTime, List<AppointmentLine>> appointmentsByDate;
   final AsyncValue<void> loadingStatus;
   final DateTime? selectedDate;
 
@@ -14,7 +14,7 @@ class AppointmentsState {
   });
 
   AppointmentsState copyWith({
-    Map<DateTime, List<AppointmentLineModel>>? appointmentsByDate,
+    Map<DateTime, List<AppointmentLine>>? appointmentsByDate,
     AsyncValue<void>? loadingStatus,
     DateTime? selectedDate,
   }) {
@@ -25,7 +25,7 @@ class AppointmentsState {
     );
   }
 
-  List<AppointmentLineModel> getAppointmentsForDate(DateTime date) {
+  List<AppointmentLine> getAppointmentsForDate(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
     return appointmentsByDate[dateKey] ?? [];
   }
@@ -37,10 +37,12 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
   bool _isDataLoaded = false;
 
   AppointmentsNotifier(this._getAppointmentLines)
-      : super(AppointmentsState(selectedDate: DateTime.now()));
+    : super(AppointmentsState(selectedDate: DateTime.now()));
 
-  Future<void> loadAppointmentsForDateRange(DateTime startDate, DateTime endDate) async {
-    // Skip if already loaded or currently loading
+  Future<void> loadAppointmentsForDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     if (_isDataLoaded || state.loadingStatus.isLoading) {
       return;
     }
@@ -57,13 +59,12 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
         state = state.copyWith(
           loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
         );
-        _isDataLoaded = true; // Mark as loaded even on error to allow retry
+        _isDataLoaded = true;
       },
-      (response) {
-        // Group appointments by date
-        final Map<DateTime, List<AppointmentLineModel>> groupedAppointments = {};
+      (appointments) {
+        final Map<DateTime, List<AppointmentLine>> groupedAppointments = {};
 
-        for (final appointment in response.data) {
+        for (final appointment in appointments) {
           final dateKey = DateTime(
             appointment.beginTime.year,
             appointment.beginTime.month,
@@ -90,18 +91,16 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
   }
 
   Future<void> refreshAppointments() async {
-    _isDataLoaded = false; // Reset flag to allow reload
+    _isDataLoaded = false;
 
-    // Reload appointments for current week
     final now = DateTime.now();
     final weekday = now.weekday;
-    final startDate = now.subtract(Duration(days: weekday - 1)); // Monday
-    final endDate = startDate.add(const Duration(days: 6)); // Sunday
+    final startDate = now.subtract(Duration(days: weekday - 1));
+    final endDate = startDate.add(const Duration(days: 6));
 
     await loadAppointmentsForDateRange(startDate, endDate);
   }
 
-  /// Reset state and clear all data (called on logout)
   void reset() {
     _isDataLoaded = false;
     state = AppointmentsState(selectedDate: DateTime.now());

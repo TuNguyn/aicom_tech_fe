@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../app_dependencies.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../routes/app_routes.dart';
-import '../../../data/models/appointment_line_model.dart';
+import '../../../domain/entities/appointment_line.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
@@ -27,24 +27,21 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
   @override
   bool get wantKeepAlive => true;
 
-  // Cache DateFormat objects
   static final _dayFormat = DateFormat('E');
   static final _dateFormat = DateFormat('d');
 
   @override
   void initState() {
     super.initState();
-    // Load appointments for current week on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAppointmentsForWeek(DateTime.now());
     });
   }
 
   void _loadAppointmentsForWeek(DateTime date) {
-    // Get week boundaries (Monday to Sunday)
     final weekday = date.weekday;
-    final startDate = date.subtract(Duration(days: weekday - 1)); // Monday
-    final endDate = startDate.add(const Duration(days: 6)); // Sunday
+    final startDate = date.subtract(Duration(days: weekday - 1));
+    final endDate = startDate.add(const Duration(days: 6));
 
     ref
         .read(appointmentsNotifierProvider.notifier)
@@ -60,20 +57,19 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Must call super.build when using AutomaticKeepAliveClientMixin
+    super.build(context);
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
     final appointments = appointmentsState.getAppointmentsForDate(
       _selectedDate,
     );
+
     final isLoading = appointmentsState.loadingStatus.isLoading;
     final appointmentCount = appointments.length;
 
-    // Listen to auth state changes (user login/logout)
     ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
       previous,
       next,
     ) {
-      // If user ID changed (new user logged in), reload data
       if (previous != null &&
           previous.isNotEmpty &&
           previous != next &&
@@ -84,13 +80,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
       }
     });
 
-    // Listen to loading status changes
     ref.listen<AsyncValue<void>>(
       appointmentsNotifierProvider.select((state) => state.loadingStatus),
       (previous, next) {
         next.whenOrNull(
           data: (_) {
-            // When data loads successfully, mark initial load as complete
             if (_isInitialLoad) {
               setState(() {
                 _isInitialLoad = false;
@@ -109,7 +103,6 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
       },
     );
 
-    // Only show loading spinner on initial load, not on refresh
     final shouldShowLoading =
         isLoading && _isInitialLoad && appointments.isEmpty;
 
@@ -119,13 +112,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            // Header with date selector
             _buildHeader(appointmentCount),
-
-            // Week Calendar Selector
             _buildWeekCalendar(),
-
-            // Appointments List
             Expanded(
               child: shouldShowLoading
                   ? _buildLoadingState()
@@ -307,15 +295,14 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       children: [
-        // Use MediaQuery to get available height and center the content
         SizedBox(
           height:
               MediaQuery.of(context).size.height -
               MediaQuery.of(context).padding.top -
-              56 - // Header height
-              88 - // Week calendar height
+              56 -
+              88 -
               kBottomNavigationBarHeight -
-              40, // Bottom padding
+              40,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -348,7 +335,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
     );
   }
 
-  Widget _buildAppointmentsList(List<AppointmentLineModel> appointments) {
+  Widget _buildAppointmentsList(List<AppointmentLine> appointments) {
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
