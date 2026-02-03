@@ -5,7 +5,7 @@ import '../../domain/entities/walk_in_ticket.dart';
 
 class TicketLineModel {
   final String id;
-  final String itemType; // CATEGORY, PRODUCT
+  final String itemType; // CATEGORY, PRODUCT, SERVICE
   final String ticketLineType; // REGULAR
   final String itemId;
   final String lineDescription;
@@ -14,12 +14,14 @@ class TicketLineModel {
   final double tips;
   final double tax;
   final double discount;
-  final double turnValue;
+  final double turnValue; // [MỚI] Giá trị turn (0.5, 1.0...)
   final int durationInMinutes;
   final String status; // WAITING, SERVING, DONE
   final String employeeName;
   final int displayOrder;
   final EmployeeInfoModel employee;
+
+  // [QUAN TRỌNG] Object chứa thông tin vé cha
   final TicketInfoModel ticket;
 
   TicketLineModel({
@@ -43,26 +45,66 @@ class TicketLineModel {
   });
 
   factory TicketLineModel.fromJson(Map<String, dynamic> json) {
+    // 1. Xử lý Employee (tránh lỗi nếu API trả về null hoặc ID string)
+    EmployeeInfoModel empObj;
+    if (json['employee'] != null && json['employee'] is Map<String, dynamic>) {
+      empObj = EmployeeInfoModel.fromJson(json['employee']);
+    } else {
+      // Fallback nếu không có object employee đầy đủ
+      empObj = EmployeeInfoModel(
+        id: json['employeeId'] ?? '',
+        firstName: json['employeeName'] ?? 'Unknown',
+        lastName: '',
+      );
+    }
+
+    // 2. Xử lý Ticket Info (Logic thông minh: Lồng vs Phẳng)
+    TicketInfoModel ticketObj;
+
+    // Trường hợp A: Dữ liệu LỒNG (Socket đã nhào nặn hoặc cấu trúc mới)
+    if (json['ticket'] != null && json['ticket'] is Map<String, dynamic>) {
+      ticketObj = TicketInfoModel.fromJson(json['ticket']);
+    }
+    // Trường hợp B: Dữ liệu PHẲNG (API GetWalkInLines truyền thống)
+    else {
+      // Gom các trường phẳng thành object TicketInfoModel
+      final flatTicketMap = <String, dynamic>{
+        'id': json['ticketId'] ?? '',
+        'ticketCode': json['ticketCode'] ?? '',
+        // Lưu ý: ticketStatus là trạng thái vé, json['status'] là trạng thái line
+        'status': json['ticketStatus'] ?? json['status'] ?? '',
+        'note': json['ticketNote'] ?? json['note'],
+        'totalPrice': json['totalPrice'],
+        'totalTips': json['totalTips'],
+        'totalDiscount': json['totalDiscount'],
+        'totalTax': json['totalTax'],
+        'totalPaid': json['totalPaid'],
+        'createdAt': json['createdAt'],
+        'updatedAt': json['updatedAt'],
+        'customer': json['customer'],
+        'payments': json['payments'] ?? [],
+      };
+      ticketObj = TicketInfoModel.fromJson(flatTicketMap);
+    }
+
     return TicketLineModel(
-      id: json['id'] as String,
-      itemType: json['itemType'] as String,
-      ticketLineType: json['ticketLineType'] as String,
-      itemId: json['itemId'] as String,
-      lineDescription: json['lineDescription'] as String,
-      unitPrice: (json['unitPrice'] as num).toDouble(),
-      qty: (json['qty'] as num).toInt(),
-      tips: (json['tips'] as num).toDouble(),
-      tax: (json['tax'] as num).toDouble(),
-      discount: (json['discount'] as num).toDouble(),
-      turnValue: (json['turnValue'] as num).toDouble(),
-      durationInMinutes: (json['durationInMinutes'] as num).toInt(),
-      status: json['status'] as String,
-      employeeName: json['employeeName'] as String,
-      displayOrder: (json['displayOrder'] as num).toInt(),
-      employee: EmployeeInfoModel.fromJson(
-        json['employee'] as Map<String, dynamic>,
-      ),
-      ticket: TicketInfoModel.fromJson(json['ticket'] as Map<String, dynamic>),
+      id: json['id'] as String? ?? '',
+      itemType: json['itemType'] as String? ?? '',
+      ticketLineType: json['ticketLineType'] as String? ?? 'REGULAR',
+      itemId: json['itemId'] as String? ?? '',
+      lineDescription: json['lineDescription'] as String? ?? '',
+      unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
+      qty: (json['qty'] as num?)?.toInt() ?? 1,
+      tips: (json['tips'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['tax'] as num?)?.toDouble() ?? 0.0,
+      discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
+      turnValue: (json['turnValue'] as num?)?.toDouble() ?? 0.0, // [MỚI]
+      durationInMinutes: (json['durationInMinutes'] as num?)?.toInt() ?? 0,
+      status: json['status'] as String? ?? '',
+      employeeName: json['employeeName'] as String? ?? '',
+      displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+      employee: empObj,
+      ticket: ticketObj,
     );
   }
 
@@ -103,6 +145,7 @@ class TicketLineModel {
       employeeName: employeeName,
       displayOrder: displayOrder,
       employeeId: employee.id,
+      turnValue: turnValue, // [MỚI] Map sang Entity
     );
   }
 }
@@ -118,7 +161,7 @@ class TicketInfoModel {
   final double totalPaid;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final CustomerInfoModel? customer; // Nullable for walk-in tickets
+  final CustomerInfoModel? customer; // Nullable
   final List<dynamic> payments;
 
   TicketInfoModel({
@@ -132,7 +175,7 @@ class TicketInfoModel {
     required this.totalPaid,
     required this.createdAt,
     required this.updatedAt,
-    this.customer, // Nullable
+    this.customer,
     required this.payments,
   });
 
@@ -146,18 +189,23 @@ class TicketInfoModel {
     }
 
     return TicketInfoModel(
-      id: json['id'] as String,
-      ticketCode: json['ticketCode'] as String,
+      id: json['id'] as String? ?? '',
+      ticketCode: json['ticketCode'] as String? ?? '',
       note: json['note'] as String?,
-      totalPrice: (json['totalPrice'] as num).toDouble(),
-      totalTips: (json['totalTips'] as num).toDouble(),
-      totalDiscount: (json['totalDiscount'] as num).toDouble(),
-      totalTax: (json['totalTax'] as num).toDouble(),
-      totalPaid: (json['totalPaid'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      totalTips: (json['totalTips'] as num?)?.toDouble() ?? 0.0,
+      totalDiscount: (json['totalDiscount'] as num?)?.toDouble() ?? 0.0,
+      totalTax: (json['totalTax'] as num?)?.toDouble() ?? 0.0,
+      totalPaid: (json['totalPaid'] as num?)?.toDouble() ?? 0.0,
+      // Parse ngày tháng an toàn
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'].toString())
+          : DateTime.now(),
       customer: customer,
-      payments: json['payments'] as List<dynamic>,
+      payments: (json['payments'] as List<dynamic>?) ?? [],
     );
   }
 

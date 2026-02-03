@@ -15,7 +15,7 @@ enum WalkInLineStatus {
       case 'DONE':
         return done;
       case 'CANCELED':
-      case 'CANCELLED':  // Support both American and British spelling
+      case 'CANCELLED': // Support both American and British spelling
         return canceled;
       default:
         return waiting;
@@ -37,6 +37,7 @@ class WalkInTicket extends Equatable {
   final double totalDiscount;
   final double totalTax;
   final double totalPaid;
+  final double turnValue;
 
   const WalkInTicket({
     required this.ticketId,
@@ -52,6 +53,7 @@ class WalkInTicket extends Equatable {
     required this.totalDiscount,
     required this.totalTax,
     required this.totalPaid,
+    required this.turnValue,
   });
 
   WalkInLineStatus get overallStatus {
@@ -64,7 +66,9 @@ class WalkInTicket extends Equatable {
       return WalkInLineStatus.waiting;
     }
     // If all are canceled, ticket is canceled
-    if (serviceLines.every((line) => line.status == WalkInLineStatus.canceled)) {
+    if (serviceLines.every(
+      (line) => line.status == WalkInLineStatus.canceled,
+    )) {
       return WalkInLineStatus.canceled;
     }
     // Otherwise done
@@ -76,20 +80,21 @@ class WalkInTicket extends Equatable {
 
   @override
   List<Object?> get props => [
-        ticketId,
-        ticketCode,
-        customerName,
-        customerId,
-        serviceLines,
-        createdAt,
-        updatedAt,
-        notes,
-        totalPrice,
-        totalTips,
-        totalDiscount,
-        totalTax,
-        totalPaid,
-      ];
+    ticketId,
+    ticketCode,
+    customerName,
+    customerId,
+    serviceLines,
+    createdAt,
+    updatedAt,
+    notes,
+    totalPrice,
+    totalTips,
+    totalDiscount,
+    totalTax,
+    totalPaid,
+    turnValue,
+  ];
 }
 
 class WalkInServiceLine extends Equatable {
@@ -106,6 +111,7 @@ class WalkInServiceLine extends Equatable {
   final String employeeName;
   final int displayOrder;
   final String? employeeId;
+  final double turnValue;
 
   const WalkInServiceLine({
     required this.id,
@@ -121,22 +127,23 @@ class WalkInServiceLine extends Equatable {
     required this.employeeName,
     required this.displayOrder,
     this.employeeId,
+    required this.turnValue,
   });
 
   @override
   List<Object?> get props => [
-        id,
-        itemType,
-        lineDescription,
-        unitPrice,
-        qty,
-        tips,
-        tax,
-        discount,
-        durationInMinutes,
-        status,
-        employeeName,
-        displayOrder,
-        employeeId,
-      ];
+    id,
+    itemType,
+    lineDescription,
+    unitPrice,
+    qty,
+    tips,
+    tax,
+    discount,
+    durationInMinutes,
+    status,
+    employeeName,
+    displayOrder,
+    employeeId,
+  ];
 }

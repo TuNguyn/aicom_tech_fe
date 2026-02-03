@@ -25,12 +25,14 @@ class ServiceLineDisplay extends Equatable {
 class WalkInsState extends Equatable {
   final List<WalkInTicket> walkInTickets;
   final AsyncValue<void> loadingStatus;
-  final int totalTurn;
+  double get totalTurn {
+    // Tự động tính tổng dựa trên danh sách hiện tại
+    return walkInTickets.fold(0.0, (sum, ticket) => sum + ticket.turnValue);
+  }
 
   const WalkInsState({
     this.walkInTickets = const [],
     this.loadingStatus = const AsyncValue.data(null),
-    this.totalTurn = 0,
   });
 
   // Helper để lấy tất cả line từ các ticket
@@ -122,12 +124,10 @@ class WalkInsState extends Equatable {
   WalkInsState copyWith({
     List<WalkInTicket>? walkInTickets,
     AsyncValue<void>? loadingStatus,
-    int? totalTurn,
   }) {
     return WalkInsState(
       walkInTickets: walkInTickets ?? this.walkInTickets,
       loadingStatus: loadingStatus ?? this.loadingStatus,
-      totalTurn: totalTurn ?? this.totalTurn,
     );
   }
 
@@ -147,7 +147,6 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
   ) : super(const WalkInsState());
 
   Future<void> loadWalkIns({List<String>? statuses}) async {
-    // Chỉ chặn load nếu đang loading thật sự, bỏ qua check _isDataLoaded thủ công
     if (state.loadingStatus.isLoading) return;
 
     state = state.copyWith(loadingStatus: const AsyncValue.loading());
@@ -165,7 +164,6 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         state = state.copyWith(
           walkInTickets: tickets,
           loadingStatus: const AsyncValue.data(null),
-          totalTurn: response.totalTurn,
         );
       },
     );
@@ -178,41 +176,38 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
       ticketsMap.putIfAbsent(line.ticket.id, () => []).add(line);
     }
 
-    // Thời gian để filter
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return ticketsMap.entries.map((entry) {
+      final lines = entry.value;
+      final firstLine = lines.first;
 
-    return ticketsMap.entries
-        .map((entry) {
-          final lines = entry.value;
-          final firstLine = lines.first;
+      lines.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
-          // Sort lines trong ticket luôn tại đây
-          lines.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+      // [CẬP NHẬT] Chỉ cộng turnValue nếu trạng thái là DONE
+      final ticketTurnValue = lines.fold<double>(0.0, (sum, line) {
+        // Kiểm tra status (API trả về String 'DONE', 'WAITING'...)
+        if (line.status == 'DONE') {
+          return sum + line.turnValue;
+        }
+        return sum;
+      });
 
-          return WalkInTicket(
-            ticketId: firstLine.ticket.id,
-            ticketCode: firstLine.ticket.ticketCode,
-            customerName: firstLine.ticket.customer?.fullName ?? 'Visitor',
-            customerId: firstLine.ticket.customer?.id ?? '',
-            serviceLines: lines.map((line) => line.toEntity()).toList(),
-            createdAt: firstLine.ticket.createdAt,
-            updatedAt: firstLine.ticket.updatedAt,
-            notes: firstLine.ticket.note,
-            totalPrice: firstLine.ticket.totalPrice,
-            totalTips: firstLine.ticket.totalTips,
-            totalDiscount: firstLine.ticket.totalDiscount,
-            totalTax: firstLine.ticket.totalTax,
-            totalPaid: firstLine.ticket.totalPaid,
-          );
-        })
-        .where((ticket) {
-          // Filter logic: giữ lại nếu tạo trong hôm nay
-          return ticket.createdAt.isAfter(startOfDay) &&
-              ticket.createdAt.isBefore(endOfDay);
-        })
-        .toList();
+      return WalkInTicket(
+        ticketId: firstLine.ticket.id,
+        ticketCode: firstLine.ticket.ticketCode,
+        customerName: firstLine.ticket.customer?.fullName ?? 'Visitor',
+        customerId: firstLine.ticket.customer?.id ?? '',
+        serviceLines: lines.map((line) => line.toEntity()).toList(),
+        createdAt: firstLine.ticket.createdAt,
+        updatedAt: firstLine.ticket.updatedAt,
+        notes: firstLine.ticket.note,
+        totalPrice: firstLine.ticket.totalPrice,
+        totalTips: firstLine.ticket.totalTips,
+        totalDiscount: firstLine.ticket.totalDiscount,
+        totalTax: firstLine.ticket.totalTax,
+        totalPaid: firstLine.ticket.totalPaid,
+        turnValue: ticketTurnValue,
+      );
+    }).toList();
   }
 
   Future<void> refreshWalkIns() async {
@@ -223,10 +218,39 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
     state = const WalkInsState();
   }
 
+  // --- SOCKET UPDATE LOGIC ---
+
+  void onTicketReceived(WalkInTicket incomingTicket) {
+    // nhận vé và xử lý
+
+    final currentList = List<WalkInTicket>.from(state.walkInTickets);
+
+    // Tìm và xóa vé cũ (nếu có) để cập nhật
+    currentList.removeWhere((t) => t.ticketId == incomingTicket.ticketId);
+
+    // Thêm vé mới
+    currentList.add(incomingTicket);
+
+    // Update State
+    state = state.copyWith(walkInTickets: currentList);
+  }
+
+  void removeTicket(String ticketId) {
+    final currentList = List<WalkInTicket>.from(state.walkInTickets);
+    final initialLength = currentList.length;
+
+    currentList.removeWhere((t) => t.ticketId == ticketId);
+
+    if (currentList.length != initialLength) {
+      state = state.copyWith(walkInTickets: currentList);
+    }
+  }
+
+  // --- ACTIONS ---
+
   Future<String?> startServiceLine(String lineId) async {
     final result = await _startWalkInLine(lineId);
     if (result.isRight()) {
-      // Chỉ refresh khi thành công để tránh spam API lỗi
       await refreshWalkIns();
       return null;
     }
