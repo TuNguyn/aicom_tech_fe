@@ -57,6 +57,7 @@ class AppointmentLineModel {
   AppointmentLine toEntity() {
     return AppointmentLine(
       id: id,
+      appointmentId: appointment.id,
       customerName: appointment.customer.fullName,
       customerPhone: appointment.customer.phone,
       serviceName: service.name,

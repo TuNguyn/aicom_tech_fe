@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/socket/socket_service.dart';
 import '../../app_dependencies.dart';
+import '../../data/models/appointment_line_model.dart';
 
 class SocketState {
   final bool isConnected;
@@ -270,15 +271,96 @@ class SocketNotifier extends StateNotifier<SocketState> {
     );
   }
 
-  void _handleAppointmentSync(dynamic data) {
-    _handleSyncEventWithLines(
-      data: data,
-      eventType: 'APPOINTMENT:SYNC',
-      linesKey: 'lines',
-      onMatchFound: () {
-        _ref.read(appointmentsNotifierProvider.notifier).refreshAppointments();
-      },
+  void _updateStateMetrics(dynamic data, String eventType) {
+    if (kDebugMode) print('[Socket] $eventType received');
+    state = state.copyWith(
+      lastEventData: data is Map<String, dynamic> ? data : {'raw': data},
+      lastEventTime: DateTime.now(),
+      lastEventType: eventType,
     );
+  }
+
+  Map<String, dynamic>? _parseData(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    return null;
+  }
+
+  void _handleAppointmentSync(dynamic data) {
+    _updateStateMetrics(data, 'APPOINTMENT:SYNC');
+
+    final mapData = _parseData(data);
+    if (mapData == null) return;
+
+    final appointmentData = mapData['data'];
+    if (appointmentData == null || appointmentData is! Map<String, dynamic>) {
+      return;
+    }
+    final String appointmentId = appointmentData['id'];
+    final lines = appointmentData['lines'];
+
+    final appointmentsNotifier = _ref.read(
+      appointmentsNotifierProvider.notifier,
+    );
+    final currentUserId = _ref.read(authNotifierProvider).user.id;
+
+    if (lines is List && lines.isNotEmpty) {
+      // Biến cờ: Đánh dấu xem có tìm thấy ít nhất 1 line của mình không
+      bool foundAnyLineForMe = false;
+
+      // Tạo thông tin Appointment Info dùng chung
+      final appointmentInfoMap = {
+        'id': appointmentData['id'],
+        'appointmentTime': appointmentData['appointmentTime'],
+        'status': appointmentData['status'],
+        'note': appointmentData['note'],
+        'customer': appointmentData['customer'],
+      };
+
+      //  Duyệt qua TẤT CẢ các line
+      for (var line in lines) {
+        if (line is Map<String, dynamic>) {
+          final employeeId = line['employee']?['id'];
+
+          // Nếu line này là của mình -> Xử lý cập nhật ngay
+          if (employeeId == currentUserId) {
+            foundAnyLineForMe = true; // Đánh dấu là có vé của mình
+
+            try {
+              // chuyển đổi JSON
+              final constructedJson = {
+                ...line,
+                'appointment': appointmentInfoMap,
+              };
+
+              final model = AppointmentLineModel.fromJson(constructedJson);
+              final entity = model.toEntity();
+
+              if (kDebugMode) {
+                print(
+                  '[Socket] Upsert Line: ${entity.serviceName} (${entity.durationMinute}m)',
+                );
+              }
+              // Gọi hàm update cho TỪNG line tìm thấy
+              appointmentsNotifier.onAppointmentReceived(entity);
+            } catch (e) {
+              if (kDebugMode) print('[Socket] Parse Error: $e');
+            }
+          }
+        }
+      }
+
+      // Sau khi chạy hết vòng lặp, nếu không tìm thấy dòng nào của mình
+      // Nghĩa là mình đã bị xóa khỏi toàn bộ ticket này -> Xóa khỏi UI
+      if (!foundAnyLineForMe) {
+        if (kDebugMode) {
+          print('[Socket] No lines for me in Appt $appointmentId -> REMOVE');
+        }
+        appointmentsNotifier.removeAppointment(appointmentId);
+      }
+    } else {
+      // Trường hợp lines rỗng -> Xóa
+      appointmentsNotifier.removeAppointment(appointmentId);
+    }
   }
 
   /// Clear the new assigned ticket flag

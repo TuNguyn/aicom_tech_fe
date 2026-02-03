@@ -105,4 +105,68 @@ class AppointmentsNotifier extends StateNotifier<AppointmentsState> {
     _isDataLoaded = false;
     state = AppointmentsState(selectedDate: DateTime.now());
   }
+
+  void onAppointmentReceived(AppointmentLine incomingAppointment) {
+    final currentMap = Map<DateTime, List<AppointmentLine>>.from(
+      state.appointmentsByDate,
+    );
+
+    // 1. Tìm và xóa appointment cũ (nếu tồn tại - để tránh trùng lặp khi update)
+    for (var date in currentMap.keys) {
+      final index = currentMap[date]!.indexWhere(
+        (app) => app.id == incomingAppointment.id,
+      );
+      if (index != -1) {
+        currentMap[date]!.removeAt(index);
+        break;
+      }
+    }
+
+    // 2. Xác định key ngày mới
+    final newDateKey = DateTime(
+      incomingAppointment.beginTime.year,
+      incomingAppointment.beginTime.month,
+      incomingAppointment.beginTime.day,
+    );
+
+    // 3. Thêm vào list
+    if (!currentMap.containsKey(newDateKey)) {
+      currentMap[newDateKey] = [];
+    }
+    currentMap[newDateKey]!.add(incomingAppointment);
+
+    // 4. Sắp xếp lại theo giờ
+    currentMap[newDateKey]!.sort((a, b) => a.beginTime.compareTo(b.beginTime));
+
+    // 5. Update State
+    state = state.copyWith(appointmentsByDate: currentMap);
+  }
+
+  /// Xóa một appointment khỏi state (Dùng khi socket báo appointment bị hủy hoặc chuyển sang thợ khác)
+  void removeAppointment(String targetAppointmentId) {
+    final currentMap = Map<DateTime, List<AppointmentLine>>.from(
+      state.appointmentsByDate,
+    );
+    bool changed = false;
+
+    for (var date in currentMap.keys) {
+      final initialLength = currentMap[date]!.length;
+
+      // [QUAN TRỌNG] Sửa 'app.id' thành 'app.appointmentId'
+      // Chúng ta muốn: "Xóa tất cả line nào thuộc về cuộc hẹn này"
+      currentMap[date]!.removeWhere(
+        (app) => app.appointmentId == targetAppointmentId,
+      );
+
+      if (currentMap[date]!.length != initialLength) {
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      state = state.copyWith(appointmentsByDate: currentMap);
+      // Optional: Log để kiểm tra
+      // print('🗑️ Removed appointment $targetAppointmentId from UI');
+    }
+  }
 }

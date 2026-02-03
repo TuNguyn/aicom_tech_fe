@@ -4,6 +4,7 @@ class AppointmentLine extends Equatable {
   // Bạn hãy copy các trường (fields) từ Model sang đây.
   // Đảm bảo chỉ giữ lại dữ liệu, không giữ các phương thức fromJson/toJson.
   final String id;
+  final String appointmentId;
   final String customerName;
   final String customerPhone;
   final String serviceName;
@@ -16,6 +17,7 @@ class AppointmentLine extends Equatable {
 
   const AppointmentLine({
     required this.id,
+    required this.appointmentId,
     required this.customerName,
     required this.customerPhone,
     required this.serviceName,
@@ -30,6 +32,7 @@ class AppointmentLine extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    appointmentId,
     customerName,
     customerPhone,
     serviceName,
