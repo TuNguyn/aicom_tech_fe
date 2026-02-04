@@ -18,10 +18,10 @@ class PaginationMeta {
 
   factory PaginationMeta.fromJson(Map<String, dynamic> json) {
     return PaginationMeta(
-      itemsPerPage: json['itemsPerPage'] as int,
-      totalItems: json['totalItems'] as int,
-      currentPage: json['currentPage'] as int,
-      totalPages: json['totalPages'] as int,
+      itemsPerPage: (json['itemsPerPage'] as num?)?.toInt() ?? 10,
+      totalItems: (json['totalItems'] as num?)?.toInt() ?? 0,
+      currentPage: (json['currentPage'] as num?)?.toInt() ?? 1,
+      totalPages: (json['totalPages'] as num?)?.toInt() ?? 1,
       sortBy: (json['sortBy'] as List<dynamic>)
           .map((item) => (item as List<dynamic>).cast<String>())
           .toList(),
@@ -46,7 +46,7 @@ class PaginationLinks {
 
   factory PaginationLinks.fromJson(Map<String, dynamic> json) {
     return PaginationLinks(
-      current: json['current'] as String,
+      current: json['current'] as String? ?? '',
     );
   }
 

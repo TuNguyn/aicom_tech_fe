@@ -1,8 +1,8 @@
-import 'package:aicom_tech_fe/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../app_dependencies.dart';
 import '../../../routes/app_routes.dart';
 import '../../../domain/entities/walk_in_ticket.dart';
 import '../../theme/app_colors.dart';
@@ -26,35 +26,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _currentNavIndex = 0;
   bool _isDataLoaded = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Load data when home page is first displayed
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDataLoaded) {
-        _loadHomeData();
-        _isDataLoaded = true;
-      }
-    });
-  }
-
-  void _loadHomeData() {
-    // Load current week's appointments (same as AppointmentsPage)
-    final now = DateTime.now();
-    final weekday = now.weekday;
-    final startDate = now.subtract(Duration(days: weekday - 1)); // Monday
-    final endDate = startDate.add(const Duration(days: 6)); // Sunday
-
-    // Load appointments and walk-ins in parallel for faster startup
-    Future.wait([
-      ref
-          .read(appointmentsNotifierProvider.notifier)
-          .loadAppointmentsForDateRange(startDate, endDate),
-      ref.read(walkInsNotifierProvider.notifier).loadWalkIns(),
-    ]);
-  }
-
-  // Cache mock notifications data as static const
+  // Mock data for notifications
   static final List<Map<String, dynamic>> _mockNotifications = [
     {
       'title': 'Appointment Reminder',
@@ -100,13 +72,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     },
   ];
 
-  static final _overlayStyleHome = SystemUiOverlayStyle(
+  static const _overlayStyleHome = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
   );
 
-  static final _overlayStyleWalkIn = SystemUiOverlayStyle(
+  static const _overlayStyleWalkIn = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
@@ -118,7 +90,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     statusBarBrightness: Brightness.dark,
   );
 
-  static final _overlayStyleReport = SystemUiOverlayStyle(
+  static const _overlayStyleReport = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
@@ -147,6 +119,14 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  // Hàm load dữ liệu chính cho trang Home
+  void _loadHomeData() {
+    Future.wait([
+      ref.read(appointmentsNotifierProvider.notifier).fetchTodayCount(),
+      ref.read(walkInsNotifierProvider.notifier).loadWalkIns(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -163,8 +143,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                 loadHomeData: _loadHomeData,
                 isDataLoaded: _isDataLoaded,
                 onDataLoaded: (loaded) {
-                  _isDataLoaded = loaded;
+                  // Dùng microtask để tránh lỗi setState trong khi build
+                  Future.microtask(() {
+                    if (mounted) {
+                      setState(() {
+                        _isDataLoaded = loaded;
+                      });
+                    }
+                  });
                 },
+                mockNotifications: _mockNotifications,
               ),
               const WalkInPage(),
               const AppointmentsPage(),
@@ -195,11 +183,13 @@ class _HomeContent extends ConsumerStatefulWidget {
   final VoidCallback loadHomeData;
   final bool isDataLoaded;
   final ValueChanged<bool> onDataLoaded;
+  final List<Map<String, dynamic>> mockNotifications;
 
   const _HomeContent({
     required this.loadHomeData,
     required this.isDataLoaded,
     required this.onDataLoaded,
+    required this.mockNotifications,
   });
 
   @override
@@ -214,7 +204,7 @@ class _HomeContentState extends ConsumerState<_HomeContent>
   @override
   void initState() {
     super.initState();
-    // Load data when home content is first displayed
+    // Load data only if not loaded yet
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!widget.isDataLoaded) {
         widget.loadHomeData();
@@ -225,16 +215,13 @@ class _HomeContentState extends ConsumerState<_HomeContent>
 
   @override
   Widget build(BuildContext context) {
-    super.build(
-      context,
-    ); // Must call super.build when using AutomaticKeepAliveClientMixin
+    super.build(context);
 
-    // Listen to auth state changes (user login/logout)
+    // Listen to auth changes to reload data on login
     ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
       previous,
       next,
     ) {
-      // If user ID changed (new user logged in), reload data
       if (previous != null &&
           previous.isNotEmpty &&
           previous != next &&
@@ -254,7 +241,7 @@ class _HomeContentState extends ConsumerState<_HomeContent>
               AppDimensions.spacingM,
               AppDimensions.spacingM,
               AppDimensions.spacingM,
-              100, // Extra bottom padding to account for bottom nav bar
+              100, // Padding for bottom nav
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,26 +318,16 @@ class _HomeContentState extends ConsumerState<_HomeContent>
   }
 
   Widget _buildQuickStatsSection(WidgetRef ref) {
-    // Watch providers for real-time data
+    // Watch providers
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
-
-    // --- SỬA LỖI TẠI ĐÂY ---
-    // Trước đây: ref.watch(walkInsNotifierProvider); // Chỉ watch mà không lấy giá trị
-    // Sửa lại: Lấy state để dùng dữ liệu
     final walkInsState = ref.watch(walkInsNotifierProvider);
 
-    // Calculate today's counts - get appointments for today
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final todayApptCount = appointmentsState
-        .getAppointmentsForDate(today)
-        .length;
+    // [UPDATED] Lấy số lượng từ totalCount của state
+    // Vì _loadHomeData đã gọi API lọc theo ngày hôm nay, nên totalCount chính là số lượng hôm nay
+    final todayApptCount = appointmentsState.todayCount;
 
-    // --- SỬA LỖI TẠI ĐÂY ---
-    // Trước đây: ref.read(...).notifier.cachedSortedServiceLines
-    // Sửa lại: Dùng state.sortedServiceLines từ provider đã watch ở trên
+    // Lấy số lượng Waiting từ Walk-in State
     final serviceLines = walkInsState.sortedServiceLines;
-
     final waitingCount = serviceLines
         .where((line) => line.serviceLine.status == WalkInLineStatus.waiting)
         .length;
@@ -478,9 +455,11 @@ class _HomeContentState extends ConsumerState<_HomeContent>
             height: 3 * 60.0,
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: _HomePageState._mockNotifications.length,
+              itemCount: widget.mockNotifications.length,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable inner scroll
               itemBuilder: (context, index) {
-                final notification = _HomePageState._mockNotifications[index];
+                final notification = widget.mockNotifications[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
@@ -550,11 +529,10 @@ class _HomeContentState extends ConsumerState<_HomeContent>
   }
 
   Widget _buildCombinedSummaryPerformance(WidgetRef ref) {
-    // --- SỬA LỖI TẠI ĐÂY ---
-    // Trước đây: ref.watch(walkInsNotifierProvider); // Chỉ watch mà ko dùng biến
-    // Sửa lại: Lấy state ra dùng trực tiếp
+    // Lấy state từ WalkIns Provider
     final walkInsState = ref.watch(walkInsNotifierProvider);
 
+    // Tính toán summary từ list line đã có
     final allLines = walkInsState.allServiceLines;
 
     final completedCount = allLines
@@ -635,7 +613,8 @@ class _HomeContentState extends ConsumerState<_HomeContent>
                   ),
                 ),
                 Text(
-                  '${walkInsState.totalTurn}', // Sửa: Dùng biến walkInsState đã watch ở trên
+                  // [UPDATED] Lấy totalTurn từ State
+                  '${walkInsState.totalTurn}',
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.secondary,

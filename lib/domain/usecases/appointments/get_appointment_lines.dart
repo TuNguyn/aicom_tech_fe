@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../core/errors/failures.dart';
 import '../../entities/appointment_line.dart';
+import '../../entities/paginated_result.dart'; // Import generic
 import '../../repositories/appointment_lines_repository.dart';
 
 class GetAppointmentLines {
@@ -8,11 +9,12 @@ class GetAppointmentLines {
 
   GetAppointmentLines(this.repository);
 
-  Future<Either<Failure, List<AppointmentLine>>> call({
+  // [SỬA] Đổi kiểu trả về thành PaginatedResult
+  Future<Either<Failure, PaginatedResult<AppointmentLine>>> call({
     required DateTime startDate,
     required DateTime endDate,
     int page = 1,
-    int limit = 100, // Get all appointments for the date range
+    int limit = 20,
     String sortBy = 'beginTime:ASC',
   }) async {
     return await repository.getAppointmentLines(

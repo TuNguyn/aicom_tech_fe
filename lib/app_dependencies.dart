@@ -49,8 +49,8 @@ final socketServiceProvider = Provider<SocketService>((ref) {
 
 final socketNotifierProvider =
     StateNotifierProvider<SocketNotifier, SocketState>((ref) {
-  return SocketNotifier(ref.read(socketServiceProvider), ref);
-});
+      return SocketNotifier(ref.read(socketServiceProvider), ref);
+    });
 
 // Hive box providers
 final authBoxProvider = Provider<Box<dynamic>>((ref) {
@@ -86,7 +86,9 @@ final getCachedTechUseCaseProvider = Provider<GetCachedTech>((ref) {
   return GetCachedTech(ref.read(authRepositoryProvider));
 });
 
-final getEmployeeWithPhoneUseCaseProvider = Provider<GetEmployeeWithPhone>((ref) {
+final getEmployeeWithPhoneUseCaseProvider = Provider<GetEmployeeWithPhone>((
+  ref,
+) {
   return GetEmployeeWithPhone(ref.read(authRepositoryProvider));
 });
 
@@ -103,8 +105,9 @@ final getEmployeeProfileUseCaseProvider = Provider<GetEmployeeProfile>((ref) {
 });
 
 // StateNotifier providers
-final authNotifierProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   return AuthNotifier(
     ref.read(loginWithStoreUseCaseProvider),
     ref.read(logoutTechUseCaseProvider),
@@ -116,13 +119,16 @@ final authNotifierProvider =
 });
 
 // Appointment providers
-final appointmentRemoteDataSourceProvider = Provider<AppointmentRemoteDataSource>((ref) {
-  return AppointmentRemoteDataSourceImpl(ref.read(dioClientProvider));
-});
+final appointmentRemoteDataSourceProvider =
+    Provider<AppointmentRemoteDataSource>((ref) {
+      return AppointmentRemoteDataSourceImpl(ref.read(dioClientProvider));
+    });
 
-final appointmentLinesRepositoryProvider = Provider<AppointmentLinesRepository>((ref) {
-  return AppointmentLinesRepositoryImpl(ref.read(appointmentRemoteDataSourceProvider));
-});
+final appointmentLinesRepositoryProvider = Provider<AppointmentLinesRepository>(
+  (ref) {
+    return AppointmentLinesRepositoryImpl(ref.read(dioProvider));
+  },
+);
 
 final getAppointmentLinesUseCaseProvider = Provider<GetAppointmentLines>((ref) {
   return GetAppointmentLines(ref.read(appointmentLinesRepositoryProvider));
@@ -130,8 +136,8 @@ final getAppointmentLinesUseCaseProvider = Provider<GetAppointmentLines>((ref) {
 
 final appointmentsNotifierProvider =
     StateNotifierProvider<AppointmentsNotifier, AppointmentsState>((ref) {
-  return AppointmentsNotifier(ref.read(getAppointmentLinesUseCaseProvider));
-});
+      return AppointmentsNotifier(ref.read(getAppointmentLinesUseCaseProvider));
+    });
 
 // Walk-in providers
 final walkInRemoteDataSourceProvider = Provider<WalkInRemoteDataSource>((ref) {
@@ -156,12 +162,12 @@ final completeWalkInLineUseCaseProvider = Provider<CompleteWalkInLine>((ref) {
 
 final walkInsNotifierProvider =
     StateNotifierProvider<WalkInsNotifier, WalkInsState>((ref) {
-  return WalkInsNotifier(
-    ref.read(getWalkInLinesUseCaseProvider),
-    ref.read(startWalkInLineUseCaseProvider),
-    ref.read(completeWalkInLineUseCaseProvider),
-  );
-});
+      return WalkInsNotifier(
+        ref.read(getWalkInLinesUseCaseProvider),
+        ref.read(startWalkInLineUseCaseProvider),
+        ref.read(completeWalkInLineUseCaseProvider),
+      );
+    });
 
 // Report providers
 final reportRemoteDataSourceProvider = Provider<ReportRemoteDataSource>((ref) {
@@ -172,11 +178,13 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
   return ReportRepositoryImpl(ref.read(reportRemoteDataSourceProvider));
 });
 
-final getReportTransactionsUseCaseProvider = Provider<GetReportTransactions>((ref) {
+final getReportTransactionsUseCaseProvider = Provider<GetReportTransactions>((
+  ref,
+) {
   return GetReportTransactions(ref.read(reportRepositoryProvider));
 });
 
 final reportsNotifierProvider =
     StateNotifierProvider<ReportsNotifier, ReportsState>((ref) {
-  return ReportsNotifier(ref.read(getReportTransactionsUseCaseProvider));
-});
+      return ReportsNotifier(ref.read(getReportTransactionsUseCaseProvider));
+    });

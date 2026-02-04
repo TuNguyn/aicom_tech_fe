@@ -24,10 +24,12 @@ class AppointmentLineModel {
 
   factory AppointmentLineModel.fromJson(Map<String, dynamic> json) {
     return AppointmentLineModel(
-      id: json['id'] as String,
-      beginTime: DateTime.parse(json['beginTime'] as String),
-      durationMinute: (json['durationMinute'] as num).toInt(),
-      type: json['type'] as String,
+      id: json['id'] as String? ?? '',
+      beginTime: json['beginTime'] != null
+          ? DateTime.tryParse(json['beginTime'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      durationMinute: (json['durationMinute'] as num?)?.toInt() ?? 0,
+      type: json['type'] as String? ?? '',
       service: ServiceInfoModel.fromJson(
         json['service'] as Map<String, dynamic>,
       ),
@@ -77,8 +79,8 @@ class ServiceInfoModel {
 
   factory ServiceInfoModel.fromJson(Map<String, dynamic> json) {
     return ServiceInfoModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
     );
   }
 
@@ -104,9 +106,11 @@ class AppointmentInfoModel {
 
   factory AppointmentInfoModel.fromJson(Map<String, dynamic> json) {
     return AppointmentInfoModel(
-      id: json['id'] as String,
-      appointmentTime: DateTime.parse(json['appointmentTime'] as String),
-      status: json['status'] as String,
+      id: json['id'] as String? ?? '',
+      appointmentTime: json['appointmentTime'] != null
+          ? DateTime.tryParse(json['appointmentTime'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      status: json['status'] as String? ?? '',
       note: json['note'] as String?,
       customer: CustomerInfoModel.fromJson(
         json['customer'] as Map<String, dynamic>,

@@ -13,9 +13,7 @@ class DioClient {
       ..options.baseUrl = AppConfig.baseUrl
       ..options.connectTimeout = const Duration(seconds: 30)
       ..options.receiveTimeout = const Duration(seconds: 30)
-      ..options.headers = {
-        'Content-Type': 'application/json; charset=UTF-8',
-      };
+      ..options.headers = {'Content-Type': 'application/json; charset=UTF-8'};
 
     // Add logging interceptor (only in debug mode)
     if (kDebugMode) {
@@ -46,7 +44,9 @@ class DioClient {
 
           if (kDebugMode) {
             // ignore: avoid_print
-            print('[DioClient] ${options.method} ${options.baseUrl}${options.path}');
+            print(
+              '[DioClient] ${options.method} ${options.baseUrl}${options.path}',
+            );
           }
           return handler.next(options);
         },
@@ -77,11 +77,23 @@ class DioClient {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
+        throw NetworkException(
+          networkErrorType: NetworkErrorType.timeout,
+          message: 'Connection timeout. Please check your network.',
+        );
+
       case DioExceptionType.receiveTimeout:
+        // Đây là lỗi khi Server xử lý quá lâu (Vấn đề bạn đang gặp)
+        throw NetworkException(
+          networkErrorType: NetworkErrorType.timeout,
+          message:
+              'Server is taking too long to respond. Please try again later.',
+        );
+
       case DioExceptionType.connectionError:
         throw NetworkException(
           networkErrorType: NetworkErrorType.noConnection,
-          message: 'No internet connection',
+          message: 'No internet connection. Please check your settings.',
         );
 
       case DioExceptionType.badResponse:
@@ -91,21 +103,25 @@ class DioClient {
             message: e.response?.data?['message'] ?? 'Server error occurred',
           );
         }
-        // Handle 4xx client errors
         throw ServerException(
           message: e.response?.data?['message'] ?? 'Request failed',
           statusCode: e.response?.statusCode,
         );
 
+      case DioExceptionType.cancel:
+        throw ServerException(message: 'Request cancelled');
+
       default:
         throw ServerException(
-          message: e.response?.data?['message'] ?? 'An error occurred',
+          message: e.response?.data?['message'] ?? 'An unknown error occurred',
         );
     }
   }
 
-  Future<Response> get(String path,
-      {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
       final response = await _dio.get(path, queryParameters: queryParameters);
       return response;

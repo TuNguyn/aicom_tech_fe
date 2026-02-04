@@ -26,15 +26,17 @@ class ReportTransactionModel {
 
   factory ReportTransactionModel.fromJson(Map<String, dynamic> json) {
     return ReportTransactionModel(
-      id: json['id'] as String,
-      ticketCode: json['ticketCode'] as String,
-      itemName: json['itemName'] as String,
-      qty: (json['qty'] as num).toInt(),
-      price: (json['price'] as num).toDouble(),
-      total: (json['total'] as num).toDouble(),
-      tips: (json['tips'] as num).toDouble(),
-      commission: (json['commission'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      id: json['id'] as String? ?? '',
+      ticketCode: json['ticketCode'] as String? ?? '',
+      itemName: json['itemName'] as String? ?? '',
+      qty: (json['qty'] as num?)?.toInt() ?? 1,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      tips: (json['tips'] as num?)?.toDouble() ?? 0.0,
+      commission: (json['commission'] as num?)?.toDouble() ?? 0.0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
@@ -67,9 +69,9 @@ class ReportSummaryModel {
 
   factory ReportSummaryModel.fromJson(Map<String, dynamic> json) {
     return ReportSummaryModel(
-      totalSales: (json['totalSales'] as num).toDouble(),
-      totalTips: (json['totalTips'] as num).toDouble(),
-      totalCommission: (json['totalCommission'] as num).toDouble(),
+      totalSales: (json['totalSales'] as num?)?.toDouble() ?? 0.0,
+      totalTips: (json['totalTips'] as num?)?.toDouble() ?? 0.0,
+      totalCommission: (json['totalCommission'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

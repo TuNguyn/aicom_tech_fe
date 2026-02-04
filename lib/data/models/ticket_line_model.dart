@@ -262,10 +262,10 @@ class TicketLinesResponse {
     }
 
     return TicketLinesResponse(
-      statusCode: (json['statusCode'] as num).toInt(),
-      message: json['message'] as String,
+      statusCode: (json['statusCode'] as num?)?.toInt() ?? 200,
+      message: json['message'] as String? ?? '',
       data: parsedLines,
-      totalTurn: (dataMap['totalTurn'] as num).toInt(),
+      totalTurn: (dataMap['totalTurn'] as num?)?.toInt() ?? 0,
     );
   }
 
