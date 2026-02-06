@@ -28,6 +28,16 @@ class PaginationMeta {
     );
   }
 
+  factory PaginationMeta.empty() {
+    return PaginationMeta(
+      itemsPerPage: 0,
+      totalItems: 0,
+      currentPage: 1,
+      totalPages: 0,
+      sortBy: [],
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'itemsPerPage': itemsPerPage,
@@ -45,14 +55,14 @@ class PaginationLinks {
   PaginationLinks({required this.current});
 
   factory PaginationLinks.fromJson(Map<String, dynamic> json) {
-    return PaginationLinks(
-      current: json['current'] as String? ?? '',
-    );
+    return PaginationLinks(current: json['current'] as String? ?? '');
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'current': current,
-    };
+    return {'current': current};
+  }
+
+  factory PaginationLinks.empty() {
+    return PaginationLinks(current: '');
   }
 }

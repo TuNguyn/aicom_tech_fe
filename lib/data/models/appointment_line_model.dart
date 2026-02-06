@@ -1,4 +1,6 @@
 import '../../domain/entities/appointment_line.dart';
+// [THÊM] Import file TimezoneUtils
+import '../../core/utils/timezone_utils.dart';
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
 import 'common/pagination_models.dart';
@@ -25,9 +27,11 @@ class AppointmentLineModel {
   factory AppointmentLineModel.fromJson(Map<String, dynamic> json) {
     return AppointmentLineModel(
       id: json['id'] as String? ?? '',
-      beginTime: json['beginTime'] != null
-          ? DateTime.tryParse(json['beginTime'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+
+      // [SỬA] Dùng TimezoneUtils để parse và convert sang Local Time
+      // Hàm này sẽ tự xử lý null check và fallback bên trong nếu cần thiết
+      beginTime: TimezoneUtils.parseJsonDateTime(json['beginTime']),
+
       durationMinute: (json['durationMinute'] as num?)?.toInt() ?? 0,
       type: json['type'] as String? ?? '',
       service: ServiceInfoModel.fromJson(
@@ -45,6 +49,8 @@ class AppointmentLineModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      // Khi gửi lên server, nên convert ngược lại UTC (nếu TimezoneUtils có hỗ trợ)
+      // Hoặc giữ nguyên toIso8601String() nếu server tự hiểu
       'beginTime': beginTime.toIso8601String(),
       'durationMinute': durationMinute,
       'type': type,
@@ -64,8 +70,8 @@ class AppointmentLineModel {
       customerPhone: appointment.customer.phone,
       serviceName: service.name,
       durationMinute: durationMinute,
-      beginTime: beginTime,
-      endTime: endTime,
+      beginTime: beginTime, // Đã là Local Time
+      endTime: endTime, // Đã là Local Time
       status: appointment.status,
     );
   }
@@ -107,9 +113,10 @@ class AppointmentInfoModel {
   factory AppointmentInfoModel.fromJson(Map<String, dynamic> json) {
     return AppointmentInfoModel(
       id: json['id'] as String? ?? '',
-      appointmentTime: json['appointmentTime'] != null
-          ? DateTime.tryParse(json['appointmentTime'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+
+      // [SỬA] Áp dụng tương tự cho appointmentTime
+      appointmentTime: TimezoneUtils.parseJsonDateTime(json['appointmentTime']),
+
       status: json['status'] as String? ?? '',
       note: json['note'] as String?,
       customer: CustomerInfoModel.fromJson(
@@ -141,17 +148,23 @@ class AppointmentLinesResponse {
   });
 
   factory AppointmentLinesResponse.fromJson(Map<String, dynamic> json) {
-    final dataMap = json['data'] as Map<String, dynamic>;
+    // Kiểm tra null safety cho dataMap để tránh crash nếu API trả lỗi
+    final dataMap = json['data'] as Map<String, dynamic>? ?? {};
+    final listData = dataMap['data'] as List<dynamic>? ?? [];
 
     return AppointmentLinesResponse(
-      data: (dataMap['data'] as List<dynamic>)
+      data: listData
           .map(
             (item) =>
                 AppointmentLineModel.fromJson(item as Map<String, dynamic>),
           )
           .toList(),
-      meta: PaginationMeta.fromJson(dataMap['meta'] as Map<String, dynamic>),
-      links: PaginationLinks.fromJson(dataMap['links'] as Map<String, dynamic>),
+      meta: dataMap['meta'] != null
+          ? PaginationMeta.fromJson(dataMap['meta'] as Map<String, dynamic>)
+          : PaginationMeta.empty(), // Cần đảm bảo PaginationMeta có hàm empty() hoặc xử lý null
+      links: dataMap['links'] != null
+          ? PaginationLinks.fromJson(dataMap['links'] as Map<String, dynamic>)
+          : PaginationLinks.empty(), // Tương tự
     );
   }
 

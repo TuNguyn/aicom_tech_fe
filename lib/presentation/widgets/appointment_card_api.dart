@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../core/utils/timezone_utils.dart';
 import '../../domain/entities/appointment_line.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -145,16 +145,17 @@ class AppointmentCardApi extends StatelessWidget {
 
   const AppointmentCardApi({super.key, required this.appointment});
 
-  static final _timeFormat = DateFormat('h:mm a');
-
   @override
   Widget build(BuildContext context) {
     final style = _AppointmentCardStyle.fromStatus(appointment.status);
 
-    // Lấy ký tự đầu của tên khách hàng một cách an toàn
     final customerInitial = appointment.customerName.isNotEmpty
         ? appointment.customerName[0].toUpperCase()
         : '?';
+
+    // sử dụng TimezoneUtils (chuẩn AM/PM)
+    final beginTimeStr = TimezoneUtils.formatLocalTime(appointment.beginTime);
+    final endTimeStr = TimezoneUtils.formatLocalTime(appointment.endTime);
 
     return RepaintBoundary(
       child: Container(
@@ -223,7 +224,8 @@ class AppointmentCardApi extends StatelessWidget {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${_timeFormat.format(appointment.beginTime)} - ${_timeFormat.format(appointment.endTime)}',
+                                  // Sử dụng chuỗi đã format từ TimezoneUtils
+                                  '$beginTimeStr - $endTimeStr',
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

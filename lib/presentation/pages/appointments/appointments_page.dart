@@ -1,3 +1,4 @@
+import 'package:aicom_tech_fe/core/utils/timezone_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,38 +43,52 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
     });
   }
 
-  (DateTime, DateTime) _getDateRange() {
-    final start = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      0,
-      0,
-      0,
-    );
-    final end = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      23,
-      59,
-      59,
-    );
-    return (start, end);
-  }
+  // (DateTime, DateTime) _getDateRange() {
+  //   final start = DateTime(
+  //     _selectedDate.year,
+  //     _selectedDate.month,
+  //     _selectedDate.day,
+  //     0,
+  //     0,
+  //     0,
+  //   );
+  //   final end = DateTime(
+  //     _selectedDate.year,
+  //     _selectedDate.month,
+  //     _selectedDate.day,
+  //     23,
+  //     59,
+  //     59,
+  //   );
+  //   return (start, end);
+  // }
 
   void _loadAppointmentsForSelectedDate() {
-    final (start, end) = _getDateRange();
+    final (hybridStart, hybridEnd) = TimezoneUtils.getHybridDateRange(
+      _selectedDate,
+    );
+
     ref
         .read(appointmentsNotifierProvider.notifier)
-        .fetchAppointments(startDate: start, endDate: end, isRefresh: true);
+        .fetchAppointments(
+          startDate: hybridStart, // Sẽ là ngày 4 (UTC)
+          endDate: hybridEnd, // Sẽ là ngày 5 hoặc 6 (Local)
+          isRefresh: true,
+        );
   }
 
   void _loadMoreAppointments() {
-    final (start, end) = _getDateRange();
+    final (hybridStart, hybridEnd) = TimezoneUtils.getHybridDateRange(
+      _selectedDate,
+    );
+
     ref
         .read(appointmentsNotifierProvider.notifier)
-        .fetchAppointments(startDate: start, endDate: end, isRefresh: false);
+        .fetchAppointments(
+          startDate: hybridStart,
+          endDate: hybridEnd,
+          isRefresh: false,
+        );
   }
 
   List<DateTime> _getWeekDates() {
