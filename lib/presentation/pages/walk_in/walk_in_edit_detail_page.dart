@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../core/utils/toast_utils.dart';
+import '../../../core/utils/timezone_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/unfocus_wrapper.dart';
@@ -504,7 +504,7 @@ class _WalkInEditDetailPageState extends State<WalkInEditDetailPage> {
 
   Widget _buildServiceCard(Map<String, dynamic> service) {
     final checkInTime = widget.walkInData['checkInTime'] as DateTime;
-    final timeStr = DateFormat('HH:mm').format(checkInTime);
+    final timeStr = TimezoneUtils.formatLocalTime(checkInTime);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

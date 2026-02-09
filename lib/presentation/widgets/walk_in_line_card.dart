@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../core/utils/toast_utils.dart';
+import '../../core/utils/timezone_utils.dart';
 import '../../domain/entities/walk_in_ticket.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -9,7 +10,7 @@ import '../theme/app_strings.dart';
 import '../../app_dependencies.dart';
 
 const _kCardBackgroundColor = Color(0xFFF8F9FA);
-
+  
 class WalkInLineCard extends ConsumerStatefulWidget {
   final String customerName;
   final WalkInServiceLine serviceLine;
@@ -30,10 +31,12 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
   bool _isProcessing = false;
 
   String _getRelativeTime(DateTime createdAt) {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    final minutes = TimezoneUtils.calculateWaitTimeMinutes(createdAt);
+    if (minutes < 60) return '${minutes}m ago';
+    final hours = (minutes / 60).floor();
+    if (hours < 24) return '${hours}h ago';
+    final days = (hours / 24).floor();
+    return '${days}d ago';
   }
 
   @override

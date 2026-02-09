@@ -879,13 +879,12 @@ class _ReportPageState extends ConsumerState<ReportPage>
       child: Row(
         children: isPaymentTab
             ? [
-                // Payment tab: 6 columns
+                // Payment tab: 5 columns
                 _buildHeaderCell('#', flex: 1),
-                _buildHeaderCell('Ticket', flex: 2),
-                _buildHeaderCell('Total\nEarn', flex: 2),
-                _buildHeaderCell('Disc', flex: 2),
-                _buildHeaderCell('Tips', flex: 2),
-                _buildHeaderCell('Emp \$', flex: 2),
+                _buildHeaderCell('Ticket', flex: 3),
+                _buildHeaderCell('Disc', flex: 3),
+                _buildHeaderCell('Tips', flex: 3),
+                _buildHeaderCell('Total\nEarn', flex: 3, maxLines: 2),
               ]
             : [
                 // Transaction tab: 3 columns
@@ -898,12 +897,14 @@ class _ReportPageState extends ConsumerState<ReportPage>
     );
   }
 
-  Widget _buildHeaderCell(String text, {int flex = 1}) {
+  Widget _buildHeaderCell(String text, {int flex = 1, int maxLines = 1}) {
     return Expanded(
       flex: flex,
       child: Text(
         text,
         textAlign: TextAlign.center,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
@@ -936,9 +937,6 @@ class _ReportPageState extends ConsumerState<ReportPage>
       return '#$ticketCode';
     }
 
-    // Calculate Emp $ with 1 decimal place
-    final empShare = transaction.total * transaction.commission;
-
     return RepaintBoundary(
       child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
@@ -952,18 +950,14 @@ class _ReportPageState extends ConsumerState<ReportPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: isPaymentTab
             ? [
-                // Payment tab: 6 columns
+                // Payment tab: 5 columns
                 _buildDataCell('$index', flex: 1),
-                _buildDataCell(formatTicketCode(transaction.ticketCode), flex: 2),
+                _buildDataCell(formatTicketCode(transaction.ticketCode), flex: 3),
+                _buildDataCell('-', flex: 3), // Discount always "-" (API doesn't have this field)
+                _buildDataCell(formatExactValue(transaction.tips), flex: 3),
                 _buildDataCell(
                   formatExactValue(transaction.total),
-                  flex: 2,
-                ),
-                _buildDataCell('-', flex: 2), // Discount always "-" (API doesn't have this field)
-                _buildDataCell(formatExactValue(transaction.tips), flex: 2),
-                _buildDataCell(
-                  empShare.toStringAsFixed(1),
-                  flex: 2,
+                  flex: 3,
                 ),
               ]
             : [
@@ -1008,12 +1002,6 @@ class _ReportPageState extends ConsumerState<ReportPage>
   ) {
     final isPaymentTab = _selectedTab == 'Payment';
 
-    // Calculate total Emp $ = sum of (total * commission)
-    final totalEmpShare = transactions.fold<double>(
-      0.0,
-      (sum, t) => sum + (t.total * t.commission),
-    );
-
     // Format số không làm tròn cho total row
     String formatTotalValue(double value) {
       if (value == 0) return '-';
@@ -1037,26 +1025,16 @@ class _ReportPageState extends ConsumerState<ReportPage>
       child: Row(
         children: isPaymentTab
             ? [
-                // Payment tab: Show Total, Disc, Tips, Emp $ in respective columns
+                // Payment tab: Show Disc, Tips, Total Earn in respective columns
                 Expanded(flex: 1, child: Container()), // # column
-                Expanded(flex: 2, child: Container()), // Ticket column
+                Expanded(flex: 3, child: Container()), // Ticket column
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    formatTotalValue(summary.totalSales),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: Text(
                     '-', // Discount always "-" (API doesn't have this field)
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
                       color: AppColors.primary,
@@ -1065,10 +1043,12 @@ class _ReportPageState extends ConsumerState<ReportPage>
                   ),
                 ),
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: Text(
                     formatTotalValue(summary.totalTips),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
                       color: AppColors.primary,
@@ -1077,10 +1057,12 @@ class _ReportPageState extends ConsumerState<ReportPage>
                   ),
                 ),
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: Text(
-                    '\$${totalEmpShare.toStringAsFixed(1)}',
+                    formatTotalValue(summary.totalSales),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
                       color: AppColors.primary,

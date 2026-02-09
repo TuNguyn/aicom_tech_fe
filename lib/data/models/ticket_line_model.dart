@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'common/customer_info_model.dart';
 import 'common/employee_info_model.dart';
 import '../../domain/entities/walk_in_ticket.dart';
+import '../../core/utils/timezone_utils.dart';
 
 class TicketLineModel {
   final String id;
@@ -142,7 +143,7 @@ class TicketLineModel {
       discount: discount,
       durationInMinutes: durationInMinutes,
       status: WalkInLineStatus.fromString(status),
-      employeeName: employeeName,
+      employeeName: employeeName.isNotEmpty ? employeeName : employee.fullName,
       displayOrder: displayOrder,
       employeeId: employee.id,
       turnValue: turnValue, // [MỚI] Map sang Entity
@@ -199,10 +200,10 @@ class TicketInfoModel {
       totalPaid: (json['totalPaid'] as num?)?.toDouble() ?? 0.0,
       // Parse ngày tháng an toàn
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
+          ? TimezoneUtils.parseJsonDateTime(json['createdAt'])
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'].toString())
+          ? TimezoneUtils.parseJsonDateTime(json['updatedAt'])
           : DateTime.now(),
       customer: customer,
       payments: (json['payments'] as List<dynamic>?) ?? [],

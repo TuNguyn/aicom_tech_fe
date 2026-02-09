@@ -81,8 +81,9 @@ class WalkInsState extends Equatable {
     return walkInTickets.where((ticket) {
       return ticket.serviceLines.any(
         (line) =>
-            line.status == WalkInLineStatus.waiting ||
-            line.status == WalkInLineStatus.serving,
+            line.itemType == 'SERVICE' &&
+            (line.status == WalkInLineStatus.waiting ||
+                line.status == WalkInLineStatus.serving),
       );
     }).length;
   }
@@ -160,9 +161,22 @@ class WalkInsNotifier extends StateNotifier<WalkInsState> {
         loadingStatus: AsyncValue.error(failure.message, StackTrace.current),
       ),
       (response) {
-        final tickets = _groupTicketLines(response.data);
+        final apiTickets = _groupTicketLines(response.data);
+        final apiTicketIds = apiTickets.map((t) => t.ticketId).toSet();
+
+        // Keep socket-provided tickets that are NOT in API response
+        // and still have active SERVICE lines
+        final socketOnlyActiveTickets = state.walkInTickets
+            .where((t) =>
+                !apiTicketIds.contains(t.ticketId) &&
+                t.serviceLines.any((line) =>
+                    line.itemType == 'SERVICE' &&
+                    (line.status == WalkInLineStatus.waiting ||
+                        line.status == WalkInLineStatus.serving)))
+            .toList();
+
         state = state.copyWith(
-          walkInTickets: tickets,
+          walkInTickets: [...apiTickets, ...socketOnlyActiveTickets],
           loadingStatus: const AsyncValue.data(null),
         );
       },

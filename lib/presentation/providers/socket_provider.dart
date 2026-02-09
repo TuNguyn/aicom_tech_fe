@@ -546,11 +546,9 @@ class SocketNotifier extends StateNotifier<SocketState> {
     final action = mapData['action'];
     final walkInsNotifier = _ref.read(walkInsNotifierProvider.notifier);
 
-    // 1. Nếu là DELETE -> Xóa ngay
-    if (action == 'DELETE') {
-      walkInsNotifier.removeTicket(ticketId);
-      return;
-    }
+    // Không return sớm cho DELETE — ticket canceled cần được giữ lại
+    // để hiển thị đúng số lượng canceled trong Today Summary.
+    // Logic bên dưới sẽ tự xử lý: upsert nếu có lines, remove nếu không.
 
     final ticketLines = ticketData['ticketLines'];
 
