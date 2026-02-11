@@ -33,10 +33,12 @@ enum NetworkErrorType {
 
 class NetworkException extends ServerException {
   final NetworkErrorType networkErrorType;
+  final bool isOffline;
 
   NetworkException({
     required this.networkErrorType,
     required super.message,
+    this.isOffline = false,
     super.statusCode,
   });
 

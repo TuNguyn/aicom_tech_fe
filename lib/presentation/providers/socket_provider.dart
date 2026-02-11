@@ -718,6 +718,13 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void connect(String authToken, String userFullName) {
+    // Skip connect when offline - will auto-reconnect when online via main.dart listener
+    final connectivityState = _ref.read(connectivityNotifierProvider);
+    if (connectivityState.isOffline) {
+      if (kDebugMode) print('[Socket] Skipping connect - device is offline');
+      return;
+    }
+
     state = state.copyWith(
       connectionStatus: const AsyncValue.loading(),
       currentUserName: userFullName,

@@ -25,7 +25,9 @@
       "Bash(convert:*)",
       "WebFetch(domain:pub.dev)",
       "Bash(dart format:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(xargs cat:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

@@ -4,11 +4,20 @@ import 'package:hive/hive.dart';
 import '../../config/app_config.dart';
 import '../constants/app_constants.dart';
 import '../errors/exceptions.dart';
+import 'connectivity_service.dart';
+import 'network_interceptor.dart';
 
 class DioClient {
   final Dio _dio;
+  final ConnectivityService? _connectivityService;
 
-  DioClient(this._dio) {
+  DioClient(this._dio, {ConnectivityService? connectivityService})
+      : _connectivityService = connectivityService {
+    // Offline interceptor - reject requests immediately when offline
+    if (_connectivityService != null) {
+      _dio.interceptors.add(NetworkInterceptor(_connectivityService));
+    }
+
     _dio
       ..options.baseUrl = AppConfig.baseUrl
       ..options.connectTimeout = const Duration(seconds: 30)
@@ -91,9 +100,13 @@ class DioClient {
         );
 
       case DioExceptionType.connectionError:
+        final isOffline = e.message == 'offline';
         throw NetworkException(
           networkErrorType: NetworkErrorType.noConnection,
-          message: 'No internet connection. Please check your settings.',
+          message: isOffline
+              ? 'No internet connection'
+              : 'No internet connection. Please check your settings.',
+          isOffline: isOffline,
         );
 
       case DioExceptionType.badResponse:

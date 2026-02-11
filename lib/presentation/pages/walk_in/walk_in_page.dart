@@ -76,6 +76,8 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
                 _isInitialLoad = false;
               });
             }
+            // Skip toast when offline - banner already shows connectivity status
+            if (ref.read(connectivityNotifierProvider).isOffline) return;
             ToastUtils.showError(error.toString());
           },
         );

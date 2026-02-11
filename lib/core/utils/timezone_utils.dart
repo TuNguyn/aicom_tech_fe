@@ -5,7 +5,7 @@
 /// - toUTC(): Converts Local time → UTC for SENDING to server
 ///
 /// The backend stores all timestamps in UTC 0. Always use toUTC() before
-/// sending DateTime to the API to ensure proper storage and querying.
+/// sending DateTime to the API to ensure proper storage and querying.  
 class TimezoneUtils {
   // Special microsecond value to mark DateTimes as already converted
   // This prevents double conversion errors
@@ -556,36 +556,22 @@ class TimezoneUtils {
     }
   }
 
-  /// Lấy hybrid range cho một ngày bất kỳ (được chọn từ lịch)
-  /// Trả về (startDate, endDate) dạng String YYYY-MM-DD
+  /// Lấy date range cho một ngày bất kỳ (được chọn từ lịch)
+  /// Trả về (startDate, endDate) dùng local date — khớp logic với fetchTodayCount()
   static (DateTime, DateTime) getHybridDateRange(DateTime selectedDate) {
-    // 1. Lấy ngày được chọn theo giờ Local (00:00:00)
-    final localStart = DateTime(
+    final start = DateTime(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
+      0, 0, 0,
     );
-
-    // 2. Convert sang UTC (Sẽ bị lùi về hôm trước nếu ở VN, hoặc tiến lên nếu ở Mỹ)
-    // Ví dụ: VN ngày 05/02 -> UTC sẽ là 17:00 ngày 04/02
-    final utcStart = toUTC(localStart);
-
-    // 3. So sánh để tìm biên (Range bao trùm cả 2 ngày)
-    // Nếu UTC < Local (VN): Lấy UTC làm Start
-    // Nếu UTC > Local (Mỹ): Lấy Local làm Start
-    final isUtcBehind = utcStart.isBefore(localStart);
-
-    // START DATE: Lấy cái nào nhỏ hơn
-    final hybridStart = isUtcBehind ? utcStart : localStart;
-
-    // END DATE: Lấy cái nào lớn hơn + thêm 1 ngày để chắc chắn bao trùm
-    // (Vì logic filter thường là < EndDate, nên cần cộng dôi ra)
-    final hybridEnd = (isUtcBehind ? localStart : utcStart).add(
-      const Duration(days: 1),
+    final end = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      23, 59, 59,
     );
-
-    // Trả về DateTime để ApptPage tự format hoặc dùng luôn
-    return (hybridStart, hybridEnd);
+    return (start, end);
   }
 
   /// Parse optional DateTime from JSON string and convert to local timezone

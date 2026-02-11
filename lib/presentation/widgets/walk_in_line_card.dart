@@ -171,6 +171,8 @@ class _WalkInLineCardState extends ConsumerState<WalkInLineCard> {
     }
 
     if (errorMessage != null && context.mounted) {
+      // Skip toast when offline - banner already shows connectivity status
+      if (ref.read(connectivityNotifierProvider).isOffline) return;
       ToastUtils.showError(errorMessage);
     }
   }

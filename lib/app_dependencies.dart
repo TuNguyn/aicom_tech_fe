@@ -33,13 +33,18 @@ import 'presentation/providers/walk_ins_provider.dart';
 import 'presentation/providers/reports_provider.dart';
 import 'presentation/providers/socket_provider.dart';
 import 'core/socket/socket_service.dart';
+import 'core/network/connectivity_service.dart';
+import 'presentation/providers/connectivity_provider.dart';
 import 'config/app_config.dart';
 
 // Core providers
 final dioProvider = Provider<Dio>((ref) => Dio());
 
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient(ref.read(dioProvider));
+  return DioClient(
+    ref.read(dioProvider),
+    connectivityService: ref.read(connectivityServiceProvider),
+  );
 });
 
 // Socket providers
@@ -50,6 +55,16 @@ final socketServiceProvider = Provider<SocketService>((ref) {
 final socketNotifierProvider =
     StateNotifierProvider<SocketNotifier, SocketState>((ref) {
       return SocketNotifier(ref.read(socketServiceProvider), ref);
+    });
+
+// Connectivity providers
+final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
+  return ConnectivityService();
+});
+
+final connectivityNotifierProvider =
+    StateNotifierProvider<ConnectivityNotifier, ConnectivityState>((ref) {
+      return ConnectivityNotifier(ref.read(connectivityServiceProvider));
     });
 
 // Hive box providers

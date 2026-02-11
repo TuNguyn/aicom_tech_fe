@@ -46,11 +46,11 @@ class SocketService {
     });
 
     _socket!.onError((error) {
-      if (kDebugMode) print('[Socket] Error: $error');
+      if (kDebugMode) print('[Socket] Error: ${_briefError(error)}');
     });
 
     _socket!.onConnectError((error) {
-      if (kDebugMode) print('[Socket] Connection error: $error');
+      if (kDebugMode) print('[Socket] Connection error: ${_briefError(error)}');
     });
 
     _socket!.connect();
@@ -90,6 +90,14 @@ class SocketService {
     }
 
     return _eventControllers[eventName]!.stream;
+  }
+
+  /// Shorten socket error for cleaner logs
+  String _briefError(dynamic error) {
+    final str = error.toString();
+    // Extract just the OS error message if it's a SocketException
+    final match = RegExp(r'OS Error: (.+?),').firstMatch(str);
+    return match != null ? match.group(1)! : str;
   }
 
   /// Cleanup resources

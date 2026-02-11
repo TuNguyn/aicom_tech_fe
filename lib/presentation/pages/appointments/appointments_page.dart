@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_dimensions.dart';
 import '../../widgets/appointment_card_api.dart';
+import '../../providers/connectivity_provider.dart';
 import '../../widgets/logout_dialog.dart';
 
 class AppointmentsPage extends ConsumerStatefulWidget {
@@ -31,6 +32,12 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
 
   @override
   bool get wantKeepAlive => true;
+
+  static const _statusPriority = {
+    'CONFIRMED': 0,
+    'SCHEDULED': 1,
+    'CANCELLED': 2,
+  };
 
   static final _dayFormat = DateFormat('E');
   static final _dateFormat = DateFormat('d');
@@ -91,6 +98,19 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
         );
   }
 
+  List<AppointmentLine> _filterAndSortByStatus(List<AppointmentLine> appointments) {
+    final filtered = appointments
+        .where((a) => _statusPriority.containsKey(a.status.toUpperCase()))
+        .toList();
+    filtered.sort((a, b) {
+      final priorityA = _statusPriority[a.status.toUpperCase()]!;
+      final priorityB = _statusPriority[b.status.toUpperCase()]!;
+      if (priorityA != priorityB) return priorityA.compareTo(priorityB);
+      return a.beginTime.compareTo(b.beginTime);
+    });
+    return filtered;
+  }
+
   List<DateTime> _getWeekDates() {
     final now = DateTime.now();
     final weekday = now.weekday;
@@ -102,12 +122,11 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
   Widget build(BuildContext context) {
     super.build(context);
     final appointmentsState = ref.watch(appointmentsNotifierProvider);
-    final appointments = appointmentsState.appointments;
+    final allAppointments = appointmentsState.appointments;
+    final appointments = _filterAndSortByStatus(allAppointments);
     final isLoading = appointmentsState.loadingStatus.isLoading;
 
-    final displayCount = appointmentsState.totalCount > appointments.length
-        ? appointmentsState.totalCount
-        : appointments.length;
+    final displayCount = appointments.length;
 
     // [LISTENERS]
     ref.listen<String>(authNotifierProvider.select((state) => state.user.id), (
@@ -117,6 +136,13 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
       if (prev != null && prev.isNotEmpty && prev != next && next.isNotEmpty) {
         _isInitialLoad = true;
         _selectedDate = DateTime.now();
+        _loadAppointmentsForSelectedDate();
+      }
+    });
+
+    // Auto-reload khi back online nếu chưa có data
+    ref.listen<ConnectivityState>(connectivityNotifierProvider, (prev, next) {
+      if (next.justCameBackOnline && appointments.isEmpty) {
         _loadAppointmentsForSelectedDate();
       }
     });
@@ -141,6 +167,8 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage>
                 _isSwitchingDate = false;
               });
             }
+            // Skip toast when offline - banner already shows connectivity status
+            if (ref.read(connectivityNotifierProvider).isOffline) return;
             ToastUtils.showError(err.toString());
           },
         );

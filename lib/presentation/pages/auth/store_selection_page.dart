@@ -38,6 +38,8 @@ class StoreSelectionPage extends ConsumerWidget {
       // Handle login error
       next.loginStatus.whenOrNull(
         error: (error, stack) {
+          // Skip toast when offline - banner already shows connectivity status
+          if (ref.read(connectivityNotifierProvider).isOffline) return;
           ToastUtils.showError(error.toString());
         },
       );

@@ -9,6 +9,8 @@ import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/app_colors.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'app_dependencies.dart';
+import 'presentation/providers/connectivity_provider.dart';
+import 'presentation/widgets/connectivity_banner.dart';
 import 'routes/app_router.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -65,6 +67,31 @@ class MyApp extends ConsumerWidget {
       }
     });
 
+    // Connectivity lifecycle management
+    ref.listen<ConnectivityState>(connectivityNotifierProvider, (prev, next) {
+      // Disconnect socket when going offline to stop retry loop
+      if (next.isOffline) {
+        ref.read(socketNotifierProvider.notifier).disconnect();
+        return;
+      }
+
+      // Auto-recovery when coming back online
+      if (next.justCameBackOnline) {
+        final authState = ref.read(authNotifierProvider);
+        if (authState.isAuthenticated && authState.user.token.isNotEmpty) {
+          // Reconnect socket
+          ref
+              .read(socketNotifierProvider.notifier)
+              .connect(authState.user.token, authState.user.fullName);
+          // Reload data
+          ref.read(appointmentsNotifierProvider.notifier).fetchTodayCount();
+          ref.read(walkInsNotifierProvider.notifier).refreshWalkIns();
+          // Reset reports so next visit fetches fresh data
+          ref.invalidate(reportsNotifierProvider);
+        }
+      }
+    });
+
     // Update AppColors with current theme
     AppColors.updateScheme(currentTheme);
 
@@ -73,6 +100,9 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return ConnectivityBanner(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

@@ -74,7 +74,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (mounted) {
         final state = ref.read(authNotifierProvider);
         if (state.updateProfileStatus.hasError) {
-          ToastUtils.showError(state.updateProfileStatus.error.toString());
+          // Skip toast when offline - banner already shows connectivity status
+          if (!ref.read(connectivityNotifierProvider).isOffline) {
+            ToastUtils.showError(state.updateProfileStatus.error.toString());
+          }
         } else {
           ToastUtils.showSuccess('Profile updated successfully');
           Navigator.of(context).pop();
