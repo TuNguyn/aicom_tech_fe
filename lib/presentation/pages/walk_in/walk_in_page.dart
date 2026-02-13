@@ -166,7 +166,7 @@ class _WalkInPageState extends ConsumerState<WalkInPage>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '$ticketCount',
+                          '$serviceLineCount',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

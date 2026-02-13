@@ -543,7 +543,6 @@ class SocketNotifier extends StateNotifier<SocketState> {
     if (ticketData == null || ticketData is! Map<String, dynamic>) return;
 
     final String ticketId = ticketData['id'];
-    final action = mapData['action'];
     final walkInsNotifier = _ref.read(walkInsNotifierProvider.notifier);
 
     // Không return sớm cho DELETE — ticket canceled cần được giữ lại
